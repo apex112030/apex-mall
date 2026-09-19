@@ -428,6 +428,20 @@ body{background:#f4f7fb;}
 @media(max-width:1200px){.home-kpis{grid-template-columns:repeat(3,1fr)}.home-grid,.home-bottom{grid-template-columns:1fr}.cost-wrap{grid-template-columns:180px 1fr}}
 @media(max-width:760px){.sidebar{width:280px;position:fixed;right:0;z-index:30;transform:translateX(105%);transition:.25s}.sidebar.open{transform:translateX(0)}.home-kpis{grid-template-columns:repeat(2,1fr)}.content{padding:14px}.home-hero h1{font-size:20px}.cost-wrap{grid-template-columns:1fr;justify-items:center}.cost-legend{width:100%}}
 @media(max-width:430px){.home-kpis{grid-template-columns:1fr}.topbar{padding:9px 10px}.user-chip .who{display:none}.content{padding:12px 10px 32px}.home-hero{padding:10px 4px 15px}.home-hero h1{font-size:18px;line-height:1.5}.home-hero p{font-size:12px}.home-kpi{min-height:96px}.sidebar{width:min(300px,88vw)}.project-bar-row{grid-template-columns:72px 1fr 34px;font-size:10px}}
+
+/* Persistent attachments viewer + save controls */
+.attachment-viewer-overlay{position:fixed;inset:0;z-index:999999;background:rgba(8,18,35,.78);display:flex;align-items:center;justify-content:center;padding:18px;direction:rtl}
+.attachment-viewer{width:min(1100px,96vw);height:min(88vh,900px);background:#f7f8fa;border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden}
+.attachment-viewer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#16243C;color:#fff;font-size:14px}
+.attachment-viewer-close{border:0;background:rgba(255,255,255,.15);color:#fff;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:18px}
+.attachment-viewer-body{flex:1;overflow:auto;padding:12px;display:flex;align-items:center;justify-content:center;direction:ltr;background:#e9edf2}
+.attachment-viewer-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:#fff;border-top:1px solid #dcdfe5;color:#5b6472;font-size:12px;direction:rtl}
+.save-actions-panel{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:14px;margin-top:16px}
+.save-stage-card,.save-all-card{border:0;border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;text-align:right;cursor:pointer;font-family:inherit;box-shadow:0 8px 24px rgba(20,40,70,.12);transition:transform .15s,box-shadow .15s}
+.save-stage-card:hover,.save-all-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(20,40,70,.18)}
+.save-stage-card{background:linear-gradient(135deg,#5c45c8,#7665cb);color:#fff}.save-all-card{background:linear-gradient(135deg,#1673c8,#238fdd);color:#fff}
+.save-icon{font-size:32px;line-height:1}.save-stage-card b,.save-all-card b{display:block;font-size:17px}.save-stage-card small,.save-all-card small{display:block;margin-top:4px;opacity:.9;font-size:12px}
+@media(max-width:700px){.save-actions-panel{grid-template-columns:1fr}.attachment-viewer{height:92vh}.attachment-viewer-foot{flex-direction:column;align-items:stretch}}
 </style>
 <meta name="epms-version" content="V10.2 restored control panel — bilingual Arabic English">
 <style>
@@ -560,6 +574,119 @@ async function dbSet(key, value){
     return false;
   }
 }
+/* ===================== Persistent Attachment Vault (IndexedDB) ===================== */
+const ATTACH_DB_NAME = 'CEPM_Attachments_V1';
+const ATTACH_STORE = 'files';
+let _attachDBPromise = null;
+function attachmentDB(){
+  if(_attachDBPromise) return _attachDBPromise;
+  _attachDBPromise = new Promise((resolve,reject)=>{
+    if(!('indexedDB' in window)){ reject(new Error('IndexedDB غير متاح')); return; }
+    const req = indexedDB.open(ATTACH_DB_NAME,1);
+    req.onupgradeneeded = ()=>{
+      const db=req.result;
+      if(!db.objectStoreNames.contains(ATTACH_STORE)) db.createObjectStore(ATTACH_STORE,{keyPath:'key'});
+    };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error('تعذر فتح قاعدة المرفقات'));
+  });
+  return _attachDBPromise;
+}
+async function attachmentPut(key,file){
+  const db=await attachmentDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(ATTACH_STORE,'readwrite');
+    const rec={key,name:file.name||'attachment',type:file.type||'application/octet-stream',size:file.size||0,lastModified:file.lastModified||Date.now(),blob:file};
+    tx.objectStore(ATTACH_STORE).put(rec);
+    tx.oncomplete=()=>resolve(rec);
+    tx.onerror=()=>reject(tx.error||new Error('تعذر حفظ المرفق'));
+  });
+}
+async function attachmentGet(key){
+  try{
+    const db=await attachmentDB();
+    return await new Promise((resolve,reject)=>{
+      const tx=db.transaction(ATTACH_STORE,'readonly');
+      const req=tx.objectStore(ATTACH_STORE).get(key);
+      req.onsuccess=()=>resolve(req.result||null);
+      req.onerror=()=>reject(req.error||new Error('تعذر قراءة المرفق'));
+    });
+  }catch(e){ return null; }
+}
+async function attachmentDelete(key){
+  try{
+    const db=await attachmentDB();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction(ATTACH_STORE,'readwrite'); tx.objectStore(ATTACH_STORE).delete(key);
+      tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);
+    });
+  }catch(e){}
+}
+function attachmentKey(moduleKey,id){ return 'attach_'+moduleKey+'_'+id; }
+function attachmentIsPreviewable(type,name){
+  type=String(type||'').toLowerCase(); name=String(name||'').toLowerCase();
+  return type.startsWith('image/') || type==='application/pdf' || type.startsWith('text/') || type.startsWith('audio/') || type.startsWith('video/') || /\.(pdf|png|jpe?g|gif|webp|bmp|svg|txt|csv|mp4|webm|ogg|mp3|wav)$/i.test(name);
+}
+function attachmentPreviewHTML(data,url){
+  const type=String(data.type||'').toLowerCase();
+  const name=escapeHtml(data.name||'المرفق');
+  if(type.startsWith('image/')) return `<img src="${url}" alt="${name}" style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:8px;background:#fff;">`;
+  if(type==='application/pdf' || /\.pdf$/i.test(data.name||'')) return `<iframe src="${url}" title="${name}" style="width:100%;height:70vh;border:0;border-radius:8px;background:#fff;"></iframe>`;
+  if(type.startsWith('video/')) return `<video src="${url}" controls style="max-width:100%;max-height:70vh;width:100%;background:#000;border-radius:8px;"></video>`;
+  if(type.startsWith('audio/')) return `<audio src="${url}" controls style="width:100%;"></audio>`;
+  if(type.startsWith('text/') || /\.(txt|csv)$/i.test(data.name||'')) return `<iframe src="${url}" title="${name}" style="width:100%;height:60vh;border:0;border-radius:8px;background:#fff;"></iframe>`;
+  return `<div style="padding:40px;text-align:center"><div style="font-size:48px">📄</div><h3>${name}</h3><p>هذا النوع لا يدعم العرض داخل المتصفح مباشرة. يمكنك فتحه من الزر أدناه.</p></div>`;
+}
+async function openAttachment(moduleKey,id){
+  const key=attachmentKey(moduleKey,id);
+  let data=await attachmentGet(key);
+  // Backward compatibility with older V14 attachments stored as DataURL in localStorage.
+  if(!data){
+    const old=await dbGet(key,null);
+    if(old && old.dataUrl){
+      try{
+        const res=await fetch(old.dataUrl); const blob=await res.blob();
+        data={key,name:old.name||'attachment',type:blob.type||'',size:blob.size,blob};
+        try{ await attachmentPut(key,new File([blob],data.name,{type:data.type||blob.type||'application/octet-stream'})); }catch(e){}
+      }catch(e){
+        data={key,name:old.name||'attachment',type:'',blob:null,dataUrl:old.dataUrl};
+      }
+    }
+  }
+  if(!data){ alert('تعذر العثور على المرفق.'); return; }
+  let url='';
+  if(data.blob) url=URL.createObjectURL(data.blob);
+  else if(data.dataUrl) url=data.dataUrl;
+  else { alert('المرفق غير صالح.'); return; }
+  const ov=document.createElement('div');
+  ov.className='attachment-viewer-overlay';
+  ov.innerHTML=`<div class="attachment-viewer"><div class="attachment-viewer-head"><b>📎 ${escapeHtml(data.name||'المرفق')}</b><button class="attachment-viewer-close" type="button">✕</button></div><div class="attachment-viewer-body">${attachmentPreviewHTML(data,url)}</div><div class="attachment-viewer-foot"><span>${Number(data.size||0).toLocaleString('ar-EG')} بايت</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ghost" type="button" id="attOpenTab">فتح في تبويب جديد</button><button class="btn btn-ghost" type="button" id="attDownload">تنزيل نسخة</button></div></div></div>`;
+  document.body.appendChild(ov);
+  const close=()=>{ if(url && data.blob) URL.revokeObjectURL(url); ov.remove(); };
+  ov.querySelector('.attachment-viewer-close').onclick=close;
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  ov.querySelector('#attOpenTab').onclick=()=>window.open(url,'_blank','noopener');
+  ov.querySelector('#attDownload').onclick=()=>{const a=document.createElement('a');a.href=url;a.download=data.name||'attachment';document.body.appendChild(a);a.click();a.remove();};
+}
+
+/* ===================== Save controls ===================== */
+async function saveCurrentStage(){
+  const key = (STATE && Array.isArray(STATE[currentRoute])) ? currentRoute : null;
+  if(!key){ await saveAllData(true); return; }
+  const ok=await dbSet(key,STATE[key]);
+  auditAction('حفظ المرحلة',key,'حفظ بيانات المرحلة الحالية');
+  showDbWarning(ok ? `تم حفظ مرحلة «${(MODULES[key]&&MODULES[key].title)||key}» بنجاح.` : 'تعذر حفظ المرحلة الحالية.');
+  render();
+}
+async function saveAllData(silent){
+  let ok=true;
+  for(const key of Object.keys(STATE)) ok = (await dbSet(key,STATE[key])) && ok;
+  try{ await dbSet('lastGeneralSave',{time:new Date().toISOString(),user:currentUser?currentUser.username:'system'}); }catch(e){}
+  auditAction('حفظ عام','النظام','حفظ جميع بيانات النظام');
+  if(!silent) showDbWarning(ok?'تم حفظ جميع بيانات النظام بنجاح.':'تم الحفظ مع وجود مشكلة في بعض البيانات.');
+  return ok;
+}
+
 function showDbWarning(msg){
   try{
     let bar=document.getElementById('epDbWarnBar');
@@ -1432,7 +1559,7 @@ function sidebarHTML(){
   <div class="sidebar ${sidebarOpen?'open':''}" id="sidebar">
     <div class="brand">
       <span class="sq"></span><b>إدارة شركات المقاولات متعددة المهام</b>
-      <small>تصميم • استشارات • إشراف • إدارة مشاريع</small>
+      <small>تصميم • تنفيذ • إشراف • إدارة مشاريع</small>
     </div>
     <div class="panel-shortcuts">
       <button type="button" onclick="expandAllNavGroups()">فتح الكل</button>
@@ -1577,8 +1704,8 @@ function dashboardHTML(){
   return `
     <div class="home-hero">
       <div class="home-crumb">⌂ &nbsp; الرئيسية</div>
-      <h1>مرحباً بك في إدارة شركات المقاولات متعددة المهام الاستشاري</h1>
-      <p>تصميم واستشارات وإشراف وإدارة متكاملة لمشروعاتكم</p>
+      <h1>مرحباً بك في إدارة شركات المقاولات متعددة المهام</h1>
+      <p>تصميم وتنفيذ وإشراف وإدارة متكاملة لمشروعاتكم</p>
     </div>
 
     <div class="home-kpis">
@@ -1619,6 +1746,11 @@ function dashboardHTML(){
           </div>
         </div>
       </section>
+    </div>
+
+    <div class="save-actions-panel no-print">
+      <button class="save-stage-card" type="button" onclick="saveCurrentStage()"><span class="save-icon">💾</span><span><b>حفظ المرحلة الحالية</b><small>حفظ بيانات القسم المفتوح الآن</small></span></button>
+      <button class="save-all-card" type="button" onclick="saveAllData(false)"><span class="save-icon">💾</span><span><b>حفظ عام</b><small>حفظ جميع بيانات النظام على الجهاز</small></span></button>
     </div>
   `;
 }
@@ -1734,7 +1866,7 @@ function moduleHTML(key, mod){
     const projCell = mod.hasProject ? `<td>${escapeHtml(projectName(r.projectId))}</td>` : '';
     const creator = r.createdByName || r.createdBy || '—';
     const creatorCell = `<td><span class="badge">${escapeHtml(creator)}</span></td>`;
-    const attachCell = `<td>${r.hasAttachment ? `<button class="link-btn" onclick="openAttachment('${key}','${r.id}')">📎 مرفقات</button>` : '<span style="color:#B7B0A0">—</span>'}</td>`;
+    const attachCell = `<td>${r.hasAttachment ? `<button class="link-btn" onclick="openAttachment('${key}','${r.id}')">👁 فتح مباشر</button>` : '<span style="color:#B7B0A0">—</span>'}</td>`;
     return `<tr>
       ${projCell}
       ${cells}
@@ -1755,6 +1887,8 @@ function moduleHTML(key, mod){
       <div class="filters">${filterBar}</div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+        <button class="btn btn-ghost" onclick="saveCurrentStage()">💾 حفظ المرحلة</button>
+        <button class="btn btn-primary" onclick="saveAllData(false)">💾 حفظ عام</button>
         ${editable ? `<button class="btn btn-amber" onclick="openNew('${key}')">+ إضافة</button>` : ''}
       </div>
     </div>
@@ -1885,20 +2019,16 @@ async function saveRecord(){
   const fileInput = document.getElementById('f_attachment');
   const file = fileInput && fileInput.files && fileInput.files[0];
   if(file){
-    if(file.size > 4 * 1024 * 1024){
-      alert('حجم المرفق كبير جداً (الحد الأقصى تقريباً 4 ميجا). لم يتم رفع المرفق، لكن باقي بيانات السجل اتحفظت.');
+    if(file.size > 100 * 1024 * 1024){
+      alert('حجم المرفق كبير جداً. الحد الأقصى 100 ميجا لكل ملف.');
     } else {
       try{
-        const dataUrl = await new Promise((resolve, reject)=>{
-          const reader = new FileReader();
-          reader.onload = ()=>resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        await dbSet('attach_'+moduleKey+'_'+record.id, {name:file.name, dataUrl});
+        await attachmentPut(attachmentKey(moduleKey,record.id),file);
         record.hasAttachment = true;
         record.attachmentName = file.name;
-      }catch(e){ console.error('attachment error', e); alert('تعذر رفع المرفق.'); }
+        record.attachmentType = file.type || '';
+        record.attachmentSize = file.size || 0;
+      }catch(e){ console.error('attachment error', e); alert('تعذر حفظ المرفق على الجهاز. تأكد من أن المتصفح يسمح بالتخزين المحلي.'); }
     }
   }
 
@@ -1908,22 +2038,11 @@ async function saveRecord(){
   render();
 }
 
-async function openAttachment(moduleKey, id){
-  const data = await dbGet('attach_'+moduleKey+'_'+id, null);
-  if(!data){ alert('تعذر العثور على المرفق.'); return; }
-  const a = document.createElement('a');
-  a.href = data.dataUrl;
-  a.download = data.name || 'attachment';
-  a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
 async function deleteRecord(moduleKey, id){
   if(!confirm('هل تريد حذف هذا السجل؟')) return;
   STATE[moduleKey] = STATE[moduleKey].filter(r=>r.id!==id);
   await dbSet(moduleKey, STATE[moduleKey]);
+  await attachmentDelete(attachmentKey(moduleKey,id));
   render();
 }
 
