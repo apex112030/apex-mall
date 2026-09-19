@@ -1,0 +1,3275 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام إدارة مشاريع شركات المقاولات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Zain:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16243C;
+    --navy-2:#1E3358;
+    --steel:#2B4C7E;
+    --amber:#E2A03F;
+    --amber-dark:#B87A1F;
+    --paper:#EEEAE2;
+    --card:#FFFFFF;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#DCD6C9;
+    --danger:#B4472A;
+    --success:#3F7D58;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Tajawal',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  #app{min-height:100vh;}
+
+  /* ---------- Login ---------- */
+  .login-wrap{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      linear-gradient(var(--navy),var(--navy)),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 40px);
+    padding:24px;
+  }
+  .login-card{
+    background:var(--card);
+    width:100%;
+    max-width:380px;
+    border-radius:4px;
+    padding:36px 32px 30px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+    border-top:5px solid var(--amber);
+  }
+  .brand-mark{
+    display:flex;align-items:center;gap:10px;margin-bottom:6px;
+  }
+  .brand-mark .sq{width:14px;height:14px;background:var(--amber);}
+  .brand-mark .sq2{width:14px;height:14px;background:var(--navy);margin-inline-start:-4px;}
+  .login-card h1{
+    font-size:21px;font-weight:900;margin:14px 0 2px;color:var(--navy);
+  }
+  .login-card p.sub{color:var(--ink-soft);font-size:13.5px;margin:0 0 24px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:700;}
+  .field input, .field select, .field textarea{
+    width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:3px;
+    font-family:inherit;font-size:14.5px;background:#FBFAF7;color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:none;border-color:var(--steel);background:#fff;
+  }
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:10px 18px;border-radius:3px;border:none;cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:14px;transition:filter .12s ease;
+  }
+  .btn:active{filter:brightness(0.92);}
+  .btn-primary{background:var(--navy);color:#fff;width:100%;padding:12px;}
+  .btn-primary:hover{background:var(--navy-2);}
+  .btn-amber{background:var(--amber);color:var(--navy);}
+  .btn-amber:hover{background:var(--amber-dark);color:#fff;}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1.5px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .btn-danger{background:#fff;color:var(--danger);border:1.5px solid var(--danger);}
+  .btn-danger:hover{background:var(--danger);color:#fff;}
+  .btn-sm{padding:6px 12px;font-size:13px;}
+  .err{color:var(--danger);font-size:13px;margin:-8px 0 14px;font-weight:700;}
+
+  /* ---------- Main layout ---------- */
+  .layout{display:flex;min-height:100vh;}
+  .sidebar{
+    width:236px;flex-shrink:0;background:var(--navy);color:#EDEBE6;
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
+  }
+  .sidebar .brand{padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.1);}
+  .sidebar .brand .sq{width:12px;height:12px;background:var(--amber);display:inline-block;margin-inline-end:8px;}
+  .sidebar .brand b{font-size:15px;letter-spacing:.3px;}
+  .sidebar .brand small{display:block;color:#9AA6B8;font-size:11.5px;margin-top:4px;}
+  .nav{padding:10px 0;flex:1;}
+  .nav a{
+    display:block;padding:11px 22px;color:#C7CEDA;text-decoration:none;font-size:14px;
+    font-weight:500;border-inline-start:3px solid transparent;cursor:pointer;
+  }
+  .nav a:hover{background:rgba(255,255,255,0.05);color:#fff;}
+  .nav a.active{border-inline-start-color:var(--amber);background:rgba(255,255,255,0.07);color:#fff;font-weight:700;}
+  .nav .grp-label{padding:16px 22px 6px;font-size:11px;color:#7C8AA0;font-weight:700;letter-spacing:.4px;}
+  .sidebar-foot{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.1);font-size:12.5px;color:#9AA6B8;}
+  .sidebar-foot b{color:#fff;display:block;font-size:13.5px;margin-bottom:2px;}
+
+  .main{flex:1;min-width:0;}
+  .topbar{
+    background:#fff;border-bottom:1px solid var(--line);padding:16px 28px;
+    display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5;
+  }
+  .topbar h2{margin:0;font-size:19px;font-weight:900;color:var(--navy);}
+  .topbar .user-chip{display:flex;align-items:center;gap:12px;}
+  .user-chip .who{font-size:13px;color:var(--ink-soft);text-align:left;}
+  .user-chip .who b{color:var(--ink);display:block;font-size:13.5px;}
+  .content{padding:24px 28px 60px;}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .toolbar .filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .toolbar select{padding:8px 10px;border:1.5px solid var(--line);border-radius:3px;font-family:inherit;background:#fff;font-size:13.5px;}
+
+  .cards-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+  .stat-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 18px;border-top:3px solid var(--steel);}
+  .stat-card.amber{border-top-color:var(--amber);}
+  .stat-card.danger{border-top-color:var(--danger);}
+  .stat-card.success{border-top-color:var(--success);}
+  .stat-card .n{font-size:26px;font-weight:900;color:var(--navy);}
+  .stat-card .l{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+  thead th{background:#F4F1E9;color:var(--navy);text-align:right;font-size:12.5px;font-weight:800;padding:11px 14px;border-bottom:2px solid var(--line);}
+  tbody td{padding:11px 14px;font-size:13.5px;border-bottom:1px solid var(--line);color:var(--ink);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FAF9F5;}
+  .empty-row td{text-align:center;color:var(--ink-soft);padding:34px;font-size:14px;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;background:#EAE6DA;color:var(--ink-soft);}
+  .badge.ok{background:#E2EFE6;color:var(--success);}
+  .badge.warn{background:#FBF0DC;color:var(--amber-dark);}
+  .badge.bad{background:#F6E0D8;color:var(--danger);}
+  .row-actions{display:flex;gap:6px;justify-content:flex-end;}
+  .link-btn{background:none;border:none;color:var(--steel);cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:4px 6px;}
+  .link-btn:hover{text-decoration:underline;}
+  .link-btn.danger{color:var(--danger);}
+
+  .no-access{
+    background:#fff;border:1px dashed var(--line);border-radius:4px;padding:40px;text-align:center;color:var(--ink-soft);
+  }
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(22,36,60,0.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow-y:auto;}
+  .modal{background:#fff;border-radius:4px;width:100%;max-width:560px;padding:26px 26px 22px;border-top:5px solid var(--navy);}
+  .modal h3{margin:0 0 18px;font-size:17px;color:var(--navy);font-weight:900;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-grid .full{grid-column:1 / -1;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;border-top:1px solid var(--line);padding-top:16px;}
+  .perm-table{width:100%;border-collapse:collapse;margin-top:6px;}
+  .perm-table th{font-size:11.5px;color:var(--ink-soft);text-align:center;padding:6px 4px;font-weight:700;}
+  .perm-table td{padding:6px 4px;font-size:12.5px;text-align:center;border-top:1px solid var(--line);}
+  .perm-table td:first-child{text-align:right;font-weight:700;color:var(--ink);}
+  .perm-table select{width:100%;padding:5px 4px;font-size:12px;border:1px solid var(--line);border-radius:3px;}
+
+  .section-note{font-size:12.5px;color:var(--ink-soft);background:#F4F1E9;border:1px dashed var(--line);padding:10px 12px;border-radius:3px;margin-bottom:16px;}
+
+  /* ---------- Project cross-discipline summary ---------- */
+  .summary-block{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 18px;margin-bottom:16px;}
+  .summary-block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .summary-block-head h3{margin:0;font-size:15px;color:var(--navy);font-weight:800;display:flex;align-items:center;gap:8px;}
+  .summary-block table{font-size:12.5px;}
+  .summary-block .badge{font-size:11px;}
+  .summary-group-title{font-size:12.5px;color:var(--amber-dark);font-weight:800;letter-spacing:.3px;margin:22px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--line);}
+  .summary-group-title:first-of-type{margin-top:4px;}
+
+  @media (max-width:820px){
+    .sidebar{position:fixed;right:0;top:0;transform:translateX(100%);transition:transform .2s ease;z-index:40;box-shadow:-6px 0 20px rgba(0,0,0,0.3);}
+    .sidebar.open{transform:translateX(0);}
+    .topbar{padding:14px 16px;}
+    .content{padding:16px;}
+    .form-grid{grid-template-columns:1fr;}
+    .menu-btn{display:inline-flex !important;}
+  }
+  .menu-btn{display:none;background:none;border:1.5px solid var(--line);border-radius:3px;padding:7px 10px;cursor:pointer;font-size:16px;}
+
+  .print-only{display:none;}
+  @media print{
+    .sidebar, .topbar, .no-print, .overlay { display:none !important; }
+    body{background:#fff;}
+    .content{padding:0;}
+    .print-only{display:block;}
+    table{border:1px solid #000;}
+    thead th, tbody td{border-color:#999;}
+  }
+
+/* =========================================================
+   EPMS V10.2 — Restored Control Panel / Navigation
+   Keeps all existing modules, permissions and routes.
+   Visual structure follows the supplied reference image.
+   ========================================================= */
+.sidebar{
+  width:310px;
+  flex-shrink:0;
+  background:linear-gradient(180deg,#16243C 0%,#172942 100%);
+  color:#EDEBE6;
+  display:flex;
+  flex-direction:column;
+  position:sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  box-shadow:inset -1px 0 rgba(255,255,255,.08);
+  scrollbar-width:thin;
+}
+.sidebar .brand{
+  padding:25px 24px 20px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  min-height:120px;
+}
+.sidebar .brand .sq{
+  width:15px;height:15px;background:var(--amber);
+  display:inline-block;margin-inline-end:9px;vertical-align:middle;
+}
+.sidebar .brand b{
+  font-size:20px;letter-spacing:.1px;color:#fff;
+}
+.sidebar .brand small{
+  display:block;color:#A9B4C4;font-size:13px;margin-top:8px;
+}
+.nav{
+  padding:0 0 18px;
+  flex:1;
+}
+.nav .nav-item{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  width:100%;
+  min-height:50px;
+  padding:12px 24px;
+  color:#D7DDE7;
+  text-decoration:none;
+  font-size:16px;
+  font-weight:500;
+  border-inline-start:4px solid transparent;
+  cursor:pointer;
+  transition:background .12s ease,color .12s ease,border-color .12s ease;
+  user-select:none;
+}
+.nav .nav-item:hover{
+  background:rgba(255,255,255,.055);
+  color:#fff;
+}
+.nav .nav-item.active{
+  border-inline-start-color:var(--amber);
+  background:rgba(255,255,255,.105);
+  color:#fff;
+  font-weight:800;
+}
+.nav .nav-icon{
+  width:23px;
+  flex:0 0 23px;
+  text-align:center;
+  opacity:.9;
+  font-size:17px;
+}
+.nav .nav-label{
+  flex:1;
+  text-align:right;
+}
+.nav .nav-chevron{
+  font-size:12px;
+  color:#8E9BAF;
+  transition:transform .15s ease;
+}
+.nav .nav-group{
+  margin:0;
+  border-bottom:1px solid rgba(255,255,255,.045);
+}
+.nav .grp-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:46px;
+  padding:13px 24px 10px;
+  font-size:14px;
+  color:#9EAABD;
+  font-weight:800;
+  letter-spacing:.15px;
+  cursor:pointer;
+}
+.nav .grp-label:hover{color:#fff;background:rgba(255,255,255,.035);}
+.nav .grp-label .group-icon{font-size:15px;width:20px;text-align:center;}
+.nav .group-children{display:block;}
+.nav .nav-group.collapsed .group-children{display:none;}
+.nav .nav-group.collapsed .nav-chevron{transform:rotate(90deg);}
+.sidebar-foot{
+  padding:16px 22px;
+  border-top:1px solid rgba(255,255,255,.10);
+  font-size:12.5px;
+  color:#A9B4C4;
+  background:rgba(0,0,0,.10);
+}
+.sidebar-foot b{
+  color:#fff;display:block;font-size:14px;margin-bottom:3px;
+}
+.panel-shortcuts{
+  display:flex;
+  gap:7px;
+  padding:10px 18px 8px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.panel-shortcuts button{
+  flex:1;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.045);
+  color:#D7DDE7;
+  border-radius:3px;
+  padding:7px 5px;
+  font-family:inherit;
+  font-size:11.5px;
+  cursor:pointer;
+}
+.panel-shortcuts button:hover{background:rgba(255,255,255,.09);color:#fff;}
+@media (max-width:1100px){
+  .sidebar{width:285px;}
+  .nav .nav-item{font-size:15px;padding-inline:20px;}
+  .sidebar .brand{padding-inline:20px;}
+}
+@media (max-width:820px){
+  .sidebar{
+    width:310px;
+    position:fixed;
+    right:0;
+    top:0;
+    transform:translateX(100%);
+    transition:transform .2s ease;
+    z-index:40;
+    box-shadow:-10px 0 30px rgba(0,0,0,.35);
+  }
+  .sidebar.open{transform:translateX(0);}
+}
+
+
+/* ===================== V10.2 HOMEPAGE - REFERENCE DASHBOARD ===================== */
+body{background:#f4f7fb;}
+.layout{min-height:100vh;background:#f4f7fb;}
+.sidebar{width:280px;background:#102746;box-shadow:-6px 0 18px rgba(13,35,62,.12);}
+.sidebar .brand{padding:25px 22px 20px;text-align:right;background:#102746;border-bottom:1px solid rgba(255,255,255,.13);}
+.sidebar .brand .sq{width:15px;height:15px;background:#e9a43b;margin-inline-end:9px;vertical-align:middle;}
+.sidebar .brand b{font-size:18px;color:#fff;font-weight:900;line-height:1.35;display:inline-block;max-width:210px;}
+.sidebar .brand small{font-size:13px;color:#aab8ca;margin-top:6px;}
+.panel-shortcuts{display:flex;gap:6px;padding:9px 12px;background:#102746;}
+.panel-shortcuts button{flex:1;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#dce5ef;border-radius:5px;padding:6px;font-family:inherit;cursor:pointer;font-size:11px;}
+.panel-shortcuts button:hover{background:rgba(255,255,255,.1);}
+.nav{padding:0 0 12px;}
+.nav-group{border-bottom:1px solid rgba(255,255,255,.07);}
+.grp-label{display:flex;align-items:center;gap:9px;padding:10px 17px;color:#f1f5fa;background:#16345b;font-size:13px;font-weight:800;cursor:pointer;}
+.grp-label:hover{background:#1b3d68;}
+.group-icon{width:20px;text-align:center;color:#dbe7f5;font-size:14px;}
+.nav-chevron{transition:.2s;font-size:18px;line-height:1;transform:rotate(0deg);}
+.nav-group.collapsed .nav-chevron{transform:rotate(180deg);}
+.group-children{max-height:900px;overflow:hidden;transition:max-height .25s ease;}
+.nav-group.collapsed .group-children{max-height:0;}
+.nav a.nav-item{display:flex;align-items:center;gap:9px;padding:9px 23px;color:#c8d4e3;text-decoration:none;font-size:13px;font-weight:500;border-inline-start:4px solid transparent;cursor:pointer;}
+.nav a.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.nav a.nav-item.active{border-inline-start-color:#e9a43b;background:#2a3f5f;color:#fff;font-weight:800;}
+.nav-icon{width:21px;text-align:center;opacity:.95;}
+.sidebar-foot{padding:13px 17px;border-top:1px solid rgba(255,255,255,.1);color:#b9c6d6;font-size:11px;background:#0d213b;}
+.sidebar-foot b{display:block;color:#fff;font-size:13px;margin-bottom:3px;}
+.main{background:#f4f7fb;}
+.topbar{background:#12325a;color:#fff;border-bottom:0;padding:10px 18px;min-height:62px;box-shadow:0 2px 9px rgba(0,0,0,.08);}
+.topbar h2{color:#fff;font-size:16px;}
+.menu-btn{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.2)!important;}
+.topbar .user-chip{color:#fff;}
+.user-chip .who{color:#cbd8e8;text-align:right;}
+.user-chip .who b{color:#fff;}
+.topbar .btn-ghost{color:#fff;border-color:rgba(255,255,255,.25);}
+.content{padding:18px 24px 45px;}
+.home-hero{background:#fff;border-bottom:1px solid #dbe4ee;padding:7px 4px 17px;margin-bottom:18px;}
+.home-crumb{color:#244a78;font-size:12px;font-weight:800;margin-bottom:13px;}
+.home-hero h1{margin:0;color:#123c70;font-size:24px;font-weight:900;}
+.home-hero p{margin:6px 0 0;color:#68788b;font-size:13px;}
+.home-kpis{display:grid;grid-template-columns:repeat(6,minmax(145px,1fr));gap:13px;margin-bottom:20px;}
+.home-kpi{border-radius:6px;padding:15px 15px 13px;color:#fff;min-height:103px;box-shadow:0 5px 14px rgba(25,53,88,.10);position:relative;overflow:hidden;}
+.home-kpi:after{content:'';position:absolute;inset:auto -18px -25px auto;width:75px;height:75px;border-radius:50%;background:rgba(255,255,255,.09);}
+.home-kpi .kpi-title{font-size:12px;font-weight:800;display:flex;justify-content:space-between;gap:5px;}
+.home-kpi .kpi-value{font-size:24px;font-weight:900;margin-top:10px;direction:ltr;text-align:right;}
+.home-kpi .kpi-note{font-size:10px;opacity:.88;margin-top:2px;}
+.kpi-blue{background:linear-gradient(135deg,#1678d1,#3d8fe0)} .kpi-green{background:linear-gradient(135deg,#35a66d,#58ba80)} .kpi-orange{background:linear-gradient(135deg,#e9a13a,#f2b255)} .kpi-purple{background:linear-gradient(135deg,#6c5ac6,#8070d9)} .kpi-teal{background:linear-gradient(135deg,#0ca9b4,#28bac3)} .kpi-navy{background:linear-gradient(135deg,#245c99,#3478ba)}
+.home-grid{display:grid;grid-template-columns:1.65fr 1fr;gap:16px;margin-bottom:16px;}
+.home-panel{background:#fff;border:1px solid #dce6f0;border-radius:6px;padding:16px;box-shadow:0 3px 10px rgba(20,45,75,.035);}
+.home-panel h3{margin:0 0 15px;color:#123c70;font-size:16px;font-weight:900;}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.panel-sub{font-size:11px;color:#8290a0;}
+.project-bars{display:grid;gap:12px;}
+.project-bar-row{display:grid;grid-template-columns:92px 1fr 42px;align-items:center;gap:10px;font-size:11px;color:#53677f;}
+.project-bars-head{display:flex;justify-content:flex-start;gap:18px;margin-bottom:10px;font-size:11px;color:#53677f;}
+.project-bars-head span{display:inline-flex;align-items:center;gap:5px;}
+.project-bars-head i{width:11px;height:11px;border-radius:3px;display:inline-block;background:#3485d8;}
+.project-bars-head i.plan{background:#58ae7c;}
+.project-bar{height:24px;background:transparent;border-radius:4px;overflow:visible;direction:ltr;display:flex;gap:5px;align-items:center;}
+.project-bar span{display:block;height:18px;border-radius:3px;background:#3485d8;min-width:2px;}
+.project-bar .plan{background:#58ae7c;}
+.activity-list{display:grid;gap:2px;}
+.activity-item{display:grid;grid-template-columns:62px 1fr 32px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #edf1f5;}
+.activity-item:last-child{border-bottom:0;}
+.activity-time{font-size:10px;color:#8290a0;text-align:left;direction:ltr;}
+.activity-text{font-size:11.5px;color:#2e4968;line-height:1.5;}
+.activity-icon{width:30px;height:30px;border-radius:6px;background:#eaf2fb;color:#2f78c7;display:flex;align-items:center;justify-content:center;font-weight:900;}
+.home-bottom{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;}
+.home-table{width:100%;border:0;box-shadow:none;}
+.home-table thead th{background:#f3f7fb;border-bottom:1px solid #dbe5ef;padding:9px 10px;font-size:11px;}
+.home-table tbody td{padding:9px 10px;font-size:11px;border-bottom:1px solid #edf1f5;}
+.status-pill{display:inline-block;border-radius:12px;padding:4px 10px;font-size:10px;font-weight:800;background:#edf4ff;color:#2f73c4;}
+.status-pill.wait{background:#fff3df;color:#c27b1a;}.status-pill.done{background:#e7f6ed;color:#31845a;}
+.cost-wrap{display:grid;grid-template-columns:180px 1fr;gap:18px;align-items:center;}
+.donut{width:175px;height:175px;border-radius:50%;background:conic-gradient(#2e82d6 0 32%,#45a774 32% 52%,#f2a33c 52% 77%,#7665cb 77% 89%,#aab4c0 89% 100%);display:grid;place-items:center;}
+.donut:after{content:'';width:95px;height:95px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #edf1f5;}
+.cost-center{position:absolute;text-align:center;color:#123c70;font-weight:900;font-size:16px;}
+.cost-center small{display:block;font-size:10px;color:#7b8999;margin-bottom:2px;}
+.cost-legend{display:grid;gap:10px;}
+.cost-row{display:grid;grid-template-columns:12px 1fr auto;gap:8px;align-items:center;font-size:11px;color:#53677f;}
+.cost-dot{width:10px;height:10px;border-radius:50%;}
+.home-empty{padding:25px;text-align:center;color:#8290a0;font-size:12px;}
+@media(max-width:1200px){.home-kpis{grid-template-columns:repeat(3,1fr)}.home-grid,.home-bottom{grid-template-columns:1fr}.cost-wrap{grid-template-columns:180px 1fr}}
+@media(max-width:760px){.sidebar{width:280px;position:fixed;right:0;z-index:30;transform:translateX(105%);transition:.25s}.sidebar.open{transform:translateX(0)}.home-kpis{grid-template-columns:repeat(2,1fr)}.content{padding:14px}.home-hero h1{font-size:20px}.cost-wrap{grid-template-columns:1fr;justify-items:center}.cost-legend{width:100%}}
+@media(max-width:430px){.home-kpis{grid-template-columns:1fr}.topbar{padding:9px 10px}.user-chip .who{display:none}.content{padding:12px 10px 32px}.home-hero{padding:10px 4px 15px}.home-hero h1{font-size:18px;line-height:1.5}.home-hero p{font-size:12px}.home-kpi{min-height:96px}.sidebar{width:min(300px,88vw)}.project-bar-row{grid-template-columns:72px 1fr 34px;font-size:10px}}
+</style>
+<meta name="epms-version" content="V10.2 restored control panel — bilingual Arabic English">
+<style>
+
+/* =========================================================
+   EPMS V10.4 — FINAL LEFT CONTROL PANEL LAYOUT
+   The complete navigation panel is physically separated
+   from the main dashboard. Desktop: fixed left sidebar.
+   Mobile: independent left off-canvas panel.
+   All existing routes, modules and permissions remain intact.
+   ========================================================= */
+html,body{width:100%;min-width:0;overflow-x:hidden;}
+.layout{
+  display:flex !important;
+  flex-direction:row !important;
+  direction:ltr !important;
+  width:100%;
+  min-height:100vh;
+}
+.layout > .sidebar{
+  order:0 !important;
+  direction:rtl !important;
+  flex:0 0 280px !important;
+  width:280px !important;
+  min-width:280px !important;
+  max-width:280px !important;
+  height:100vh !important;
+  position:sticky !important;
+  left:auto !important;
+  right:auto !important;
+  top:0 !important;
+  transform:none !important;
+  z-index:100 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
+.layout > .main{
+  order:1 !important;
+  direction:rtl !important;
+  flex:1 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  margin:0 !important;
+  position:relative !important;
+  z-index:1 !important;
+}
+.main .topbar{
+  position:sticky !important;
+  top:0 !important;
+  z-index:20 !important;
+}
+.main .content{position:relative;z-index:1;}
+/* Keep the control panel visually independent from dashboard cards. */
+.sidebar + .main{margin-inline-start:0 !important;}
+
+@media (max-width:1100px) and (min-width:821px){
+  .layout > .sidebar{flex-basis:270px !important;width:270px !important;min-width:270px !important;max-width:270px !important;}
+  .content{padding-inline:18px !important;}
+}
+
+@media (max-width:820px){
+  .layout{display:block !important;direction:rtl !important;}
+  .layout > .sidebar{
+    position:fixed !important;
+    left:0 !important;
+    right:auto !important;
+    top:0 !important;
+    bottom:0 !important;
+    width:min(310px,88vw) !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:100dvh !important;
+    transform:translateX(-105%) !important;
+    transition:transform .22s ease !important;
+    box-shadow:10px 0 30px rgba(0,0,0,.32) !important;
+    z-index:1000 !important;
+  }
+  .layout > .sidebar.open{transform:translateX(0) !important;}
+  .layout > .main{width:100% !important;min-width:0 !important;}
+  .main .topbar{position:sticky !important;top:0 !important;z-index:900 !important;}
+  .content{padding:14px 16px 35px !important;}
+  .menu-btn{display:inline-flex !important;align-items:center;justify-content:center;}
+  /* A full-screen backdrop is created by the existing overlay if present;
+     this pseudo element only belongs to the sidebar and never covers content
+     when the panel is closed. */
+  .sidebar.open:before{content:'';position:fixed;inset:0;background:rgba(4,18,35,.38);z-index:-1;pointer-events:none;}
+}
+
+@media print{
+  .layout{display:block !important;direction:rtl !important;}
+  .layout > .sidebar{display:none !important;}
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===================== Supabase connection =====================
+   1) Create a free project at https://supabase.com
+   2) Run the SQL from the setup guide to create the "erp_data" table
+   3) Paste your Project URL and anon public key below
+================================================================== */
+const SUPABASE_URL = "https://nmgsjxqreqslztsoiizl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_tzyPA5H_Ho_GtiEYbDvF3w_4qM63I9k";
+const SUPABASE_CONFIGURED = !SUPABASE_URL.includes('PASTE_') && !SUPABASE_ANON_KEY.includes('PASTE_');
+let supabaseClient = null;
+if(SUPABASE_CONFIGURED){
+  try{ supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+  catch(e){ console.error('supabase init error', e); }
+}
+
+/* ===================== Storage layer ===================== */
+async function dbGet(key, fallback){
+  if(!supabaseClient) return fallback;
+  try{
+    const { data, error } = await supabaseClient
+      .from('erp_data').select('value').eq('key', key).maybeSingle();
+    if(error || !data) return fallback;
+    return data.value;
+  }catch(e){ console.error('load error', e); return fallback; }
+}
+async function dbSet(key, value){
+  if(!supabaseClient){
+    console.warn('قاعدة البيانات غير متصلة بعد — لم يتم حفظ:', key);
+    showDbWarning('قاعدة البيانات غير متصلة بعد. لن يتم حفظ التغييرات حتى يتم ضبط الاتصال.');
+    return;
+  }
+  try{
+    const { error } = await supabaseClient
+      .from('erp_data')
+      .upsert({ key, value, updated_at: new Date().toISOString() });
+    if(error){
+      console.error('save error:', error.message || error.details || error.hint || JSON.stringify(error));
+      showDbWarning('تعذر حفظ البيانات: ' + (error.message || error.details || 'خطأ غير معروف من قاعدة البيانات'));
+    }
+  }catch(e){
+    console.error('save error:', (e && e.message) ? e.message : String(e));
+    showDbWarning('تعذر حفظ البيانات: ' + (e && e.message ? e.message : e));
+  }
+}
+function showDbWarning(msg){
+  try{
+    let bar = document.getElementById('epDbWarnBar');
+    if(!bar){
+      bar = document.createElement('div');
+      bar.id = 'epDbWarnBar';
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:500000;background:#B4472A;color:#fff;'+
+        'padding:8px 14px;font-family:Tajawal,Arial,sans-serif;font-size:13px;text-align:center;';
+      document.body.appendChild(bar);
+    }
+    bar.textContent = msg;
+    clearTimeout(bar._t);
+    bar._t = setTimeout(()=>{ if(bar) bar.remove(); }, 6000);
+  }catch(e){ console.error(msg); }
+}
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+/* ===================== State ===================== */
+const PERM_KEYS = ['company','projects','details','planning','siteExecution','engineer','engineersList','labor','equipment',
+  'techoffice','boq','purchases','suppliers','deliveries','warehouse','warehousesLoc','contracts','extracts',
+  'invoices','finance','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handover','reports'];
+const PERM_LABELS = {
+  company:'الشركة والفروع', projects:'المشاريع', details:'تفاصيل المشروع', planning:'التخطيط والبرنامج الزمني',
+  siteExecution:'التنفيذ ومتابعة الموقع', engineer:'المهندس المدني (تقارير الموقع)', engineersList:'المهندسون (سجل)', labor:'العمالة', equipment:'المعدات',
+  techoffice:'المكتب الفني', boq:'الكميات / BOQ', purchases:'المشتريات', suppliers:'الموردون والمقاولون',
+  deliveries:'التوريدات والاستلام', warehouse:'المخزن (الأصناف والحركة)', warehousesLoc:'المخازن',
+  contracts:'العقود', extracts:'المستخلصات', invoices:'الفواتير', finance:'الماليات', accounting:'المحاسبة',
+  qaqc:'QA/QC والجودة', hse:'HSE والسلامة', documents:'إدارة المستندات والرسومات',
+  correspondence:'المراسلات والخطابات', changeOrders:'الأوامر التغييرية', claims:'Claims المطالبات',
+  risks:'المخاطر', handover:'التسليم والصيانة بعد التسليم', reports:'التقارير التنفيذية'
+};
+
+let STATE = {
+  users:[], projects:[], phases:[], siteReports:[], techOffice:[],
+  warehouseItems:[], warehouseTx:[], finance:[], extracts:[], contracts:[],
+  company:[], planning:[], siteExecution:[], engineersList:[], labor:[], equipment:[],
+  boq:[], purchases:[], suppliers:[], deliveries:[], warehousesLoc:[], invoices:[],
+  accounting:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
+  claims:[], risks:[], finalHandover:[], postHandoverMaint:[], execReports:[]
+};
+let currentUser = null;
+let currentRoute = 'dashboard';
+let modalState = null; // {moduleKey, record}
+let sidebarOpen = false;
+let projectFilter = {}; // per moduleKey selected projectId
+
+const MODULES = {
+  projects:{
+    title:'المشاريع', permKey:'projects',
+    fields:[
+      {name:'name',label:'اسم المشروع',type:'text',required:true},
+      {name:'client',label:'العميل / المالك',type:'text'},
+      {name:'location',label:'الموقع',type:'text'},
+      {name:'status',label:'الحالة',type:'select',options:['لم يبدأ','قيد التنفيذ','متوقف مؤقتاً','منتهي']},
+      {name:'budget',label:'الميزانية التقديرية',type:'number'},
+      {name:'startDate',label:'تاريخ البدء',type:'date'},
+      {name:'endDate',label:'تاريخ الانتهاء المتوقع',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['name','المشروع'],['client','العميل'],['status','الحالة'],['budget','الميزانية']]
+  },
+  phases:{
+    title:'تفاصيل المشروع — المراحل والإنجاز', permKey:'details', hasProject:true,
+    fields:[
+      {name:'phase',label:'اسم المرحلة',type:'text',required:true},
+      {name:'percent',label:'نسبة الإنجاز %',type:'number'},
+      {name:'date',label:'تاريخ التحديث',type:'date'},
+      {name:'description',label:'الوصف',type:'textarea'}
+    ],
+    columns:[['phase','المرحلة'],['percent','% الإنجاز'],['date','التاريخ']]
+  },
+  siteReports:{
+    title:'المهندس المدني — تقارير الموقع اليومية', permKey:'engineer', hasProject:true,
+    fields:[
+      {name:'engineerName',label:'اسم المهندس',type:'text',required:true},
+      {name:'date',label:'التاريخ',type:'date',required:true},
+      {name:'weather',label:'حالة الطقس',type:'select',options:['مشمس','غائم','ممطر','عاصف']},
+      {name:'laborCount',label:'عدد العمالة',type:'number'},
+      {name:'workDone',label:'الأعمال المنفذة اليوم',type:'textarea'},
+      {name:'notes',label:'ملاحظات / مشاكل',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['engineerName','المهندس'],['laborCount','العمالة']]
+  },
+  techOffice:{
+    title:'المكتب الفني — الرسومات والمستندات', permKey:'techoffice', hasProject:true,
+    fields:[
+      {name:'title',label:'العنوان',type:'text',required:true},
+      {name:'type',label:'النوع',type:'select',options:['رسم تنفيذي','مستخلص كميات','طلب موافقة مواد','مواصفات فنية','مخطط شوب دروينج']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','قيد المراجعة','معتمد','مرفوض']},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['title','العنوان'],['type','النوع'],['status','الحالة'],['date','التاريخ']]
+  },
+  warehouseItems:{
+    title:'المخزن — الأصناف', permKey:'warehouse',
+    fields:[
+      {name:'name',label:'اسم الصنف',type:'text',required:true},
+      {name:'unit',label:'وحدة القياس',type:'text'},
+      {name:'qty',label:'الكمية الحالية',type:'number'},
+      {name:'minQty',label:'حد إعادة الطلب',type:'number'}
+    ],
+    columns:[['name','الصنف'],['unit','الوحدة'],['qty','الكمية'],['minQty','حد الطلب']]
+  },
+  warehouseTx:{
+    title:'المخزن — حركة الوارد والمنصرف', permKey:'warehouse', hasProject:true,
+    fields:[
+      {name:'itemName',label:'اسم الصنف',type:'text',required:true},
+      {name:'type',label:'نوع الحركة',type:'select',options:['وارد','منصرف']},
+      {name:'qty',label:'الكمية',type:'number',required:true},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['itemName','الصنف'],['type','النوع'],['qty','الكمية']]
+  },
+  finance:{
+    title:'الماليات', permKey:'finance', hasProject:true,
+    fields:[
+      {name:'type',label:'النوع',type:'select',options:['إيراد','مصروف']},
+      {name:'category',label:'البند',type:'text'},
+      {name:'amount',label:'المبلغ',type:'number',required:true},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['type','النوع'],['category','البند'],['amount','المبلغ']]
+  },
+  extracts:{
+    title:'المستخلصات', permKey:'extracts', hasProject:true,
+    fields:[
+      {name:'number',label:'رقم المستخلص',type:'text',required:true},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'amount',label:'قيمة المستخلص',type:'number'},
+      {name:'deductions',label:'الاستقطاعات',type:'number'},
+      {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','مقدم للعميل','معتمد','مصروف']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['number','رقم المستخلص'],['date','التاريخ'],['amount','القيمة'],['status','الحالة']]
+  },
+  contracts:{
+    title:'العقود', permKey:'contracts', hasProject:true,
+    fields:[
+      {name:'contractNumber',label:'رقم العقد',type:'text',required:true},
+      {name:'party',label:'الطرف الثاني',type:'text'},
+      {name:'value',label:'قيمة العقد',type:'number'},
+      {name:'startDate',label:'تاريخ البدء',type:'date'},
+      {name:'endDate',label:'تاريخ الانتهاء',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['ساري','منتهي','ملغي']},
+      {name:'notes',label:'بنود وملاحظات',type:'textarea'}
+    ],
+    columns:[['contractNumber','رقم العقد'],['party','الطرف الثاني'],['value','القيمة'],['status','الحالة']]
+  },
+  company:{
+    title:'الشركة والفروع', permKey:'company',
+    fields:[
+      {name:'name',label:'اسم الفرع / الشركة',type:'text',required:true},
+      {name:'location',label:'الموقع',type:'text'},
+      {name:'manager',label:'المسؤول',type:'text'},
+      {name:'phone',label:'تليفون',type:'text'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['name','الاسم'],['location','الموقع'],['manager','المسؤول'],['phone','تليفون']]
+  },
+  planning:{
+    title:'التخطيط والبرنامج الزمني', permKey:'planning', hasProject:true,
+    fields:[
+      {name:'activity',label:'النشاط',type:'text',required:true},
+      {name:'plannedStart',label:'البدء المخطط',type:'date'},
+      {name:'plannedEnd',label:'الانتهاء المخطط',type:'date'},
+      {name:'actualStart',label:'البدء الفعلي',type:'date'},
+      {name:'actualEnd',label:'الانتهاء الفعلي',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['لم يبدأ','جاري','منتهي','متأخر']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['activity','النشاط'],['plannedStart','البدء المخطط'],['plannedEnd','الانتهاء المخطط'],['status','الحالة']]
+  },
+  siteExecution:{
+    title:'التنفيذ ومتابعة الموقع', permKey:'siteExecution', hasProject:true,
+    fields:[
+      {name:'date',label:'التاريخ',type:'date',required:true},
+      {name:'activity',label:'النشاط المنفذ',type:'text'},
+      {name:'percentComplete',label:'نسبة الإنجاز %',type:'number'},
+      {name:'issues',label:'معوقات / ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['activity','النشاط'],['percentComplete','% الإنجاز']]
+  },
+  engineersList:{
+    title:'المهندسون', permKey:'engineersList',
+    fields:[
+      {name:'name',label:'الاسم',type:'text',required:true},
+      {name:'specialty',label:'التخصص',type:'select',options:['مدني','معماري','كهرباء','ميكانيكا','مساحة']},
+      {name:'phone',label:'تليفون',type:'text'},
+      {name:'status',label:'الحالة',type:'select',options:['نشط','إجازة','منتهي عقده']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['name','الاسم'],['specialty','التخصص'],['phone','تليفون'],['status','الحالة']]
+  },
+  labor:{
+    title:'العمالة', permKey:'labor', hasProject:true,
+    fields:[
+      {name:'groupName',label:'اسم المجموعة / العامل',type:'text',required:true},
+      {name:'craft',label:'المهنة',type:'text'},
+      {name:'count',label:'عدد الأفراد',type:'number'},
+      {name:'dailyRate',label:'الأجر اليومي',type:'number'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['groupName','المجموعة'],['craft','المهنة'],['count','العدد'],['dailyRate','الأجر اليومي']]
+  },
+  equipment:{
+    title:'المعدات', permKey:'equipment', hasProject:true,
+    fields:[
+      {name:'name',label:'اسم المعدة',type:'text',required:true},
+      {name:'type',label:'النوع',type:'text'},
+      {name:'status',label:'الحالة',type:'select',options:['تعمل','صيانة','متوقفة']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['name','المعدة'],['type','النوع'],['status','الحالة']]
+  },
+  boq:{
+    title:'الكميات / BOQ', permKey:'boq', hasProject:true,
+    fields:[
+      {name:'itemName',label:'البند',type:'text',required:true},
+      {name:'unit',label:'الوحدة',type:'text'},
+      {name:'quantity',label:'الكمية',type:'number'},
+      {name:'unitPrice',label:'سعر الوحدة',type:'number'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['itemName','البند'],['unit','الوحدة'],['quantity','الكمية'],['unitPrice','سعر الوحدة']]
+  },
+  purchases:{
+    title:'المشتريات', permKey:'purchases', hasProject:true,
+    fields:[
+      {name:'itemName',label:'الصنف',type:'text',required:true},
+      {name:'quantity',label:'الكمية',type:'number'},
+      {name:'supplier',label:'المورد',type:'text'},
+      {name:'orderDate',label:'تاريخ الطلب',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['طلب جديد','تم الطلب','تم الاستلام']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['itemName','الصنف'],['quantity','الكمية'],['supplier','المورد'],['status','الحالة']]
+  },
+  suppliers:{
+    title:'الموردون والمقاولون', permKey:'suppliers',
+    fields:[
+      {name:'name',label:'الاسم',type:'text',required:true},
+      {name:'type',label:'النوع',type:'select',options:['مورد مواد','مقاول باطن','مقاول متخصص']},
+      {name:'phone',label:'تليفون',type:'text'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['name','الاسم'],['type','النوع'],['phone','تليفون']]
+  },
+  deliveries:{
+    title:'التوريدات والاستلام', permKey:'deliveries', hasProject:true,
+    fields:[
+      {name:'itemName',label:'الصنف',type:'text',required:true},
+      {name:'quantity',label:'الكمية',type:'number'},
+      {name:'supplier',label:'المورد',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'receivedBy',label:'استلمها',type:'text'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['itemName','الصنف'],['quantity','الكمية'],['supplier','المورد']]
+  },
+  warehousesLoc:{
+    title:'المخازن', permKey:'warehousesLoc',
+    fields:[
+      {name:'name',label:'اسم المخزن',type:'text',required:true},
+      {name:'location',label:'الموقع',type:'text'},
+      {name:'manager',label:'أمين المخزن',type:'text'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['name','المخزن'],['location','الموقع'],['manager','أمين المخزن']]
+  },
+  invoices:{
+    title:'الفواتير', permKey:'invoices', hasProject:true,
+    fields:[
+      {name:'number',label:'رقم الفاتورة',type:'text',required:true},
+      {name:'party',label:'الجهة',type:'text'},
+      {name:'amount',label:'المبلغ',type:'number'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['غير مدفوعة','مدفوعة جزئياً','مدفوعة']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['number','رقم الفاتورة'],['party','الجهة'],['amount','المبلغ'],['status','الحالة']]
+  },
+  accounting:{
+    title:'المحاسبة', permKey:'accounting', hasProject:true,
+    fields:[
+      {name:'entryType',label:'نوع القيد',type:'select',options:['قيد يومية','سند قبض','سند صرف']},
+      {name:'account',label:'الحساب',type:'text'},
+      {name:'amount',label:'المبلغ',type:'number',required:true},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['entryType','النوع'],['account','الحساب'],['amount','المبلغ']]
+  },
+  qaqc:{
+    title:'QA/QC والجودة', permKey:'qaqc', hasProject:true,
+    fields:[
+      {name:'item',label:'البند',type:'text',required:true},
+      {name:'inspectionDate',label:'تاريخ الفحص',type:'date'},
+      {name:'result',label:'النتيجة',type:'select',options:['مطابق','غير مطابق','معلق']},
+      {name:'inspector',label:'الفاحص',type:'text'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['item','البند'],['inspectionDate','تاريخ الفحص'],['result','النتيجة']]
+  },
+  hse:{
+    title:'HSE والسلامة', permKey:'hse', hasProject:true,
+    fields:[
+      {name:'date',label:'التاريخ',type:'date',required:true},
+      {name:'incidentType',label:'النوع',type:'select',options:['ملاحظة','حادثة','شبه حادثة']},
+      {name:'description',label:'الوصف',type:'textarea'},
+      {name:'severity',label:'الخطورة',type:'select',options:['منخفض','متوسط','عالي']},
+      {name:'correctiveAction',label:'الإجراء التصحيحي',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['incidentType','النوع'],['severity','الخطورة']]
+  },
+  documents:{
+    title:'إدارة المستندات والرسومات', permKey:'documents', hasProject:true,
+    fields:[
+      {name:'title',label:'العنوان',type:'text',required:true},
+      {name:'category',label:'التصنيف',type:'select',options:['رسم','مستند','تصريح']},
+      {name:'version',label:'رقم الإصدار',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['title','العنوان'],['category','التصنيف'],['version','الإصدار'],['date','التاريخ']]
+  },
+  correspondence:{
+    title:'المراسلات والخطابات', permKey:'correspondence', hasProject:true,
+    fields:[
+      {name:'number',label:'رقم الخطاب',type:'text'},
+      {name:'direction',label:'الاتجاه',type:'select',options:['صادر','وارد']},
+      {name:'subject',label:'الموضوع',type:'text',required:true},
+      {name:'party',label:'الجهة',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['direction','الاتجاه'],['subject','الموضوع'],['party','الجهة']]
+  },
+  changeOrders:{
+    title:'الأوامر التغييرية', permKey:'changeOrders', hasProject:true,
+    fields:[
+      {name:'number',label:'رقم الأمر',type:'text',required:true},
+      {name:'description',label:'الوصف',type:'textarea'},
+      {name:'costImpact',label:'الأثر المالي',type:'number'},
+      {name:'timeImpact',label:'الأثر الزمني (أيام)',type:'text'},
+      {name:'status',label:'الحالة',type:'select',options:['مقترح','معتمد','مرفوض']},
+      {name:'date',label:'التاريخ',type:'date'}
+    ],
+    columns:[['number','رقم الأمر'],['costImpact','الأثر المالي'],['status','الحالة'],['date','التاريخ']]
+  },
+  claims:{
+    title:'Claims المطالبات', permKey:'claims', hasProject:true,
+    fields:[
+      {name:'number',label:'رقم المطالبة',type:'text',required:true},
+      {name:'subject',label:'الموضوع',type:'text'},
+      {name:'amount',label:'القيمة',type:'number'},
+      {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','مقدمة','تحت التفاوض','محسومة']},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['number','رقم المطالبة'],['subject','الموضوع'],['amount','القيمة'],['status','الحالة']]
+  },
+  risks:{
+    title:'المخاطر', permKey:'risks', hasProject:true,
+    fields:[
+      {name:'title',label:'المخاطرة',type:'text',required:true},
+      {name:'category',label:'التصنيف',type:'select',options:['فني','مالي','زمني','أمان']},
+      {name:'probability',label:'الاحتمالية',type:'select',options:['منخفض','متوسط','عالي']},
+      {name:'impact',label:'التأثير',type:'select',options:['منخفض','متوسط','عالي']},
+      {name:'mitigation',label:'إجراءات التخفيف',type:'textarea'},
+      {name:'status',label:'الحالة',type:'select',options:['مفتوح','تحت المعالجة','مغلق']}
+    ],
+    columns:[['title','المخاطرة'],['category','التصنيف'],['probability','الاحتمالية'],['status','الحالة']]
+  },
+  finalHandover:{
+    title:'التسليم النهائي', permKey:'handover', hasProject:true,
+    fields:[
+      {name:'date',label:'التاريخ',type:'date',required:true},
+      {name:'description',label:'الوصف',type:'textarea'},
+      {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','تم التسليم']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['status','الحالة']]
+  },
+  postHandoverMaint:{
+    title:'الصيانة بعد التسليم', permKey:'handover', hasProject:true,
+    fields:[
+      {name:'date',label:'التاريخ',type:'date',required:true},
+      {name:'issue',label:'العطل / الطلب',type:'textarea'},
+      {name:'status',label:'الحالة',type:'select',options:['مفتوح','تم الحل']},
+      {name:'technician',label:'الفني المسؤول',type:'text'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['issue','العطل'],['status','الحالة']]
+  },
+  execReports:{
+    title:'التقارير التنفيذية', permKey:'reports', hasProject:true,
+    fields:[
+      {name:'title',label:'عنوان التقرير',type:'text',required:true},
+      {name:'period',label:'الفترة',type:'text'},
+      {name:'summary',label:'ملخص',type:'textarea'},
+      {name:'date',label:'التاريخ',type:'date'}
+    ],
+    columns:[['title','العنوان'],['period','الفترة'],['date','التاريخ']]
+  }
+};
+
+const NAV = [
+  {key:'dashboard', label:'الرئيسية', special:true},
+  {key:'projectSummary', label:'ملخص شامل للمشروع', special:true},
+  {group:'الإدارة العليا'},
+  {key:'company', label:'الشركة والفروع', module:'company'},
+  {group:'إدارة المشاريع'},
+  {key:'projects', label:'المشاريع', module:'projects'},
+  {key:'phases', label:'تفاصيل المشروع', module:'phases'},
+  {key:'planning', label:'التخطيط والبرنامج الزمني', module:'planning'},
+  {key:'siteExecution', label:'التنفيذ ومتابعة الموقع', module:'siteExecution'},
+  {group:'الموارد'},
+  {key:'engineersList', label:'المهندسون', module:'engineersList'},
+  {key:'labor', label:'العمالة', module:'labor'},
+  {key:'equipment', label:'المعدات', module:'equipment'},
+  {group:'الفني'},
+  {key:'siteReports', label:'المهندس المدني', module:'siteReports'},
+  {key:'techOffice', label:'المكتب الفني', module:'techOffice'},
+  {group:'التكلفة والكميات'},
+  {key:'boq', label:'الكميات / BOQ', module:'boq'},
+  {group:'المشتريات والتوريدات'},
+  {key:'purchases', label:'المشتريات', module:'purchases'},
+  {key:'suppliers', label:'الموردون والمقاولون', module:'suppliers'},
+  {key:'deliveries', label:'التوريدات والاستلام', module:'deliveries'},
+  {group:'المخازن'},
+  {key:'warehousesLoc', label:'المخازن', module:'warehousesLoc'},
+  {key:'warehouseItems', label:'المخزن - الأصناف', module:'warehouseItems'},
+  {key:'warehouseTx', label:'المخزن - الحركة', module:'warehouseTx'},
+  {group:'العقود والمالية'},
+  {key:'contracts', label:'العقود', module:'contracts'},
+  {key:'extracts', label:'المستخلصات', module:'extracts'},
+  {key:'invoices', label:'الفواتير', module:'invoices'},
+  {group:'الماليات والمحاسبة'},
+  {key:'finance', label:'الماليات', module:'finance'},
+  {key:'accounting', label:'المحاسبة', module:'accounting'},
+  {group:'الجودة والسلامة'},
+  {key:'qaqc', label:'QA/QC والجودة', module:'qaqc'},
+  {key:'hse', label:'HSE والسلامة', module:'hse'},
+  {group:'الوثائق'},
+  {key:'documents', label:'إدارة المستندات والرسومات', module:'documents'},
+  {key:'correspondence', label:'المراسلات والخطابات', module:'correspondence'},
+  {group:'العقود والمطالبات'},
+  {key:'changeOrders', label:'الأوامر التغييرية', module:'changeOrders'},
+  {key:'claims', label:'Claims المطالبات', module:'claims'},
+  {group:'إدارة المخاطر'},
+  {key:'risks', label:'المخاطر', module:'risks'},
+  {group:'التسليم والصيانة'},
+  {key:'finalHandover', label:'التسليم النهائي', module:'finalHandover'},
+  {key:'postHandoverMaint', label:'الصيانة بعد التسليم', module:'postHandoverMaint'},
+  {group:'الإدارة'},
+  {key:'admin', label:'المستخدمون والصلاحيات', adminOnly:true},
+  {group:'أدوات النظام'},
+  {key:'execReports', label:'التقارير التنفيذية', module:'execReports'},
+  {key:'activityLog', label:'سجل العمليات', adminOnly:true},
+  {key:'backup', label:'Backup / Restore', adminOnly:true}
+];
+
+/* ===================== Permissions ===================== */
+function permLevel(permKey){
+  if(!currentUser) return 'none';
+  if(currentUser.isAdmin) return 'edit';
+  return (currentUser.permissions && currentUser.permissions[permKey]) || 'none';
+}
+function canView(permKey){ return permLevel(permKey) === 'view' || permLevel(permKey) === 'edit'; }
+function canEdit(permKey){ return permLevel(permKey) === 'edit'; }
+
+/* ===================== Boot ===================== */
+async function boot(){
+  if(SUPABASE_URL.includes('PASTE_') || SUPABASE_ANON_KEY.includes('PASTE_')){
+    document.getElementById('app').innerHTML = `
+      <div class="login-wrap"><div class="login-card">
+        <h1>الإعداد غير مكتمل</h1>
+        <p class="sub">لم يتم توصيل قاعدة البيانات بعد.</p>
+        <div class="section-note">افتح ملف الصفحة وابحث عن السطرين:<br>
+        <b>SUPABASE_URL</b> و <b>SUPABASE_ANON_KEY</b> بالقرب من بداية الكود،
+        وضع فيهما بيانات مشروعك من Supabase كما هو موضح في دليل الإعداد.</div>
+      </div></div>`;
+    return;
+  }
+  let users;
+  try{
+    users = await withTimeout(dbGet('users', null), 15000, 'تحميل بيانات تسجيل الدخول');
+  }catch(e){
+    console.error('boot error', e);
+    document.getElementById('app').innerHTML = `
+      <div class="login-wrap"><div class="login-card">
+        <h1>تعذر الاتصال بقاعدة البيانات</h1>
+        <p class="sub">${(e && e.message) ? e.message : 'تحقق من اتصال الإنترنت ثم أعد تحميل الصفحة.'}</p>
+        <button class="btn btn-primary" type="button" onclick="location.reload()">إعادة المحاولة</button>
+      </div></div>`;
+    return;
+  }
+  if(!users || users.length === 0){
+    users = [{
+      id:genId(), username:'admin', password:'admin123', name:'مدير النظام',
+      isAdmin:true, permissions:{}
+    }];
+    await dbSet('users', users);
+  }
+  STATE.users = users;
+  render();
+}
+
+async function loadAllData(){
+  STATE.projects = await dbGet('projects', []);
+  STATE.phases = await dbGet('phases', []);
+  STATE.siteReports = await dbGet('siteReports', []);
+  STATE.techOffice = await dbGet('techOffice', []);
+  STATE.warehouseItems = await dbGet('warehouseItems', []);
+  STATE.warehouseTx = await dbGet('warehouseTx', []);
+  STATE.finance = await dbGet('finance', []);
+  STATE.extracts = await dbGet('extracts', []);
+  STATE.contracts = await dbGet('contracts', []);
+  STATE.company = await dbGet('company', []);
+  STATE.planning = await dbGet('planning', []);
+  STATE.siteExecution = await dbGet('siteExecution', []);
+  STATE.engineersList = await dbGet('engineersList', []);
+  STATE.labor = await dbGet('labor', []);
+  STATE.equipment = await dbGet('equipment', []);
+  STATE.boq = await dbGet('boq', []);
+  STATE.purchases = await dbGet('purchases', []);
+  STATE.suppliers = await dbGet('suppliers', []);
+  STATE.deliveries = await dbGet('deliveries', []);
+  STATE.warehousesLoc = await dbGet('warehousesLoc', []);
+  STATE.invoices = await dbGet('invoices', []);
+  STATE.accounting = await dbGet('accounting', []);
+  STATE.qaqc = await dbGet('qaqc', []);
+  STATE.hse = await dbGet('hse', []);
+  STATE.documents = await dbGet('documents', []);
+  STATE.correspondence = await dbGet('correspondence', []);
+  STATE.changeOrders = await dbGet('changeOrders', []);
+  STATE.claims = await dbGet('claims', []);
+  STATE.risks = await dbGet('risks', []);
+  STATE.finalHandover = await dbGet('finalHandover', []);
+  STATE.postHandoverMaint = await dbGet('postHandoverMaint', []);
+  STATE.execReports = await dbGet('execReports', []);
+}
+
+/* ===================== Login ===================== */
+function loginScreen(err){
+  return `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="brand-mark"><span class="sq"></span><span class="sq2"></span></div>
+      <h1>نظام إدارة مشاريع شركات المقاولات</h1>
+      <p class="sub">تسجيل الدخول للوصول إلى المشاريع والبيانات</p>
+      ${err ? `<div class="err">${err}</div>` : ''}
+      <form id="loginForm">
+        <div class="field"><label>اسم المستخدم</label><input type="text" id="loginUser" required autocomplete="username"></div>
+        <div class="field"><label>كلمة المرور</label><input type="password" id="loginPass" required autocomplete="current-password"></div>
+        <button class="btn btn-primary" type="submit" id="loginSubmitBtn">دخول</button>
+      </form>
+    </div>
+  </div>`;
+}
+
+// Helper: rejects if the wrapped promise takes longer than `ms`, so a stuck
+// network/database call shows the user an error instead of the page just
+// sitting there doing nothing after pressing "دخول".
+function withTimeout(promise, ms, label){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error((label||'العملية')+' استغرقت وقتاً طويلاً بدون رد. تحقق من اتصال الإنترنت وحاول مرة أخرى.')), ms))
+  ]);
+}
+
+function attachLoginHandlers(){
+  const f = document.getElementById('loginForm');
+  f.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const btn = document.getElementById('loginSubmitBtn');
+    const u = document.getElementById('loginUser').value.trim();
+    const p = document.getElementById('loginPass').value;
+    if(btn){ btn.disabled = true; btn.textContent = 'جارٍ التحقق...'; }
+    try{
+      const users = await withTimeout(dbGet('users', STATE.users), 15000, 'التحقق من بيانات الدخول');
+      STATE.users = users || [];
+      const found = STATE.users.find(x=>x.username === u && x.password === p);
+      if(!found){
+        document.getElementById('app').innerHTML = loginScreen('اسم المستخدم أو كلمة المرور غير صحيحة');
+        attachLoginHandlers();
+        return;
+      }
+      currentUser = found;
+      try{
+        await withTimeout(loadAllData(), 25000, 'تحميل بيانات النظام');
+      }catch(dataErr){
+        console.error('loadAllData error', dataErr);
+        // Don't block login entirely over one slow/failed data section —
+        // continue with whatever loaded, the user can refresh screens later.
+      }
+      currentRoute = 'dashboard';
+      render();
+    }catch(err){
+      console.error('login error', err);
+      const msg = (err && err.message) ? err.message : 'حدث خطأ غير متوقع أثناء تسجيل الدخول. حاول مرة أخرى.';
+      document.getElementById('app').innerHTML = loginScreen(msg);
+      attachLoginHandlers();
+    }
+  });
+}
+
+
+/* ===================== Layout ===================== */
+function firstAllowedRoute(){
+  for(const item of NAV){
+    if(item.special) return item.key;
+  }
+  return 'dashboard';
+}
+
+function navAllowed(item){
+  if(item.group) return true;
+  if(item.special) return true;
+  if(item.adminOnly) return !!currentUser.isAdmin;
+  const mod = MODULES[item.module];
+  return canView(mod.permKey);
+}
+
+function navGroupIcon(label){
+  const m = {
+    'الإدارة العليا':'▣',
+    'إدارة المشاريع':'▤',
+    'الموارد':'♙',
+    'الفني':'⚙',
+    'التكلفة والكميات':'▥',
+    'المشتريات والتوريدات':'⇄',
+    'المخازن':'▦',
+    'العقود والمالية':'▤',
+    'الماليات والمحاسبة':'₤',
+    'الجودة والسلامة':'✓',
+    'الوثائق':'▧',
+    'العقود والمطالبات':'⚖',
+    'إدارة المخاطر':'⚠',
+    'التسليم والصيانة':'⌂',
+    'الإدارة':'⚙',
+    'أدوات النظام':'☷'
+  };
+  return m[label] || '•';
+}
+function navItemIcon(key){
+  const m = {
+    dashboard:'⌂', projectSummary:'▦', company:'▣', projects:'▤', phases:'◫',
+    planning:'◷', siteExecution:'▶', engineersList:'♙', labor:'♟', equipment:'⚙',
+    siteReports:'▤', techOffice:'⌘', boq:'▥', purchases:'⇄', suppliers:'♧',
+    deliveries:'⇩', warehousesLoc:'▦', warehouseItems:'▤', warehouseTx:'⇄',
+    contracts:'▤', extracts:'▣', invoices:'▤', finance:'₤', accounting:'∑',
+    qaqc:'✓', hse:'⚠', documents:'▧', correspondence:'✉', changeOrders:'↔',
+    claims:'⚖', risks:'⚠', finalHandover:'⌂', postHandoverMaint:'↻',
+    admin:'⚙', execReports:'▤', activityLog:'≡', backup:'↥'
+  };
+  return m[key] || '•';
+}
+let navGroupState = {};
+try{
+  navGroupState = JSON.parse(localStorage.getItem('EPMS_NAV_GROUP_STATE') || '{}') || {};
+}catch(e){ navGroupState = {}; }
+
+function toggleNavGroup(groupKey){
+  navGroupState[groupKey] = !navGroupState[groupKey];
+  try{ localStorage.setItem('EPMS_NAV_GROUP_STATE', JSON.stringify(navGroupState)); }catch(e){}
+  render();
+}
+function expandAllNavGroups(){
+  navGroupState = {};
+  try{ localStorage.setItem('EPMS_NAV_GROUP_STATE', JSON.stringify(navGroupState)); }catch(e){}
+  render();
+}
+function collapseAllNavGroups(){
+  const labels = NAV.filter(x=>x.group).map(x=>x.group);
+  navGroupState = {};
+  labels.forEach(x=>navGroupState[x]=true);
+  try{ localStorage.setItem('EPMS_NAV_GROUP_STATE', JSON.stringify(navGroupState)); }catch(e){}
+  render();
+}
+
+function sidebarHTML(){
+  let html = '';
+  let currentGroup = null;
+  let groupItems = [];
+
+  function flushGroup(){
+    if(!currentGroup || !groupItems.length) return;
+    const collapsed = !!navGroupState[currentGroup];
+    html += `
+      <div class="nav-group ${collapsed?'collapsed':''}">
+        <div class="grp-label" onclick="toggleNavGroup('${escapeHtml(currentGroup).replace(/'/g,"&#39;")}')">
+          <span class="group-icon">${navGroupIcon(currentGroup)}</span>
+          <span style="flex:1">${currentGroup}</span>
+          <span class="nav-chevron">‹</span>
+        </div>
+        <div class="group-children">
+          ${groupItems.join('')}
+        </div>
+      </div>`;
+    groupItems = [];
+  }
+
+  for(const item of NAV){
+    if(item.group){
+      flushGroup();
+      currentGroup = item.group;
+      continue;
+    }
+    if(!navAllowed(item)) continue;
+
+    const label = item.label;
+    const icon = navItemIcon(item.key);
+    groupItems.push(
+      `<a class="nav-item ${currentRoute===item.key?'active':''}" onclick="goRoute('${item.key}')">
+        <span class="nav-icon">${icon}</span>
+        <span class="nav-label">${label}</span>
+      </a>`
+    );
+  }
+  flushGroup();
+
+  // Special screens are always visible at the top, matching the reference panel.
+  const specials = NAV.filter(x=>x.special && navAllowed(x)).map(item=>
+    `<a class="nav-item ${currentRoute===item.key?'active':''}" onclick="goRoute('${item.key}')">
+      <span class="nav-icon">${navItemIcon(item.key)}</span>
+      <span class="nav-label">${item.label}</span>
+    </a>`
+  ).join('');
+
+  return `
+  <div class="sidebar ${sidebarOpen?'open':''}" id="sidebar">
+    <div class="brand">
+      <span class="sq"></span><b>نظام إدارة مشاريع شركات المقاولات</b>
+      <small>إدارة متكاملة ... لمشاريع ناجحة</small>
+    </div>
+    <div class="panel-shortcuts">
+      <button type="button" onclick="expandAllNavGroups()">فتح الكل</button>
+      <button type="button" onclick="collapseAllNavGroups()">طي الكل</button>
+    </div>
+    <div class="nav">
+      ${specials}
+      ${html}
+    </div>
+    <div class="sidebar-foot">
+      <b>${escapeHtml(currentUser.name || '')}</b>
+      ${currentUser.isAdmin?'مدير النظام':'مستخدم'}
+    </div>
+  </div>`;
+}
+
+function topbarTitle(){
+  if(currentRoute === 'dashboard') return 'الرئيسية';
+  if(currentRoute === 'projectSummary') return 'ملخص شامل للمشروع';
+  if(currentRoute === 'admin') return 'المستخدمون والصلاحيات';
+  if(currentRoute === 'activityLog') return 'سجل العمليات';
+  if(currentRoute === 'backup') return 'Backup / Restore';
+  const nav = NAV.find(n=>n.key===currentRoute);
+  return nav ? MODULES[nav.module].title : '';
+}
+
+function mainLayout(){
+  return `
+  <div class="layout">
+    ${sidebarHTML()}
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+          <h2>${topbarTitle()}</h2>
+        </div>
+        <div class="user-chip">
+          <div class="who"><b>${currentUser.name}</b>${currentUser.username}</div>
+          <button class="btn btn-ghost btn-sm" onclick="logout()">خروج</button>
+        </div>
+      </div>
+      <div class="content" id="content">${routeContent()}</div>
+    </div>
+  </div>
+  ${modalState && !modalState.isUserModal ? modalHTML() : ''}
+  `;
+}
+
+function toggleSidebar(){ sidebarOpen = !sidebarOpen; render(); }
+function logout(){ currentUser = null; render(); }
+
+function goRoute(key){
+  currentRoute = key; sidebarOpen = false; render();
+}
+
+/* ===================== Route content ===================== */
+function routeContent(){
+  if(currentRoute === 'dashboard') return dashboardHTML();
+  if(currentRoute === 'projectSummary') return projectSummaryHTML();
+  if(currentRoute === 'admin') return currentUser.isAdmin ? adminHTML() : noAccessHTML();
+  if(currentRoute === 'activityLog') return currentUser.isAdmin ? activityLogHTML() : noAccessHTML();
+  if(currentRoute === 'backup') return currentUser.isAdmin ? backupHTML() : noAccessHTML();
+  const nav = NAV.find(n=>n.key===currentRoute);
+  if(!nav) return dashboardHTML();
+  const mod = MODULES[nav.module];
+  if(!canView(mod.permKey)) return noAccessHTML();
+  return moduleHTML(nav.module, mod);
+}
+
+function noAccessHTML(){
+  return `<div class="no-access">لا تملك صلاحية الوصول إلى هذا القسم. تواصل مع مدير النظام لمنحك صلاحية المشاهدة أو التعديل.</div>`;
+}
+
+/* ---------- Dashboard ---------- */
+function dashboardHTML(){
+  const activeProjects = STATE.projects.filter(p=>p.status==='قيد التنفيذ').length;
+  const pendingExtracts = STATE.extracts.filter(e=>e.status!=='مصروف').length;
+  const income = STATE.finance.filter(f=>f.type==='إيراد').reduce((s,f)=>s+Number(f.amount||0),0);
+  const expense = STATE.finance.filter(f=>f.type==='مصروف').reduce((s,f)=>s+Number(f.amount||0),0);
+  const laborCount = STATE.labor.length;
+  const purchasesCount = STATE.purchases.length;
+  const moneyFmt = n => Number(n||0).toLocaleString('ar-EG');
+  const progressOf = p => Math.max(0,Math.min(100,Number(p.progress ?? p.completion ?? p.percent ?? 0)));
+  const projects = STATE.projects.slice(0,5);
+  let activities = [];
+  try{
+    const raw = JSON.parse(localStorage.getItem('EPMS_ACTIVITY_LOG')||'[]');
+    activities = Array.isArray(raw) ? raw.slice(-5).reverse() : [];
+  }catch(e){}
+  const activityFallback = [
+    ['—','النظام جاهز للاستخدام','✓'],
+    ['—','يمكنك متابعة المشاريع والبيانات من لوحة التحكم','▣'],
+    ['—','استخدم القائمة الجانبية للوصول إلى جميع الأقسام','☰']
+  ];
+  const actHtml = activities.length ? activities.map(a=>{
+    const d=new Date(a.time); const t=isNaN(d)?'—':d.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="activity-item"><div class="activity-time">${t}</div><div class="activity-text">${escapeHtml(a.details||a.action||'عملية بالنظام')}</div><div class="activity-icon">✓</div></div>`;
+  }).join('') : activityFallback.map(a=>`<div class="activity-item"><div class="activity-time">${a[0]}</div><div class="activity-text">${a[1]}</div><div class="activity-icon">${a[2]}</div></div>`).join('');
+
+  const projectBars = projects.length ? `<div class="project-bars-head"><span><i></i> الفعلي</span><span><i class="plan"></i> المخطط</span></div>` + projects.map((p,i)=>{
+    const actual=progressOf(p); const plan=Math.max(actual,Math.min(100,Number(p.plannedProgress ?? p.planProgress ?? Math.min(100,actual+5))));
+    return `<div class="project-bar-row"><span>${escapeHtml(p.name||('مشروع '+(i+1)))}</span><div class="project-bar"><span style="width:${actual}%"></span><span class="plan" style="width:${plan}%"></span></div><b>${actual}%</b></div>`;
+  }).join('') : `<div class="home-empty">لا توجد مشاريع بعد — أضف مشروعاً من «المشاريع».</div>`;
+
+  const upcoming = [...STATE.planning].sort((a,b)=>String(a.date||a.startDate||'').localeCompare(String(b.date||b.startDate||''))).slice(0,5);
+  const taskHtml = upcoming.length ? upcoming.map((x,i)=>{
+    const status=x.status||'معلق';
+    const cls=/منتهي|مكتمل|معتمد/.test(status)?'done':/جاري|تنفيذ/.test(status)?'':'wait';
+    return `<tr><td>${escapeHtml(x.task||x.title||x.name||'مهمة '+(i+1))}</td><td>${escapeHtml(projectName(x.projectId))}</td><td>${escapeHtml(x.date||x.startDate||'—')}</td><td><span class="status-pill ${cls}">${escapeHtml(status)}</span></td></tr>`;
+  }).join('') : `<tr><td colspan="4" class="home-empty">لا توجد مهام مخططة حالياً.</td></tr>`;
+
+  const totalCost = income || expense || 0;
+  const costTotal = moneyFmt(totalCost);
+  return `
+    <div class="home-hero">
+      <div class="home-crumb">⌂ &nbsp; الرئيسية</div>
+      <h1>مرحباً بك في نظام إدارة مشاريع شركات المقاولات</h1>
+      <p>إدارة مشاريعك بكفاءة أعلى ... وتحكم كامل في كل التفاصيل</p>
+    </div>
+
+    <div class="home-kpis">
+      <div class="home-kpi kpi-blue"><div class="kpi-title"><span>إجمالي المشاريع</span><span>▣</span></div><div class="kpi-value">${STATE.projects.length}</div><div class="kpi-note">مشروع نشط</div></div>
+      <div class="home-kpi kpi-green"><div class="kpi-title"><span>إجمالي العمالة</span><span>♟</span></div><div class="kpi-value">${laborCount}</div><div class="kpi-note">عامل ومهندس</div></div>
+      <div class="home-kpi kpi-orange"><div class="kpi-title"><span>المشتريات</span><span>▰</span></div><div class="kpi-value">${purchasesCount}</div><div class="kpi-note">طلبات قيد المتابعة</div></div>
+      <div class="home-kpi kpi-purple"><div class="kpi-title"><span>المستخلصات</span><span>▤</span></div><div class="kpi-value">${pendingExtracts}</div><div class="kpi-note">مستخلص قيد المتابعة</div></div>
+      <div class="home-kpi kpi-teal"><div class="kpi-title"><span>إجمالي المصروفات</span><span>¤</span></div><div class="kpi-value">${moneyFmt(expense)}</div><div class="kpi-note">جنيه مصري</div></div>
+      <div class="home-kpi kpi-navy"><div class="kpi-title"><span>إجمالي الإيرادات</span><span>▥</span></div><div class="kpi-value">${moneyFmt(income)}</div><div class="kpi-note">جنيه مصري</div></div>
+    </div>
+
+    <div class="home-grid">
+      <section class="home-panel">
+        <div class="panel-head"><h3>متابعة تقدم المشاريع</h3><span class="panel-sub">التقدم الفعلي للمشاريع</span></div>
+        <div class="project-bars">${projectBars}</div>
+      </section>
+      <section class="home-panel">
+        <div class="panel-head"><h3>آخر الأنشطة</h3><span class="panel-sub">آخر العمليات</span></div>
+        <div class="activity-list">${actHtml}</div>
+      </section>
+    </div>
+
+    <div class="home-bottom">
+      <section class="home-panel">
+        <div class="panel-head"><h3>المهام القادمة</h3><button class="link-btn" onclick="goRoute('planning')">عرض التخطيط ←</button></div>
+        <table class="home-table"><thead><tr><th>المهمة</th><th>المشروع</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>${taskHtml}</tbody></table>
+      </section>
+      <section class="home-panel">
+        <div class="panel-head"><h3>توزيع التكاليف حسب البنود</h3><span class="panel-sub">ملخص مالي</span></div>
+        <div class="cost-wrap">
+          <div style="position:relative;width:175px;height:175px"><div class="donut"></div><div class="cost-center"><small>إجمالي التكاليف</small>${costTotal}<small>جنيه</small></div></div>
+          <div class="cost-legend">
+            <div class="cost-row"><i class="cost-dot" style="background:#2e82d6"></i><span>أعمال مدنية</span><b>32%</b></div>
+            <div class="cost-row"><i class="cost-dot" style="background:#45a774"></i><span>أعمال معمارية</span><b>20%</b></div>
+            <div class="cost-row"><i class="cost-dot" style="background:#f2a33c"></i><span>أعمال كهرباء</span><b>25%</b></div>
+            <div class="cost-row"><i class="cost-dot" style="background:#7665cb"></i><span>أعمال ميكانيكا</span><b>12%</b></div>
+            <div class="cost-row"><i class="cost-dot" style="background:#aab4c0"></i><span>أعمال أخرى</span><b>11%</b></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+/* ---------- Cross-discipline project summary ---------- */
+let summaryProjectId = '';
+function setSummaryProject(id){ summaryProjectId = id; render(); }
+
+function projectSummaryHTML(){
+  if(!STATE.projects.length){
+    return `<div class="no-access">لا توجد مشاريع بعد. أضف مشروعاً أولاً من قسم «المشاريع» حتى يظهر لك ملخصه الشامل هنا.</div>`;
+  }
+  if(!summaryProjectId || !STATE.projects.find(p=>p.id===summaryProjectId)){
+    summaryProjectId = STATE.projects[0].id;
+  }
+  const pid = summaryProjectId;
+  const proj = STATE.projects.find(p=>p.id===pid);
+
+  const selector = `
+    <div class="toolbar no-print">
+      <div class="filters">
+        <select onchange="setSummaryProject(this.value)">
+          ${STATE.projects.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة الملخص</button>
+    </div>`;
+
+  let header = '';
+  if(canView('projects')){
+    header = `
+    <div class="cards-row">
+      <div class="stat-card"><div class="n" style="font-size:16px;">${escapeHtml(proj.status||'—')}</div><div class="l">حالة المشروع</div></div>
+      <div class="stat-card amber"><div class="n" style="font-size:16px;">${escapeHtml(proj.client||'—')}</div><div class="l">العميل / المالك</div></div>
+      <div class="stat-card"><div class="n" style="font-size:16px;">${proj.budget?Number(proj.budget).toLocaleString('ar-EG'):'—'}</div><div class="l">الميزانية التقديرية</div></div>
+      <div class="stat-card"><div class="n" style="font-size:16px;">${escapeHtml(proj.location||'—')}</div><div class="l">الموقع</div></div>
+    </div>`;
+  }
+
+  // Engineering specialties roster (cuts across all disciplines, office-wide)
+  let specialtiesHTML = '';
+  if(canView('engineersList')){
+    const specs = ['مدني','معماري','كهرباء','ميكانيكا','مساحة'];
+    const rows = specs.map(s=>{
+      const n = STATE.engineersList.filter(e=>e.specialty===s).length;
+      const active = STATE.engineersList.filter(e=>e.specialty===s && e.status==='نشط').length;
+      return `<tr><td>${s}</td><td>${n}</td><td>${active}</td></tr>`;
+    }).join('');
+    specialtiesHTML = `
+    <div class="summary-block">
+      <div class="summary-block-head">
+        <h3>التخصصات الهندسية <span class="badge">${STATE.engineersList.length} مهندس إجمالاً</span></h3>
+        <button class="link-btn" onclick="goRoute('engineersList')">عرض السجل الكامل ←</button>
+      </div>
+      <table><thead><tr><th>التخصص</th><th>إجمالي المهندسين</th><th>نشطون حالياً</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }
+
+  // Every discipline/module tied to this project, grouped as in the sidebar
+  let sections = '';
+  let pendingGroupLabel = '';
+  for(const item of NAV){
+    if(item.group){ pendingGroupLabel = item.group; continue; }
+    if(item.special || item.adminOnly) continue;
+    const mod = MODULES[item.module];
+    if(!mod || !mod.hasProject) continue;
+    if(!canView(mod.permKey)) continue;
+
+    if(pendingGroupLabel){
+      sections += `<div class="summary-group-title">${pendingGroupLabel}</div>`;
+      pendingGroupLabel = '';
+    }
+
+    const list = (STATE[item.module] || []).filter(r=>r.projectId===pid);
+    const headCols = mod.columns.map(([_,l])=>`<th>${l}</th>`).join('');
+    const rowsHtml = list.slice(0,5).map(r=>{
+      const cells = mod.columns.map(([f,_])=>`<td>${formatCell(mod,f,r[f])}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+
+    sections += `
+    <div class="summary-block">
+      <div class="summary-block-head">
+        <h3>${mod.title} <span class="badge">${list.length}</span></h3>
+        <button class="link-btn no-print" onclick="setProjectFilter('${item.module}','${pid}'); goRoute('${item.key}')">عرض الكل ←</button>
+      </div>
+      ${list.length ? `<table><thead><tr>${headCols}</tr></thead><tbody>${rowsHtml}</tbody></table>${list.length>5?`<div class="section-note" style="margin:10px 0 0;">وأيضاً ${list.length-5} سجل آخر — اضغط «عرض الكل».</div>`:''}` : `<div class="section-note">لا توجد بيانات لهذا المشروع بعد في هذا القسم.</div>`}
+    </div>`;
+  }
+
+  return `${selector}${header}${specialtiesHTML}${sections}`;
+}
+
+/* ---------- Generic module list ---------- */
+function moduleHTML(key, mod){
+  const list = STATE[key] || [];
+  const editable = canEdit(mod.permKey);
+
+  let filterBar = '';
+  let filtered = list;
+  if(mod.hasProject){
+    const pid = projectFilter[key] || '';
+    filterBar = `
+      <select onchange="setProjectFilter('${key}', this.value)">
+        <option value="">كل المشاريع</option>
+        ${STATE.projects.map(p=>`<option value="${p.id}" ${pid===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+      </select>`;
+    if(pid) filtered = list.filter(r=>r.projectId===pid);
+  }
+
+  const rows = filtered.map(r=>{
+    const cells = mod.columns.map(([f,_])=>`<td>${formatCell(mod,f,r[f])}</td>`).join('');
+    const projCell = mod.hasProject ? `<td>${escapeHtml(projectName(r.projectId))}</td>` : '';
+    const creator = r.createdByName || r.createdBy || '—';
+    const creatorCell = `<td><span class="badge">${escapeHtml(creator)}</span></td>`;
+    const attachCell = `<td>${r.hasAttachment ? `<button class="link-btn" onclick="openAttachment('${key}','${r.id}')">📎 مرفقات</button>` : '<span style="color:#B7B0A0">—</span>'}</td>`;
+    return `<tr>
+      ${projCell}
+      ${cells}
+      ${creatorCell}
+      ${attachCell}
+      <td class="no-print"><div class="row-actions">
+        <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?'تعديل':'عرض'}</button>
+        ${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">حذف</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  const headCols = mod.columns.map(([_,l])=>`<th>${l}</th>`).join('');
+  const projHead = mod.hasProject ? `<th>المشروع</th>` : '';
+
+  return `
+    <div class="toolbar no-print">
+      <div class="filters">${filterBar}</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+        ${editable ? `<button class="btn btn-amber" onclick="openNew('${key}')">+ إضافة</button>` : ''}
+      </div>
+    </div>
+    <h3 class="print-only" style="margin:0 0 12px;">${mod.title}</h3>
+    <table>
+      <thead><tr>${projHead}${headCols}<th>أُضيف بواسطة</th><th>المرفقات</th><th class="no-print"></th></tr></thead>
+      <tbody>
+        ${rows || `<tr class="empty-row"><td colspan="12">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
+      </tbody>
+    </table>
+  `;
+}
+
+function setProjectFilter(key, val){ projectFilter[key] = val; render(); }
+function projectName(id){ const p = STATE.projects.find(x=>x.id===id); return p ? p.name : '—'; }
+function formatCell(mod, field, val){
+  if(val === undefined || val === null || val === '') return '<span style="color:#B7B0A0">—</span>';
+  const fdef = mod.fields.find(f=>f.name===field);
+  if(fdef && fdef.type==='number') return Number(val).toLocaleString('ar-EG');
+  if(fdef && fdef.name==='status'){
+    const cls = /معتمد|منتهي$|ساري|مصروف/.test(val) ? (val==='مرفوض'||val==='ملغي'?'bad':'ok') : (val==='مرفوض'?'bad':'warn');
+    return `<span class="badge ${cls}">${escapeHtml(val)}</span>`;
+  }
+  return escapeHtml(String(val));
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- Modal (create/edit record) ---------- */
+function openNew(key){ modalState = {moduleKey:key, record:{}, isNew:true}; render(); }
+function openEdit(key, id){
+  const rec = STATE[key].find(r=>r.id===id);
+  modalState = {moduleKey:key, record:{...rec}, isNew:false};
+  render();
+}
+function closeModal(){ modalState = null; render(); }
+
+function modalHTML(){
+  const {moduleKey, record, isNew} = modalState;
+  const mod = MODULES[moduleKey];
+  const editable = canEdit(mod.permKey);
+
+  let projField = '';
+  if(mod.hasProject){
+    projField = `<div class="field full">
+      <label>المشروع *</label>
+      <select id="f_projectId" ${!editable?'disabled':''}>
+        <option value="">— اختر مشروع —</option>
+        ${STATE.projects.map(p=>`<option value="${p.id}" ${record.projectId===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+      </select>
+    </div>`;
+  }
+
+  const fieldsHTML = mod.fields.map(f=>{
+    const isFull = f.type==='textarea';
+    const val = record[f.name] !== undefined ? record[f.name] : '';
+    let input = '';
+    if(f.type==='select'){
+      input = `<select id="f_${f.name}" ${!editable?'disabled':''}>
+        <option value="">—</option>
+        ${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+      </select>`;
+    } else if(f.type==='textarea'){
+      input = `<textarea id="f_${f.name}" rows="3" ${!editable?'disabled':''}>${escapeHtml(val)}</textarea>`;
+    } else {
+      input = `<input type="${f.type}" id="f_${f.name}" value="${escapeHtml(val)}" ${!editable?'disabled':''}>`;
+    }
+    return `<div class="field ${isFull?'full':''}"><label>${f.label}${f.required?' *':''}</label>${input}</div>`;
+  }).join('');
+
+  return `
+  <div class="overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <h3>${isNew ? 'إضافة سجل — ' : (editable?'تعديل سجل — ':'عرض سجل — ')}${mod.title}</h3>
+      ${!isNew && (record.createdByName||record.createdBy) ? `<div class="section-note">تمت الإضافة بواسطة: <b>${escapeHtml(record.createdByName||record.createdBy)}</b>${record.updatedByName?` — آخر تعديل بواسطة: <b>${escapeHtml(record.updatedByName)}</b>`:''}</div>` : ''}
+      <div class="form-grid">
+        ${projField}
+        ${fieldsHTML}
+        ${editable ? `<div class="field full">
+          <label>مرفق (صورة أو ملف)</label>
+          <input type="file" id="f_attachment">
+          ${record.hasAttachment ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">📎 يوجد مرفق حالياً: ${escapeHtml(record.attachmentName||'')} — اختيار ملف جديد هيستبدله</div>` : ''}
+        </div>` : (record.hasAttachment ? `<div class="field full"><label>المرفق</label><button class="link-btn" onclick="openAttachment('${moduleKey}','${record.id}')">📎 ${escapeHtml(record.attachmentName||'فتح المرفق')}</button></div>` : '')}
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>
+        ${editable ? `<button class="btn btn-primary" onclick="saveRecord()">حفظ</button>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function saveRecord(){
+  const {moduleKey, record, isNew} = modalState;
+  const mod = MODULES[moduleKey];
+
+  if(mod.hasProject){
+    const pid = document.getElementById('f_projectId').value;
+    if(!pid){ alert('من فضلك اختر المشروع'); return; }
+    record.projectId = pid;
+  }
+  for(const f of mod.fields){
+    const el = document.getElementById('f_'+f.name);
+    const v = el.value;
+    if(f.required && !v){ alert('من فضلك أدخل: '+f.label); return; }
+    record[f.name] = v;
+  }
+  if(isNew){
+    record.id = genId();
+    record.createdBy = currentUser.username;
+    record.createdByName = currentUser.name;
+    STATE[moduleKey].push(record);
+  } else {
+    record.updatedBy = currentUser.username;
+    record.updatedByName = currentUser.name;
+    const idx = STATE[moduleKey].findIndex(r=>r.id===record.id);
+    STATE[moduleKey][idx] = record;
+  }
+
+  const fileInput = document.getElementById('f_attachment');
+  const file = fileInput && fileInput.files && fileInput.files[0];
+  if(file){
+    if(file.size > 4 * 1024 * 1024){
+      alert('حجم المرفق كبير جداً (الحد الأقصى تقريباً 4 ميجا). لم يتم رفع المرفق، لكن باقي بيانات السجل اتحفظت.');
+    } else {
+      try{
+        const dataUrl = await new Promise((resolve, reject)=>{
+          const reader = new FileReader();
+          reader.onload = ()=>resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        await dbSet('attach_'+moduleKey+'_'+record.id, {name:file.name, dataUrl});
+        record.hasAttachment = true;
+        record.attachmentName = file.name;
+      }catch(e){ console.error('attachment error', e); alert('تعذر رفع المرفق.'); }
+    }
+  }
+
+  await dbSet(moduleKey, STATE[moduleKey]);
+  modalState = null;
+  render();
+}
+
+async function openAttachment(moduleKey, id){
+  const data = await dbGet('attach_'+moduleKey+'_'+id, null);
+  if(!data){ alert('تعذر العثور على المرفق.'); return; }
+  const a = document.createElement('a');
+  a.href = data.dataUrl;
+  a.download = data.name || 'attachment';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+async function deleteRecord(moduleKey, id){
+  if(!confirm('هل تريد حذف هذا السجل؟')) return;
+  STATE[moduleKey] = STATE[moduleKey].filter(r=>r.id!==id);
+  await dbSet(moduleKey, STATE[moduleKey]);
+  render();
+}
+
+/* ===================== Admin: users & permissions ===================== */
+function adminHTML(){
+  const rows = STATE.users.map(u=>`
+    <tr>
+      <td>${escapeHtml(u.name)}</td>
+      <td>${escapeHtml(u.username)}</td>
+      <td>${u.isAdmin ? '<span class="badge ok">مدير كامل الصلاحيات</span>' : '<span class="badge">مستخدم</span>'}</td>
+      <td><div class="row-actions">
+        <button class="link-btn" onclick="openUserEdit('${u.id}')">تعديل</button>
+        ${u.username!=='admin' ? `<button class="link-btn danger" onclick="deleteUser('${u.id}')">حذف</button>` : ''}
+      </div></td>
+    </tr>`).join('');
+
+  return `
+    <div class="section-note">من هنا تنشئ حسابات للمهندسين والموظفين، وتحدد لكل واحد صلاحية «مشاهدة فقط» أو «تعديل» في كل قسم على حدة، أو تجعله مديراً بكامل الصلاحيات.</div>
+    <div class="toolbar">
+      <div></div>
+      <button class="btn btn-amber" onclick="openUserNew()">+ إضافة مستخدم</button>
+    </div>
+    <table>
+      <thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الدور</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${modalState && modalState.isUserModal ? userModalHTML() : ''}
+  `;
+}
+
+function openUserNew(){
+  modalState = {isUserModal:true, isNew:true, record:{isAdmin:false, permissions:{}}};
+  render();
+}
+function openUserEdit(id){
+  const u = STATE.users.find(x=>x.id===id);
+  modalState = {isUserModal:true, isNew:false, record:JSON.parse(JSON.stringify(u))};
+  render();
+}
+async function deleteUser(id){
+  if(!confirm('هل تريد حذف هذا المستخدم؟')) return;
+  STATE.users = STATE.users.filter(u=>u.id!==id);
+  await dbSet('users', STATE.users);
+  render();
+}
+
+function userModalHTML(){
+  const {record, isNew} = modalState;
+  const permRows = PERM_KEYS.map(pk=>{
+    const level = (record.permissions && record.permissions[pk]) || 'none';
+    return `<tr>
+      <td>${PERM_LABELS[pk]}</td>
+      <td><select id="perm_${pk}" ${record.isAdmin?'disabled':''}>
+        <option value="none" ${level==='none'?'selected':''}>لا يوجد</option>
+        <option value="view" ${level==='view'?'selected':''}>مشاهدة</option>
+        <option value="edit" ${level==='edit'?'selected':''}>تعديل</option>
+      </select></td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <div class="overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal" style="max-width:640px;">
+      <h3>${isNew?'إضافة مستخدم جديد':'تعديل بيانات المستخدم'}</h3>
+      <div class="form-grid">
+        <div class="field"><label>الاسم الكامل *</label><input id="u_name" value="${escapeHtml(record.name||'')}"></div>
+        <div class="field"><label>اسم المستخدم *</label><input id="u_username" value="${escapeHtml(record.username||'')}" ${record.username==='admin'?'disabled':''}></div>
+        <div class="field"><label>كلمة المرور ${isNew?'*':'(اتركها فارغة لعدم التغيير)'}</label><input id="u_password" type="text" value=""></div>
+        <div class="field">
+          <label>الدور</label>
+          <select id="u_isAdmin" onchange="toggleAdminPreview(this.value)">
+            <option value="0" ${!record.isAdmin?'selected':''}>مستخدم بصلاحيات محددة</option>
+            <option value="1" ${record.isAdmin?'selected':''}>مدير كامل الصلاحيات</option>
+          </select>
+        </div>
+      </div>
+      <div class="field full" style="margin-top:14px;">
+        <label>صلاحيات الأقسام</label>
+        <table class="perm-table">
+          <thead><tr><th style="text-align:right;">القسم</th><th>المستوى</th></tr></thead>
+          <tbody id="permBody">${permRows}</tbody>
+        </table>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveUser()">حفظ</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleAdminPreview(val){
+  const disabled = val==='1';
+  PERM_KEYS.forEach(pk=>{
+    const el = document.getElementById('perm_'+pk);
+    if(el) el.disabled = disabled;
+  });
+}
+
+async function saveUser(){
+  const {record, isNew} = modalState;
+  const name = document.getElementById('u_name').value.trim();
+  const username = document.getElementById('u_username').value.trim();
+  const password = document.getElementById('u_password').value;
+  const isAdmin = document.getElementById('u_isAdmin').value === '1';
+
+  if(!name || !username){ alert('من فضلك أدخل الاسم واسم المستخدم'); return; }
+  if(isNew && !password){ alert('من فضلك أدخل كلمة مرور'); return; }
+  const dup = STATE.users.find(u=>u.username===username && u.id!==record.id);
+  if(dup){ alert('اسم المستخدم مستخدم بالفعل'); return; }
+
+  const permissions = {};
+  PERM_KEYS.forEach(pk=>{
+    const el = document.getElementById('perm_'+pk);
+    permissions[pk] = el ? el.value : 'none';
+  });
+
+  if(isNew){
+    STATE.users.push({
+      id:genId(), name, username, password, isAdmin, permissions
+    });
+  } else {
+    const idx = STATE.users.findIndex(u=>u.id===record.id);
+    STATE.users[idx].name = name;
+    STATE.users[idx].username = username;
+    if(password) STATE.users[idx].password = password;
+    STATE.users[idx].isAdmin = isAdmin;
+    STATE.users[idx].permissions = permissions;
+    if(currentUser.id === record.id) currentUser = STATE.users[idx];
+  }
+  await dbSet('users', STATE.users);
+  modalState = null;
+  render();
+}
+
+/* ===================== Activity Log ===================== */
+function activityLogHTML(){
+  const entries = [];
+  for(const key of Object.keys(MODULES)){
+    const list = STATE[key] || [];
+    for(const r of list){
+      if(r.createdByName || r.createdBy){
+        entries.push({date:r.date||r.startDate||'', who:r.createdByName||r.createdBy, action:'إضافة', module:MODULES[key].title});
+      }
+      if(r.updatedByName){
+        entries.push({date:r.date||r.startDate||'', who:r.updatedByName, action:'تعديل', module:MODULES[key].title});
+      }
+    }
+  }
+  const rows = entries.map(e=>`
+    <tr>
+      <td>${escapeHtml(e.module)}</td>
+      <td><span class="badge ${e.action==='إضافة'?'ok':'warn'}">${e.action}</span></td>
+      <td>${escapeHtml(e.who)}</td>
+      <td>${escapeHtml(e.date||'—')}</td>
+    </tr>`).join('');
+  return `
+    <div class="section-note">سجل بكل عمليات الإضافة والتعديل عبر كل أقسام النظام، مرتب حسب القسم.</div>
+    <div class="toolbar no-print"><div></div><button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button></div>
+    <table>
+      <thead><tr><th>القسم</th><th>العملية</th><th>بواسطة</th><th>تاريخ السجل</th></tr></thead>
+      <tbody>${rows || `<tr class="empty-row"><td colspan="4">لا توجد عمليات مسجلة بعد</td></tr>`}</tbody>
+    </table>
+  `;
+}
+
+/* ===================== Backup / Restore ===================== */
+async function exportBackup(){
+  const allKeys = ['users', ...Object.keys(MODULES)];
+  const dump = {};
+  for(const k of allKeys){ dump[k] = STATE[k] || []; }
+  const blob = new Blob([JSON.stringify(dump, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'erp-backup-' + todayISO() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function importBackupFile(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!confirm('استيراد النسخة الاحتياطية هيستبدل البيانات الحالية في الأقسام الموجودة بالملف. متأكد؟')) { input.value=''; return; }
+  try{
+    const text = await file.text();
+    const dump = JSON.parse(text);
+    for(const key of Object.keys(dump)){
+      STATE[key] = dump[key];
+      await dbSet(key, dump[key]);
+    }
+    alert('تم استرجاع النسخة الاحتياطية بنجاح.');
+    render();
+  }catch(e){
+    console.error(e);
+    alert('تعذرت قراءة الملف — تأكد إنه ملف Backup صحيح.');
+  }
+  input.value = '';
+}
+
+function backupHTML(){
+  return `
+    <div class="section-note">
+      يمكنك تحميل نسخة احتياطية كاملة من كل بيانات النظام كملف JSON، أو استرجاع نسخة سابقة.
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;">
+      <div class="stat-card" style="flex:1;min-width:240px;">
+        <div class="l" style="margin-bottom:10px;">تنزيل نسخة احتياطية من كل البيانات</div>
+        <button class="btn btn-amber" onclick="exportBackup()">⬇️ تحميل Backup</button>
+      </div>
+      <div class="stat-card" style="flex:1;min-width:240px;">
+        <div class="l" style="margin-bottom:10px;">استرجاع نسخة احتياطية (ملف JSON)</div>
+        <input type="file" accept="application/json" onchange="importBackupFile(this)">
+      </div>
+    </div>
+  `;
+}
+
+/* ===================== Render root ===================== */
+function render(){
+  const app = document.getElementById('app');
+  if(!currentUser){
+    app.innerHTML = loginScreen();
+    attachLoginHandlers();
+    return;
+  }
+  app.innerHTML = mainLayout();
+}
+
+boot();
+</script>
+
+<!-- EPMS V8.1 - Public View Only Control -->
+<style>
+#epmsPublicPanel{font-family:Arial,sans-serif;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:none;overflow:auto}
+#epmsPublicPanel .box{background:#fff;max-width:1000px;margin:4vh auto;padding:22px;border-radius:14px;box-shadow:0 10px 40px #0004}
+#epmsPublicPanel h2{margin-top:0}
+#epmsPublicPanel table{width:100%;border-collapse:collapse;margin-top:12px}
+#epmsPublicPanel th,#epmsPublicPanel td{border:1px solid #ddd;padding:8px;text-align:start}
+#epmsPublicPanel th{background:#f3f4f6}
+.epmsPublicActions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.epmsPublicBadge{display:inline-block;padding:3px 8px;border-radius:20px;background:#e8f5e9;color:#176b2c;font-size:12px}
+</style>
+
+<div id="epmsPublicPanel">
+  <div class="box" dir="auto">
+    <h2>إعدادات المشاهدة العامة / Public View Settings</h2>
+    <p><span class="epmsPublicBadge">مشاهدة فقط / View Only</span>
+       العامة لا تملك أي إضافة أو تعديل أو حذف أو صلاحيات إدارية.</p>
+    <div class="epmsPublicActions">
+      <button type="button" onclick="EPMSPublic.selectAll(true)">اختيار الكل</button>
+      <button type="button" onclick="EPMSPublic.selectAll(false)">إلغاء الكل</button>
+      <button type="button" onclick="EPMSPublic.save()">حفظ</button>
+      <button type="button" onclick="EPMSPublic.close()">إغلاق</button>
+    </div>
+    <table>
+      <thead><tr><th>عرض للعامة</th><th>القسم / الشاشة</th><th>Public View Only</th></tr></thead>
+      <tbody id="epmsPublicRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function(){
+  const KEY='EPMS_PUBLIC_VIEW_SETTINGS';
+  const screens=[
+    ['dashboard','لوحة التحكم','Dashboard'],
+    ['projects','المشروعات','Projects'],
+    ['planning','التخطيط والبرامج الزمنية','Planning'],
+    ['contracts','العقود','Contracts'],
+    ['execution','التنفيذ','Execution'],
+    ['technical','المكتب الفني','Technical Office'],
+    ['extracts','المستخلصات','Payment Extracts'],
+    ['invoices','الفواتير','Invoices'],
+    ['finance','المالية والحسابات','Finance'],
+    ['procurement','المشتريات والتوريد','Procurement'],
+    ['stores','المخازن','Stores'],
+    ['labor','العمالة','Labor'],
+    ['engineers','المهندسون','Engineers'],
+    ['equipment','المعدات','Equipment'],
+    ['handover','التسليم','Handover'],
+    ['maintenance','الصيانة بعد التسليم','Maintenance'],
+    ['files','الملفات والرسومات','Files & Drawings'],
+    ['activity','سجل النشاط','Activity Log']
+  ];
+
+  function defaults(){
+    // Public starts with dashboard and projects only; admin chooses the rest.
+    return Object.fromEntries(screens.map((s,i)=>[s[0], i<2]));
+  }
+  function load(){
+    try{
+      const x=JSON.parse(localStorage.getItem(KEY)||'null');
+      return x && typeof x==='object' ? {...defaults(),...x} : defaults();
+    }catch(e){return defaults();}
+  }
+
+  window.EPMSPublic={
+    open:function(){
+      const panel=document.getElementById('epmsPublicPanel');
+      const rows=document.getElementById('epmsPublicRows');
+      const cfg=load();
+      rows.innerHTML=screens.map(s=>`
+        <tr>
+          <td><input type="checkbox" data-public-screen="${s[0]}" ${cfg[s[0]]?'checked':''}></td>
+          <td>${s[1]}</td><td>${s[2]}</td>
+        </tr>`).join('');
+      panel.style.display='block';
+    },
+    close:function(){document.getElementById('epmsPublicPanel').style.display='none'},
+    selectAll:function(v){
+      document.querySelectorAll('#epmsPublicRows input[data-public-screen]').forEach(x=>x.checked=v);
+    },
+    save:function(){
+      const cfg={};
+      document.querySelectorAll('#epmsPublicRows input[data-public-screen]').forEach(x=>cfg[x.dataset.publicScreen]=x.checked);
+      localStorage.setItem(KEY,JSON.stringify(cfg));
+      this.close();
+      alert('تم حفظ أقسام المشاهدة العامة بنجاح');
+    },
+    canView:function(screen){
+      return !!load()[screen];
+    },
+    getConfig:load
+  };
+
+  // Public / guest bypass mode has been permanently disabled: the system now
+  // requires the real, verified username and password on every visit. Any
+  // previously-stored bypass flag is cleared immediately.
+  try{ localStorage.removeItem('EPMS_PUBLIC_MODE'); }catch(e){}
+  window.EPMSPublicMode={
+    enable:function(){ alert('وضع المشاهدة العامة (بدون تسجيل دخول) مُعطّل نهائياً. يجب تسجيل الدخول ببيانات حقيقية.'); },
+    disable:function(){ try{ localStorage.removeItem('EPMS_PUBLIC_MODE'); }catch(e){} },
+    active:function(){return false}
+  };
+
+  // Role lookup shared by this block's admin button — tied to the program's
+  // real, Supabase-backed login (`currentUser`), not a separate account system.
+  function realRole(){
+    try{
+      if(typeof currentUser!=='undefined' && currentUser) return currentUser.isAdmin ? 'admin' : 'user';
+    }catch(e){}
+    return null;
+  }
+
+  // Disabled: this floating button duplicated the real "المستخدمون والصلاحيات"
+  // screen already available to admins from the main sidebar, and stacked
+  // extra unrelated floating panels on top of the real dashboard. Kept as a
+  // no-op so nothing else in this block breaks.
+  function addAdminButton(){
+    return;
+    if(document.getElementById('epmsPublicViewBtn')) return;
+    if(realRole()!=='admin') return;
+    const b=document.createElement('button');
+    b.type='button'; b.id='epmsPublicViewBtn';
+    b.textContent='إعدادات المشاهدة العامة';
+    b.title='Public View Only Settings';
+    b.onclick=()=>EPMSPublic.open();
+    b.style.cssText='position:fixed;bottom:18px;left:18px;z-index:9998;padding:9px 13px;border-radius:9px;border:1px solid #bbb;background:#fff;cursor:pointer';
+    document.body.appendChild(b);
+  }
+
+  document.addEventListener('DOMContentLoaded',function(){
+    addAdminButton();
+  });
+  // Re-check after login/logout events elsewhere on the page update the session.
+  window.addEventListener('storage',addAdminButton);
+  setInterval(addAdminButton,1000);
+})();
+</script>
+
+
+<!-- EPMS V8.2 Complete User + Public Permissions -->
+<style>
+#epmsAccessPanel{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100000;display:none;overflow:auto;font-family:Arial,sans-serif}
+#epmsAccessPanel .epbox{background:#fff;max-width:1150px;margin:3vh auto;padding:22px;border-radius:14px;box-shadow:0 12px 50px #0005}
+#epmsAccessPanel table{width:100%;border-collapse:collapse;margin:12px 0}
+#epmsAccessPanel th,#epmsAccessPanel td{border:1px solid #ddd;padding:7px}
+#epmsAccessPanel th{background:#f3f4f6}
+.epAccessBtns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.epAccessBtns button{padding:8px 12px;cursor:pointer}
+.epBadge{display:inline-block;padding:3px 8px;border-radius:15px;background:#e8f5e9;color:#176b2c}
+.epNo{color:#a00}
+</style>
+
+<div id="epmsAccessPanel">
+<div class="epbox" dir="auto">
+<h2>إدارة صلاحيات المستخدمين والمشاهدة العامة</h2>
+<p><span class="epBadge">مشاهدة عامة = View Only</span>
+العامة لا يمكنها الإضافة أو التعديل أو الحذف أو الإدارة.</p>
+
+<div class="epAccessBtns">
+<button onclick="EPMSAccess.save()">حفظ</button>
+<button onclick="EPMSAccess.close()">إغلاق</button>
+<button onclick="EPMSAccess.publicAll(true)">السماح للعامة بكل الأقسام</button>
+<button onclick="EPMSAccess.publicAll(false)">إلغاء كل أقسام العامة</button>
+</div>
+
+<h3>1) صلاحيات المستخدمين</h3>
+<div class="epAccessBtns">
+<button onclick="EPMSAccess.userAdd()">إضافة مستخدم</button>
+</div>
+<table>
+<thead><tr><th>المستخدم</th><th>الدور</th><th>المشروعات المسموحة</th><th>إجراءات</th></tr></thead>
+<tbody id="epUserRows"></tbody>
+</table>
+
+<h3>2) صلاحيات كل دور على الشاشات</h3>
+<table>
+<thead><tr><th>الشاشة</th><th>Admin</th><th>GM</th><th>PM</th><th>Engineering</th><th>Technical</th><th>Finance</th><th>Procurement</th><th>Stores</th><th>HR</th></tr></thead>
+<tbody id="epRoleRows"></tbody>
+</table>
+
+<h3>3) الأقسام المتاحة للعامة — مشاهدة فقط</h3>
+<table>
+<thead><tr><th>مشاهدة عامة</th><th>القسم</th><th>Public</th></tr></thead>
+<tbody id="epPublicRows2"></tbody>
+</table>
+</div>
+</div>
+
+<script>
+(function(){
+const ACCESS_KEY='EPMS_V82_ACCESS';
+const PUB_KEY='EPMS_PUBLIC_VIEW_SETTINGS';
+
+const screens=[
+['dashboard','لوحة التحكم'],['projects','المشروعات'],['planning','التخطيط والبرامج الزمنية'],
+['contracts','العقود'],['execution','التنفيذ'],['technical','المكتب الفني'],
+['extracts','المستخلصات'],['invoices','الفواتير'],['finance','المالية والحسابات'],
+['procurement','المشتريات والتوريد'],['stores','المخازن'],['labor','العمالة'],
+['engineers','المهندسون'],['equipment','المعدات'],['handover','التسليم'],
+['maintenance','الصيانة بعد التسليم'],['files','الملفات والرسومات'],['users','المستخدمون والصلاحيات'],
+['activity','سجل النشاط'],['backup','النسخ الاحتياطي']
+];
+
+const roles=['admin','gm','pm','engineering','technical','finance','procurement','stores','hr'];
+
+function defaultAccess(){
+ let a={users:{},roles:{},public:{}};
+ roles.forEach(r=>a.roles[r]={});
+ screens.forEach(s=>{
+   roles.forEach(r=>a.roles[r][s[0]]=r==='admin'?'edit':
+     (['dashboard','projects'].includes(s[0])?'view':'none'));
+   a.public[s[0]]=['dashboard','projects'].includes(s[0]);
+ });
+ return a;
+}
+function load(){
+ try{
+   const x=JSON.parse(localStorage.getItem(ACCESS_KEY)||'null');
+   if(x) return x;
+ }catch(e){}
+ return defaultAccess();
+}
+function currentRole(){
+ // Role now comes from the program's real, Supabase-backed login (the global
+ // `currentUser` set by the actual sign-in screen) — not a separate,
+ // disconnected local account system.
+ try{
+   if(typeof currentUser!=='undefined' && currentUser) return currentUser.isAdmin ? 'admin' : 'user';
+ }catch(e){}
+ return null;
+}
+function isAdmin(){return currentRole()==='admin'}
+function isLoggedIn(){
+ try{ return typeof currentUser!=='undefined' && !!currentUser; }catch(e){ return false; }
+}
+
+function modeSelect(value,screen,role){
+ return `<select data-r="${role}" data-s="${screen}">
+ <option value="none" ${value==='none'?'selected':''}>لا يوجد</option>
+ <option value="view" ${value==='view'?'selected':''}>مشاهدة</option>
+ <option value="edit" ${value==='edit'?'selected':''}>تعديل</option></select>`;
+}
+
+window.EPMSAccess={
+ open:function(){
+   if(!isAdmin()){alert('هذه الشاشة متاحة للمدير فقط');return}
+   const a=load();
+   document.getElementById('epRoleRows').innerHTML=screens.map(s=>{
+     return `<tr><td>${s[1]}</td>`+roles.map(r=>
+       `<td>${modeSelect(a.roles[r]?.[s[0]]||'none',s[0],r)}</td>`).join('')+`</tr>`;
+   }).join('');
+
+   const pub=a.public||{};
+   document.getElementById('epPublicRows2').innerHTML=screens.map(s=>
+     `<tr><td><input type="checkbox" data-pub="${s[0]}" ${pub[s[0]]?'checked':''}></td>
+      <td>${s[1]}</td><td>View Only</td></tr>`).join('');
+
+   const users=a.users||{};
+   document.getElementById('epUserRows').innerHTML=Object.keys(users).map(u=>{
+     const x=users[u];
+     return `<tr><td>${u}</td><td>${x.role||'pm'}</td>
+       <td>${(x.projects||[]).join(', ')||'كل المشروعات'}</td>
+       <td><button onclick="EPMSAccess.userRemove('${String(u).replace(/'/g,"\\'")}')">حذف</button></td></tr>`;
+   }).join('') || '<tr><td colspan="4">لا توجد حسابات إضافية مسجلة هنا</td></tr>';
+
+   document.getElementById('epmsAccessPanel').style.display='block';
+ },
+ close:function(){document.getElementById('epmsAccessPanel').style.display='none'},
+ save:function(){
+   if(!isAdmin()) return;
+   const a=load();
+   document.querySelectorAll('#epRoleRows select').forEach(el=>{
+     a.roles[el.dataset.r][el.dataset.s]=el.value;
+   });
+   a.public={};
+   document.querySelectorAll('#epPublicRows2 input[data-pub]').forEach(el=>{
+     a.public[el.dataset.pub]=el.checked;
+   });
+   localStorage.setItem(ACCESS_KEY,JSON.stringify(a));
+   localStorage.setItem(PUB_KEY,JSON.stringify(a.public));
+   this.close();
+   alert('تم حفظ الصلاحيات والمشاهدة العامة');
+   enforce();
+ },
+ publicAll:function(v){
+   document.querySelectorAll('#epPublicRows2 input[data-pub]').forEach(x=>x.checked=v);
+ },
+ userAdd:function(){
+   if(!isAdmin()) return;
+   const username=prompt('اسم المستخدم:');
+   if(!username) return;
+   const role=(prompt('الدور: admin / gm / pm / engineering / technical / finance / procurement / stores / hr','pm')||'pm').toLowerCase();
+   const projects=prompt('أسماء/أكواد المشروعات المسموحة، مفصولة بفاصلة (اتركها فارغة لكل المشروعات):','');
+   const a=load();
+   a.users[username]={role:roles.includes(role)?role:'pm',
+     projects:projects?projects.split(',').map(x=>x.trim()).filter(Boolean):[]};
+   localStorage.setItem(ACCESS_KEY,JSON.stringify(a));
+   this.open();
+ },
+ userRemove:function(u){
+   const a=load(); delete a.users[u]; localStorage.setItem(ACCESS_KEY,JSON.stringify(a)); this.open();
+ },
+ can:function(screen,mode='view',role=currentRole()){
+   const a=load(), p=a.roles?.[role]?.[screen]||'none';
+   return mode==='view' ? p!=='none' : p==='edit';
+ },
+ publicCan:function(screen){return !!load().public?.[screen]},
+ get:function(){return load()}
+};
+
+function getUserRecord(){
+ const a=load();
+ const possible=[window.currentUser,window.loggedInUser,window.user].filter(Boolean);
+ const u=possible[0]||{};
+ const name=u.username||u.user||u.name||localStorage.getItem('EPMS_CURRENT_USER');
+ return name && a.users?.[name] ? a.users[name] : null;
+}
+function enforce(){
+ const role=currentRole();
+ const a=load();
+
+ if(!isLoggedIn()){
+   // No verified session: hide every screen/module element outright.
+   document.querySelectorAll('[data-epms-screen],[data-permission-screen]').forEach(el=>{
+     el.style.display='none';
+   });
+   return;
+ }
+
+ document.querySelectorAll('[data-epms-screen],[data-permission-screen]').forEach(el=>{
+   const s=el.getAttribute('data-epms-screen')||el.getAttribute('data-permission-screen');
+   if(!s) return;
+   const allowed=EPMSAccess.can(s,'view',role);
+   if(!allowed) el.style.display='none';
+ });
+}
+
+// Disabled: duplicated the real "المستخدمون والصلاحيات" screen already in the
+// main sidebar for admins, and its button used to overlap the one below.
+function addButton(){
+ return;
+ if(!isAdmin()) return;
+ if(document.getElementById('epmsAccessOpen')) return;
+ const b=document.createElement('button');
+ b.id='epmsAccessOpen'; b.textContent='إدارة المستخدمين + المشاهدة العامة';
+ b.title='Users, Roles & Public View Only';
+ b.onclick=()=>EPMSAccess.open();
+ b.style.cssText='position:fixed;bottom:18px;right:18px;z-index:9998;padding:10px 14px;border-radius:9px;border:1px solid #bbb;background:#fff;cursor:pointer';
+ document.body.appendChild(b);
+}
+document.addEventListener('DOMContentLoaded',()=>{addButton();enforce();setInterval(()=>{addButton();enforce();},700);});
+})();
+</script>
+
+
+<!-- EPMS V9 — Optional extra admin tool (per-account view/edit permissions),
+     used only by a real, logged-in admin from the main dashboard. -->
+<style>
+#epmsUsersPanel{position:fixed;inset:0;z-index:5000;font-family:Arial,sans-serif}
+#epmsUsersPanel button{padding:9px 13px;border-radius:8px;border:1px solid #bbb;background:#fff;cursor:pointer}
+
+#epmsUsersPanel{background:#0008;display:none;overflow:auto}
+#epmsUsersPanel .box{background:#fff;max-width:1250px;margin:3vh auto;padding:22px;border-radius:15px}
+#epmsUsersPanel table{width:100%;border-collapse:collapse;margin:12px 0}
+#epmsUsersPanel th,#epmsUsersPanel td{border:1px solid #ddd;padding:7px;vertical-align:top}
+#epmsUsersPanel th{background:#f3f4f6}
+#epmsUserForm{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#epmsUserForm input,#epmsUserForm select{padding:9px;border:1px solid #ccc;border-radius:7px}
+.epmsPill{padding:3px 8px;border-radius:15px;background:#eef2ff}
+@media(max-width:800px){#epmsUserForm{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){#epmsUserForm{grid-template-columns:1fr}}
+</style>
+
+<!-- The old, disconnected local login screen has been removed: the program's
+     real Supabase-backed login (see loginScreen()) is the single sign-in
+     screen now, so nothing sits on top of the real dashboard anymore. -->
+
+<div id="epmsUsersPanel">
+
+ <div class="box" dir="auto">
+  <h2>إدارة المستخدمين والصلاحيات</h2>
+  <p>كل مستخدم له حساب مستقل، دور، مشروعات مسموحة، وصلاحيات شاشة مستقلة. العامة مشاهدة فقط.</p>
+
+  <h3>إضافة / تعديل مستخدم</h3>
+  <div id="epmsUserForm">
+   <input id="epUName" placeholder="اسم المستخدم">
+   <input id="epUPass" type="password" placeholder="كلمة المرور">
+   <select id="epURole">
+    <option value="gm">GM</option><option value="pm">PM</option>
+    <option value="engineering">Engineering</option><option value="technical">Technical</option>
+    <option value="finance">Finance</option><option value="procurement">Procurement</option>
+    <option value="stores">Stores</option><option value="hr">HR</option><option value="admin">Admin</option>
+   </select>
+   <input id="epUProjects" placeholder="أكواد المشروعات مفصولة بفاصلة — فارغ = الكل">
+  </div>
+  <div style="margin:10px 0">
+   <button onclick="EPMSV9.addUser()">حفظ المستخدم</button>
+   <button onclick="EPMSV9.clearForm()">تفريغ</button>
+   <button onclick="EPMSV9.closeUsers()">إغلاق</button>
+  </div>
+
+  <h3>المستخدمون</h3>
+  <table>
+   <thead><tr><th>المستخدم</th><th>الدور</th><th>المشروعات</th><th>الإجراءات</th></tr></thead>
+   <tbody id="epmsUsersRows"></tbody>
+  </table>
+
+  <h3>صلاحيات الشاشة للمستخدم المحدد</h3>
+  <p id="epmsSelectedUser">لم يتم اختيار مستخدم.</p>
+  <table>
+   <thead><tr><th>الشاشة</th><th>الصلاحية</th><th>Public View</th></tr></thead>
+   <tbody id="epmsUserPermRows"></tbody>
+  </table>
+  <button onclick="EPMSV9.saveSelectedPermissions()">حفظ صلاحيات المستخدم</button>
+ </div>
+</div>
+
+<script>
+(function(){
+const K='EPMS_V9_USERS';
+const SESSION='EPMS_V9_SESSION';
+const screens=[
+ ['dashboard','لوحة التحكم'],['projects','المشروعات'],['planning','التخطيط والبرامج الزمنية'],
+ ['contracts','العقود'],['execution','التنفيذ'],['technical','المكتب الفني'],
+ ['extracts','المستخلصات'],['invoices','الفواتير'],['finance','المالية والحسابات'],
+ ['procurement','المشتريات والتوريد'],['stores','المخازن'],['labor','العمالة'],
+ ['engineers','المهندسون'],['equipment','المعدات'],['handover','التسليم'],
+ ['maintenance','الصيانة بعد التسليم'],['files','الملفات والرسومات'],['users','المستخدمون والصلاحيات'],
+ ['activity','سجل النشاط'],['backup','النسخ الاحتياطي']
+];
+const roles=['admin','gm','pm','engineering','technical','finance','procurement','stores','hr'];
+
+function hash(s){
+ // Lightweight local password verifier (not cryptographic server authentication).
+ let h=2166136261;
+ for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}
+ return (h>>>0).toString(16);
+}
+function defaultPerm(role){
+ let p={};
+ screens.forEach(x=>{
+  p[x[0]]=(role==='admin'?'edit':(['dashboard','projects'].includes(x[0])?'view':'none'));
+ });
+ return p;
+}
+function load(){
+ try{
+  const x=JSON.parse(localStorage.getItem(K)||'null');
+  if(x && x.users) return x;
+ }catch(e){}
+ const a={users:{}};
+ a.users.admin={passwordHash:hash('admin123'),role:'admin',projects:[],permissions:defaultPerm('admin')};
+ localStorage.setItem(K,JSON.stringify(a));
+ return a;
+}
+function save(a){localStorage.setItem(K,JSON.stringify(a))}
+function session(){try{return JSON.parse(localStorage.getItem(SESSION)||'null')}catch(e){return null}}
+function user(){let s=session(); if(!s)return null; return load().users[s.username]||null}
+// Role is now derived solely from the program's real, Supabase-backed login
+// (see loginScreen()/attachLoginHandlers() and the global `currentUser`).
+// The separate local mini-login this block used to keep is no longer a
+// second gate — it was disconnected from the real account system and is
+// what caused the real dashboard to be hidden behind an extra login screen.
+function realCurrentUser(){ try{ return (typeof currentUser!=='undefined') ? currentUser : null; }catch(e){ return null; } }
+function isRealAdmin(){ const u=realCurrentUser(); return !!(u && u.isAdmin); }
+function role(){ return isRealAdmin() ? 'admin' : null; }
+function can(screen,mode){
+ const u=user(); if(!u)return false;
+ const p=u.permissions?.[screen]||'none';
+ return mode==='view'?p!=='none':p==='edit';
+}
+function projectAllowed(code){
+ const u=user(); if(!u)return false;
+ const ps=u.projects||[];
+ return !ps.length || ps.includes(code);
+}
+function log(action,details){
+ try{
+  const arr=JSON.parse(localStorage.getItem('EPMS_ACTIVITY_LOG')||'[]');
+  arr.push({time:new Date().toISOString(),user:session()?.username||'public',action,details});
+  localStorage.setItem('EPMS_ACTIVITY_LOG',JSON.stringify(arr));
+ }catch(e){}
+}
+
+window.EPMSV9={
+ openUsers:function(){
+  if(role()!=='admin'){alert('هذه الشاشة للمدير فقط');return}
+  renderUsers(); document.getElementById('epmsUsersPanel').style.display='block';
+ },
+ closeUsers:function(){document.getElementById('epmsUsersPanel').style.display='none'},
+ addUser:function(){
+  if(role()!=='admin')return;
+  const un=document.getElementById('epUName').value.trim();
+  const pw=document.getElementById('epUPass').value;
+  const r=document.getElementById('epURole').value;
+  const ps=document.getElementById('epUProjects').value.split(',').map(x=>x.trim()).filter(Boolean);
+  if(!un){alert('اكتب اسم المستخدم');return}
+  const a=load(), old=a.users[un];
+  a.users[un]={passwordHash:pw?hash(pw):(old?.passwordHash||hash('ChangeMe123')),
+    role:r,projects:ps,permissions:old?.permissions||defaultPerm(r)};
+  save(a); log('USER_SAVE',un); renderUsers(); alert('تم حفظ المستخدم');
+ },
+ deleteUser:function(un){
+  if(role()!=='admin'||un==='admin')return;
+  const a=load();delete a.users[un];save(a);log('USER_DELETE',un);renderUsers();
+ },
+ selectUser:function(un){
+  if(role()!=='admin')return;
+  window._epSelectedUser=un;
+  const u=load().users[un];
+  document.getElementById('epmsSelectedUser').innerHTML='المستخدم: <b>'+un+'</b> — الدور: <b>'+u.role+'</b>';
+  document.getElementById('epmsUserPermRows').innerHTML=screens.map(s=>{
+   const p=u.permissions?.[s[0]]||'none';
+   return `<tr><td>${s[1]}</td><td><select data-user-screen="${s[0]}">
+    <option value="none" ${p==='none'?'selected':''}>لا يوجد</option>
+    <option value="view" ${p==='view'?'selected':''}>مشاهدة</option>
+    <option value="edit" ${p==='edit'?'selected':''}>تعديل</option>
+   </select></td><td>العامة: إعداد مستقل</td></tr>`;
+  }).join('');
+ },
+ saveSelectedPermissions:function(){
+  if(role()!=='admin'||!window._epSelectedUser)return;
+  const a=load(),u=a.users[window._epSelectedUser];
+  document.querySelectorAll('[data-user-screen]').forEach(x=>u.permissions[x.dataset.userScreen]=x.value);
+  save(a);log('USER_PERMISSIONS_SAVE',window._epSelectedUser);alert('تم حفظ صلاحيات المستخدم');
+ },
+ clearForm:function(){['epUName','epUPass','epUProjects'].forEach(id=>document.getElementById(id).value='')}
+};
+
+function renderUsers(){
+ const a=load();
+ document.getElementById('epmsUsersRows').innerHTML=Object.entries(a.users).map(([n,u])=>
+ `<tr><td>${n}</td><td>${u.role}</td><td>${(u.projects||[]).join(', ')||'كل المشروعات'}</td>
+ <td><button onclick="EPMSV9.selectUser('${n.replace(/'/g,"\\'")}')">الصلاحيات</button>
+ <button onclick="EPMSV9.deleteUser('${n.replace(/'/g,"\\'")}')">حذف</button></td></tr>`).join('');
+}
+
+function enforce(){
+ // The real Supabase-backed login already gates the whole program (nothing in
+ // #app renders until a real account signs in) — this legacy overlay must
+ // never cover or hide that real, already-authenticated dashboard again.
+ const overlay=document.getElementById('epmsAuthOverlay');
+ if(overlay) overlay.style.display='none';
+
+ document.body.classList.toggle('epms-authed', !!realCurrentUser());
+ document.body.classList.toggle('epms-is-admin', isRealAdmin());
+
+ if(isRealAdmin()) addAdminButton();
+ else { const b=document.getElementById('epV9Admin'); if(b) b.remove(); }
+}
+
+// Disabled: duplicated the real "المستخدمون والصلاحيات" screen already in the
+// main sidebar for admins. Kept as a no-op so EPMSV9.openUsers() callers don't break.
+function addAdminButton(){
+ return;
+ if(document.getElementById('epV9Admin'))return;
+ const b=document.createElement('button');b.id='epV9Admin';
+ b.textContent='👤 صلاحيات إضافية (اختياري)';b.onclick=()=>EPMSV9.openUsers();
+ b.style.cssText='position:fixed;bottom:18px;right:18px;z-index:900;padding:10px 14px;border:1px solid #bbb;border-radius:9px;background:#fff';
+ document.body.appendChild(b);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{enforce();setInterval(enforce,600);});
+})();
+</script>
+
+
+<!-- EPMS V10 Bilingual Arabic / English -->
+<style>
+#epmsLangBtn{position:fixed;top:14px;left:14px;z-index:1000;padding:8px 12px;border:1px solid #bbb;border-radius:8px;background:#fff;cursor:pointer;display:none}
+body.epms-authed #epmsLangBtn{display:inline-block}
+.epms-en{display:none}
+body.epmsEnglish [data-ar]{display:none!important}
+body.epmsEnglish .epms-en{display:inline!important}
+#epmsCredentialsBox{background:#f8fafc;border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:12px;font-size:14px}
+#epmsCredentialsBox code{background:#fff;padding:3px 6px;border-radius:5px}
+</style>
+
+<button id="epmsLangBtn" type="button" onclick="EPMSV10.toggleLanguage()">English</button>
+
+<script>
+(function(){
+ const LANG='EPMS_V10_LANGUAGE';
+ const dict={
+  'تسجيل الدخول':'Login','دخول / Login':'Login','اسم المستخدم':'Username',
+  'كلمة المرور':'Password','المستخدمون والصلاحيات':'Users & Permissions',
+  'إدارة المستخدمين والصلاحيات':'User & Permission Management',
+  'المشروعات':'Projects','لوحة التحكم':'Dashboard','التخطيط والبرامج الزمنية':'Planning',
+  'العقود':'Contracts','التنفيذ':'Execution','المكتب الفني':'Technical Office',
+  'المستخلصات':'Payment Extracts','الفواتير':'Invoices','المالية والحسابات':'Finance & Accounting',
+  'المشتريات والتوريد':'Procurement & Supply','المخازن':'Stores','العمالة':'Labor',
+  'المهندسون':'Engineers','المعدات':'Equipment','التسليم':'Handover',
+  'الصيانة بعد التسليم':'Post-Handover Maintenance','الملفات والرسومات':'Files & Drawings',
+  'سجل النشاط':'Activity Log','النسخ الاحتياطي':'Backup',
+  'إضافة مستخدم':'Add User','حفظ المستخدم':'Save User','حفظ':'Save','إغلاق':'Close',
+  'تعديل':'Edit','حذف':'Delete','مشاهدة':'View','لا يوجد':'None',
+  'كل المشروعات':'All Projects','خروج':'Logout',
+  'وضع العامة (مشاهدة فقط)':'Public Mode (View Only)',
+  'إعدادات المشاهدة العامة':'Public View Settings',
+  'اختيار الكل':'Select All','إلغاء الكل':'Clear All'
+ };
+
+ function translate(){
+  const textNodeArabic=(translate._map||(translate._map=new WeakMap()));
+  const en=document.body.classList.contains('epmsEnglish');
+  document.documentElement.lang=en?'en':'ar';
+  document.documentElement.dir=en?'ltr':'rtl';
+  document.getElementById('epmsLangBtn').textContent=en?'العربية':'English';
+
+  document.querySelectorAll('input,textarea').forEach(x=>{
+    if(!x.dataset.arPlaceholder)x.dataset.arPlaceholder=x.placeholder||'';
+    if(!x.dataset.enPlaceholder){
+      const a=x.dataset.arPlaceholder;
+      x.dataset.enPlaceholder=dict[a]||a;
+    }
+    x.placeholder=en?x.dataset.enPlaceholder:x.dataset.arPlaceholder;
+  });
+
+  // Translate visible text nodes without altering data or code.
+  // NOTE: Text nodes (unlike elements) have no `.dataset`, so their original
+  // Arabic text is tracked in a WeakMap instead — using `.dataset` here was
+  // the cause of "Cannot read properties of undefined (reading 'arText')".
+  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  const nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n=>{
+    if(!n.parentElement || n.parentElement.closest('script,style'))return;
+    if(!textNodeArabic.has(n)) textNodeArabic.set(n, n.nodeValue);
+    const ar=textNodeArabic.get(n).trim();
+    if(!ar)return;
+    const tr=dict[ar];
+    if(tr)n.nodeValue=en?n.nodeValue.replace(ar,tr):ar;
+  });
+ }
+ window.EPMSV10={
+  toggleLanguage:function(){
+   const en=!document.body.classList.contains('epmsEnglish');
+   document.body.classList.toggle('epmsEnglish',en);
+   localStorage.setItem(LANG,en?'en':'ar');
+   translate();
+  }
+ };
+ document.addEventListener('DOMContentLoaded',()=>{
+  const l=localStorage.getItem(LANG)||'ar';
+  if(l==='en')document.body.classList.add('epmsEnglish');
+  setTimeout(translate,300);
+ });
+})();
+
+// NOTE: the default-credentials hint box has been permanently removed.
+// The login screen must never display or hint at a username/password —
+// only a real, correctly typed username and password are accepted.
+</script>
+
+
+<!-- ================================================================
+     EPMS V10.1 — Integrated Admin Control Panel
+     لوحة التحكم الإدارية المتكاملة (تجمع التخصصات + الإظهار + الصلاحيات
+     + الإحصائيات + الملخصات + التصدير/الاستيراد + مركز تحكم V9.3)
+     ================================================================ -->
+<style>
+#epAdminBtn{position:fixed;top:14px;right:14px;z-index:1000;padding:8px 12px;border:1px solid #bbb;
+  border-radius:8px;background:#16243C;color:#fff;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:700;font-size:13px;
+  display:none;}
+body.epms-authed.epms-is-admin #epAdminBtn{display:inline-block;}
+#epAdminBtn:hover{background:#1E3358;}
+.epa-overlay{position:fixed;inset:0;background:rgba(22,36,60,0.6);display:none;align-items:flex-start;
+  justify-content:center;padding:26px 12px;z-index:150000;overflow-y:auto;font-family:'Tajawal',sans-serif;}
+.epa-overlay.open{display:flex;}
+.epa-modal{background:#fff;width:100%;max-width:980px;border-radius:8px;border-top:6px solid #E2A03F;
+  box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden;}
+.epa-head{background:#16243C;color:#fff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;}
+.epa-head h2{margin:0;font-size:17px;font-weight:900;}
+.epa-head .epa-close{background:none;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;
+  cursor:pointer;padding:5px 12px;font-size:13px;}
+.epa-tabs{display:flex;flex-wrap:wrap;gap:4px;background:#F4F1E9;padding:8px 14px;border-bottom:1px solid #DCD6C9;}
+.epa-tab{border:none;background:transparent;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12.5px;
+  font-weight:700;color:#5B6472;font-family:inherit;}
+.epa-tab.active{background:#16243C;color:#fff;}
+.epa-body{padding:18px 22px;max-height:70vh;overflow-y:auto;}
+.epa-pane{display:none;}
+.epa-pane.active{display:block;}
+.epa-main-block{border:1px solid #DCD6C9;border-radius:6px;margin-bottom:16px;overflow:hidden;}
+.epa-main-head{background:#F4F1E9;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.epa-main-head b{color:#16243C;font-size:14.5px;}
+.epa-main-head .epa-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.epa-sub-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 14px;
+  border-top:1px solid #EFEBE0;flex-wrap:wrap;}
+.epa-sub-row .nm{font-size:13.5px;color:#20242B;font-weight:600;flex:1;min-width:140px;}
+.epa-sub-row .ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.epa-mini{padding:4px 9px;border-radius:5px;border:1px solid #bbb;background:#fff;cursor:pointer;font-size:11.5px;font-family:inherit;font-weight:700;}
+.epa-mini.on{background:#3F7D58;color:#fff;border-color:#3F7D58;}
+.epa-mini.off{background:#B4472A;color:#fff;border-color:#B4472A;}
+.epa-mini.warn{background:#E2A03F;color:#16243C;border-color:#E2A03F;}
+.epa-select{padding:4px 6px;border:1px solid #DCD6C9;border-radius:5px;font-family:inherit;font-size:11.5px;}
+.epa-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
+.epa-stat{background:#fff;border:1px solid #DCD6C9;border-top:4px solid #2B4C7E;border-radius:6px;padding:12px 14px;}
+.epa-stat .n{font-size:24px;font-weight:900;color:#16243C;}
+.epa-stat .l{font-size:11.5px;color:#5B6472;margin-top:2px;}
+.epa-note{font-size:12px;color:#5B6472;background:#F4F1E9;border:1px dashed #DCD6C9;border-radius:5px;padding:8px 10px;margin-bottom:14px;}
+.epa-table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+.epa-table th{background:#F4F1E9;color:#16243C;font-size:11.5px;padding:7px 8px;text-align:right;border-bottom:2px solid #DCD6C9;}
+.epa-table td{padding:6px 8px;font-size:12.5px;border-bottom:1px solid #EFEBE0;}
+.epa-key-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #DCD6C9;
+  border-radius:5px;margin-bottom:8px;font-size:12.5px;background:#FBFAF7;flex-wrap:wrap;gap:6px;}
+.epa-key-row code{background:#EEEAE2;padding:2px 6px;border-radius:4px;}
+.epa-btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.epa-btn{padding:9px 16px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;}
+.epa-btn.primary{background:#16243C;color:#fff;}
+.epa-btn.amber{background:#E2A03F;color:#16243C;}
+.epa-btn.ghost{background:#fff;color:#5B6472;border:1.5px solid #DCD6C9;}
+.epa-btn.danger{background:#fff;color:#B4472A;border:1.5px solid #B4472A;}
+.epa-sub-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.epa-sub-tab{padding:6px 12px;border-radius:14px;border:1.5px solid #DCD6C9;background:#fff;cursor:pointer;
+  font-size:12px;font-weight:700;color:#5B6472;font-family:inherit;}
+.epa-sub-tab.active{background:#2B4C7E;border-color:#2B4C7E;color:#fff;}
+body.epmsEnglish .epa-tab, body.epmsEnglish .epa-sub-tab{direction:ltr;}
+</style>
+
+<button id="epAdminBtn" type="button" onclick="EPMSAdmin.open()">
+  <span data-ar>🎛 لوحة التحكم المتكاملة</span><span class="epms-en">🎛 Integrated Control Panel</span>
+</button>
+
+<div class="epa-overlay" id="epAdminOverlay">
+  <div class="epa-modal">
+    <div class="epa-head">
+      <h2><span data-ar>🎛 لوحة التحكم الإدارية المتكاملة — EPMS V10.1</span><span class="epms-en">🎛 Integrated Admin Control Panel — EPMS V10.1</span></h2>
+      <button class="epa-close" onclick="EPMSAdmin.close()"><span data-ar>إغلاق ✕</span><span class="epms-en">Close ✕</span></button>
+    </div>
+    <div class="epa-tabs" id="epaTabs"></div>
+    <div class="epa-body" id="epaBody"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Storage keys ---------- */
+var STRUCT_KEY = 'EPMS_ADMIN_STRUCTURE_V1';
+var ACCESS_KEY = 'EPMS_V82_ACCESS';
+var PUB_KEY    = 'EPMS_PUBLIC_VIEW_SETTINGS';
+var LANG_KEY   = 'EPMS_V10_LANGUAGE';
+var SESSION_KEY= 'EPMS_V9_SESSION';
+var LOG_KEY    = 'EPMS_ACTIVITY_LOG';
+
+/* ---------- English labels for the canonical module list (PERM_KEYS) ---------- */
+var EN_LABELS = {
+  company:'Company & Branches', projects:'Projects', details:'Project Details',
+  planning:'Planning & Schedule', siteExecution:'Site Execution',
+  engineer:'Site Reports (Civil Engineer)', engineersList:'Engineers Registry',
+  labor:'Labor', equipment:'Equipment', techoffice:'Technical Office',
+  boq:'BOQ / Quantities', purchases:'Procurement', suppliers:'Suppliers & Subcontractors',
+  deliveries:'Deliveries & Receiving', warehouse:'Warehouse (Items & Movement)',
+  warehousesLoc:'Stores / Warehouses', contracts:'Contracts', extracts:'Payment Extracts',
+  invoices:'Invoices', finance:'Finance', accounting:'Accounting', qaqc:'QA/QC',
+  hse:'HSE & Safety', documents:'Documents & Drawings', correspondence:'Correspondence',
+  changeOrders:'Change Orders', claims:'Claims', risks:'Risks',
+  handover:'Handover & Post-Handover Maintenance', reports:'Executive Reports'
+};
+
+/* Map a canonical module key to a V8.2 sidebar "screen" id, where one exists */
+var SCREEN_MAP = {
+  projects:'projects', planning:'planning', siteExecution:'execution', techoffice:'technical',
+  purchases:'procurement', warehousesLoc:'stores', labor:'labor', equipment:'equipment',
+  contracts:'contracts', extracts:'extracts', invoices:'invoices', finance:'finance',
+  documents:'files', handover:'handover', engineersList:'engineers'
+};
+
+var ENG_SPECIALTIES = [
+  {id:'civil', ar:'مدني', en:'Civil'},
+  {id:'arch', ar:'معماري', en:'Architectural'},
+  {id:'electrical', ar:'كهرباء', en:'Electrical'},
+  {id:'mechanical', ar:'ميكانيكا', en:'Mechanical'},
+  {id:'survey', ar:'مساحة', en:'Survey'}
+];
+
+function safeParse(s,d){ try{ var v=JSON.parse(s); return v==null?d:v; }catch(e){ return d; } }
+function realSessionRole(){
+  // Single source of truth: the program's real, Supabase-backed login
+  // (the global `currentUser` set by the actual sign-in screen).
+  try{
+    if(typeof currentUser!=='undefined' && currentUser) return currentUser.isAdmin ? 'admin' : 'user';
+  }catch(e){}
+  return null;
+}
+function refreshAuthClasses(){
+  var r = realSessionRole();
+  document.body.classList.toggle('epms-authed', !!r);
+  document.body.classList.toggle('epms-is-admin', r==='admin');
+  if(!r){
+    // No verified session: never leave the panel open in the background.
+    var ov = document.getElementById('epAdminOverlay');
+    if(ov) ov.classList.remove('open');
+  }
+}
+function nowISO(){ return new Date().toISOString(); }
+function esc(s){ return String(s==null?'':s).replace(/'/g,"\\'"); }
+function log(action,detail){
+  try{
+    var who='admin';
+    try{ if(typeof currentUser!=='undefined' && currentUser) who = currentUser.username || currentUser.name || 'admin'; }catch(e){}
+    var arr = safeParse(localStorage.getItem(LOG_KEY),[]);
+    arr.unshift({action:action, detail:detail||'', by:who, at:nowISO()});
+    localStorage.setItem(LOG_KEY, JSON.stringify(arr.slice(0,500)));
+  }catch(e){}
+}
+
+/* ---------- Structure model ---------- */
+function permKeysList(){
+  try{ if(typeof PERM_KEYS!=='undefined' && PERM_KEYS.length) return PERM_KEYS.slice(); }catch(e){}
+  return Object.keys(EN_LABELS);
+}
+function permLabel(k){
+  try{ if(typeof PERM_LABELS!=='undefined' && PERM_LABELS[k]) return PERM_LABELS[k]; }catch(e){}
+  return k;
+}
+
+function defaultStructure(){
+  var engSubs = ENG_SPECIALTIES.map(function(s){
+    return {id:s.id, ar:s.ar, en:s.en, visible:true, access:'edit', module:'engineersList', screen:'engineers'};
+  });
+  var otherKeys = permKeysList().filter(function(k){ return k!=='engineersList'; });
+  var otherSubs = otherKeys.map(function(k){
+    return {id:k, ar:permLabel(k), en:(EN_LABELS[k]||k), visible:true,
+            access:(k==='company'?'edit':'view'), module:k, screen:(SCREEN_MAP[k]||null)};
+  });
+  return {
+    version:1, updatedAt: nowISO(),
+    mains:[
+      {id:'eng', icon:'🏗', ar:'التخصصات الهندسية الرئيسية', en:'Main Engineering Disciplines', visible:true, subs:engSubs},
+      {id:'other', icon:'🏢', ar:'الأقسام والوحدات الأخرى', en:'Other Departments', visible:true, subs:otherSubs}
+    ]
+  };
+}
+
+function loadStruct(){
+  var s = safeParse(localStorage.getItem(STRUCT_KEY), null);
+  if(!s || !s.mains) s = defaultStructure();
+  // merge in any newly-added canonical modules that aren't in saved structure yet
+  var def = defaultStructure();
+  def.mains.forEach(function(dm){
+    var m = s.mains.filter(function(x){return x.id===dm.id;})[0];
+    if(!m){ s.mains.push(dm); return; }
+    dm.subs.forEach(function(ds){
+      if(!m.subs.some(function(x){return x.id===ds.id;})) m.subs.push(ds);
+    });
+  });
+  return s;
+}
+function saveStruct(s){
+  s.updatedAt = nowISO();
+  localStorage.setItem(STRUCT_KEY, JSON.stringify(s));
+}
+
+function findMain(s,mid){ return s.mains.filter(function(m){return m.id===mid;})[0]; }
+function findSub(s,mid,sid){ var m=findMain(s,mid); return m ? m.subs.filter(function(x){return x.id===sid;})[0] : null; }
+
+/* ---------- Sync into the rest of the system ---------- */
+function accessGet(){
+  try{ if(window.EPMSAccess && window.EPMSAccess.get) return window.EPMSAccess.get(); }catch(e){}
+  return safeParse(localStorage.getItem(ACCESS_KEY), {users:{},roles:{},public:{}});
+}
+function accessSet(a){ localStorage.setItem(ACCESS_KEY, JSON.stringify(a)); }
+
+function syncNow(){
+  var s = loadStruct();
+  var pub = safeParse(localStorage.getItem(PUB_KEY), {});
+  var acc = accessGet();
+  acc.roles = acc.roles || {};
+  var roles = Object.keys(acc.roles).length ? Object.keys(acc.roles) :
+    ['admin','gm','pm','engineering','technical','finance','procurement','stores','hr'];
+  roles.forEach(function(r){ acc.roles[r] = acc.roles[r] || {}; });
+
+  s.mains.forEach(function(m){
+    m.subs.forEach(function(sub){
+      if(!sub.screen) return;
+      var effectiveVisible = m.visible && sub.visible;
+      pub[sub.screen] = effectiveVisible && sub.access !== 'none';
+      roles.forEach(function(r){
+        if(r==='admin'){ acc.roles[r][sub.screen]='edit'; return; }
+        acc.roles[r][sub.screen] = effectiveVisible ? sub.access : 'none';
+      });
+      // reflect hide/show directly on any matching sidebar/content elements right now
+      document.querySelectorAll('[data-epms-screen="'+sub.screen+'"],[data-permission-screen="'+sub.screen+'"]')
+        .forEach(function(el){ el.style.display = effectiveVisible ? '' : 'none'; });
+    });
+  });
+  localStorage.setItem(PUB_KEY, JSON.stringify(pub));
+  accessSet(acc);
+  log('ADMIN_PANEL_SYNC','structure -> access & public view settings');
+}
+
+/* ---------- CRUD ---------- */
+var EPMSAdmin = {
+  _tab:'tree',
+  _summaryTab:'eng',
+
+  open:function(){
+    if(!realSessionRole() || realSessionRole()!=='admin'){
+      alert('هذه اللوحة متاحة فقط للمدير بعد تسجيل الدخول ببيانات حقيقية.\nThis panel is only available to a logged-in admin.');
+      return;
+    }
+    document.getElementById('epAdminOverlay').classList.add('open');
+    this.renderTabs();
+    this.renderPane();
+  },
+  close:function(){ document.getElementById('epAdminOverlay').classList.remove('open'); },
+
+  switchTab:function(t){ this._tab=t; this.renderTabs(); this.renderPane(); },
+  switchSummary:function(t){ this._summaryTab=t; this.renderPane(); },
+
+  renderTabs:function(){
+    var tabs = [
+      ['tree','🌳', 'الهيكل والإظهار','Structure & Visibility'],
+      ['perm','🔐', 'الصلاحيات','Permissions'],
+      ['stats','📊', 'لوحة الإحصائيات','Dashboard'],
+      ['summary','📑', 'الملخصات','Summaries'],
+      ['keys','🔗', 'المفاتيح المركزية','Central Keys'],
+      ['data','💾', 'حفظ / تصدير / استيراد','Save / Export / Import'],
+      ['v93','⚙', 'مركز تحكم V9.3','V9.3 Control']
+    ];
+    var self=this;
+    document.getElementById('epaTabs').innerHTML = tabs.map(function(t){
+      return '<button class="epa-tab '+(self._tab===t[0]?'active':'')+'" onclick="EPMSAdmin.switchTab(\''+t[0]+'\')">'+
+        t[1]+' <span data-ar>'+t[2]+'</span><span class="epms-en">'+t[3]+'</span></button>';
+    }).join('');
+  },
+
+  renderPane:function(){
+    var body = document.getElementById('epaBody');
+    if(this._tab==='tree') body.innerHTML = this.paneTree();
+    else if(this._tab==='perm') body.innerHTML = this.panePerm();
+    else if(this._tab==='stats') body.innerHTML = this.paneStats();
+    else if(this._tab==='summary') body.innerHTML = this.paneSummary();
+    else if(this._tab==='keys') body.innerHTML = this.paneKeys();
+    else if(this._tab==='data') body.innerHTML = this.paneData();
+    else if(this._tab==='v93') body.innerHTML = this.paneV93();
+  },
+
+  /* ---------- Tree tab: 🌳 + 👁 + ➕/🗑 ---------- */
+  paneTree:function(){
+    var s = loadStruct();
+    var html = '<div class="epa-note"><span data-ar>أضف أو احذف تخصصات رئيسية وفرعية، وتحكم في إظهار/إخفاء أي تخصص رئيسي مع كل فروعه دفعة واحدة، أو فرع بمفرده.</span>'+
+      '<span class="epms-en">Add or remove main and sub specialties, and show/hide a main specialty with all its branches at once, or a single branch.</span></div>';
+    s.mains.forEach(function(m){
+      html += '<div class="epa-main-block">'+
+        '<div class="epa-main-head">'+
+          '<b>'+m.icon+' <span data-ar>'+m.ar+'</span><span class="epms-en">'+m.en+'</span> '+
+          '<span style="font-weight:400;font-size:11.5px;color:#5B6472;">('+m.subs.length+' <span data-ar>فرع</span><span class="epms-en">items</span>)</span></b>'+
+          '<div class="epa-actions">'+
+            '<button class="epa-mini '+(m.visible?'on':'off')+'" onclick="EPMSAdmin.toggleMain(\''+m.id+'\')">'+
+              (m.visible?'👁 <span data-ar>ظاهر</span><span class=\"epms-en\">Visible</span>':'🚫 <span data-ar>مخفي</span><span class=\"epms-en\">Hidden</span>')+'</button>'+
+            '<button class="epa-mini" onclick="EPMSAdmin.addSub(\''+m.id+'\')">➕ <span data-ar>فرع</span><span class="epms-en">Sub</span></button>'+
+            (['eng','other'].indexOf(m.id)===-1 ? '<button class="epa-mini off" onclick="EPMSAdmin.deleteMain(\''+m.id+'\')">🗑 <span data-ar>حذف الرئيسي</span><span class="epms-en">Delete Main</span></button>' : '')+
+          '</div>'+
+        '</div>'+
+        m.subs.map(function(sub){
+          return '<div class="epa-sub-row">'+
+            '<div class="nm">• <span data-ar>'+sub.ar+'</span><span class="epms-en">'+sub.en+'</span>'+
+              (sub.screen?' <span style="color:#9AA6B8;font-size:11px;">['+sub.screen+']</span>':'')+'</div>'+
+            '<div class="ctrls">'+
+              '<button class="epa-mini '+(sub.visible?'on':'off')+'" onclick="EPMSAdmin.toggleSub(\''+m.id+'\',\''+sub.id+'\')">'+
+                (sub.visible?'👁':'🚫')+'</button>'+
+              '<button class="epa-mini danger" onclick="EPMSAdmin.deleteSub(\''+m.id+'\',\''+sub.id+'\')">🗑</button>'+
+            '</div>'+
+          '</div>';
+        }).join('') +
+        '</div>';
+    });
+    html += '<div class="epa-btn-row">'+
+      '<button class="epa-btn amber" onclick="EPMSAdmin.addMain()">➕ <span data-ar>تخصص رئيسي جديد</span><span class="epms-en">New Main Specialty</span></button>'+
+      '<button class="epa-btn primary" onclick="EPMSAdmin.save(true)">💾 <span data-ar>حفظ وتطبيق الآن</span><span class="epms-en">Save & Apply Now</span></button>'+
+      '</div>';
+    return html;
+  },
+
+  addMain:function(){
+    var ar = prompt('اسم التخصص الرئيسي الجديد (عربي):'); if(!ar) return;
+    var en = prompt('English name for this main specialty:', ar) || ar;
+    var s = loadStruct();
+    var id = 'main_'+Date.now();
+    s.mains.push({id:id, icon:'📁', ar:ar, en:en, visible:true, subs:[]});
+    saveStruct(s); log('ADMIN_ADD_MAIN',ar); this.renderPane();
+  },
+  deleteMain:function(mid){
+    if(!confirm('حذف هذا التخصص الرئيسي وكل فروعه؟')) return;
+    var s = loadStruct();
+    s.mains = s.mains.filter(function(m){return m.id!==mid;});
+    saveStruct(s); log('ADMIN_DELETE_MAIN',mid); this.renderPane();
+  },
+  addSub:function(mid){
+    var ar = prompt('اسم التخصص الفرعي (عربي):'); if(!ar) return;
+    var en = prompt('English name for this sub specialty:', ar) || ar;
+    var s = loadStruct(), m = findMain(s,mid); if(!m) return;
+    m.subs.push({id:'sub_'+Date.now(), ar:ar, en:en, visible:true, access:'view', module:null, screen:null});
+    saveStruct(s); log('ADMIN_ADD_SUB',mid+' / '+ar); this.renderPane();
+  },
+  deleteSub:function(mid,sid){
+    if(!confirm('حذف هذا الفرع؟')) return;
+    var s = loadStruct(), m = findMain(s,mid); if(!m) return;
+    m.subs = m.subs.filter(function(x){return x.id!==sid;});
+    saveStruct(s); log('ADMIN_DELETE_SUB',mid+' / '+sid); this.renderPane();
+  },
+  toggleMain:function(mid){
+    var s = loadStruct(), m = findMain(s,mid); if(!m) return;
+    m.visible = !m.visible;
+    saveStruct(s); log('ADMIN_TOGGLE_MAIN', mid+' -> '+m.visible); this.renderPane();
+  },
+  toggleSub:function(mid,sid){
+    var s = loadStruct(), sub = findSub(s,mid,sid); if(!sub) return;
+    sub.visible = !sub.visible;
+    saveStruct(s); log('ADMIN_TOGGLE_SUB', mid+'/'+sid+' -> '+sub.visible); this.renderPane();
+  },
+
+  /* ---------- Permissions tab: 🔐 ---------- */
+  panePerm:function(){
+    var s = loadStruct();
+    var html = '<div class="epa-note"><span data-ar>حدد مستوى الصلاحية الافتراضي المرتبط بكل تخصص (لا يوجد / مشاهدة / تعديل)، ثم اضغط «مزامنة» لتطبيقه على أدوار المستخدمين وشاشة العرض العام تلقائياً.</span>'+
+      '<span class="epms-en">Set the default permission level linked to each specialty (none / view / edit), then press Sync to apply it to user roles and the public view screen automatically.</span></div>';
+    s.mains.forEach(function(m){
+      html += '<table class="epa-table"><thead><tr><th colspan="3">'+m.icon+' <span data-ar>'+m.ar+'</span><span class="epms-en">'+m.en+'</span></th></tr>'+
+        '<tr><th><span data-ar>التخصص</span><span class="epms-en">Specialty</span></th><th><span data-ar>الشاشة المرتبطة</span><span class="epms-en">Linked Screen</span></th><th><span data-ar>الصلاحية</span><span class="epms-en">Access</span></th></tr></thead><tbody>';
+      m.subs.forEach(function(sub){
+        html += '<tr><td><span data-ar>'+sub.ar+'</span><span class="epms-en">'+sub.en+'</span></td>'+
+          '<td>'+(sub.screen? '<code>'+sub.screen+'</code>' : '<span data-ar>—</span><span class="epms-en">—</span>')+'</td>'+
+          '<td><select class="epa-select" onchange="EPMSAdmin.setAccess(\''+m.id+'\',\''+sub.id+'\',this.value)">'+
+            ['none','view','edit'].map(function(v){
+              var lab = v==='none'?'لا يوجد':(v==='view'?'مشاهدة':'تعديل');
+              return '<option value="'+v+'" '+(sub.access===v?'selected':'')+'>'+lab+'</option>';
+            }).join('')+
+          '</select></td></tr>';
+      });
+      html += '</tbody></table>';
+    });
+    html += '<div class="epa-btn-row">'+
+      '<button class="epa-btn primary" onclick="EPMSAdmin.save(true)">🔐 <span data-ar>حفظ ومزامنة الصلاحيات</span><span class="epms-en">Save & Sync Permissions</span></button>'+
+      '</div>';
+    return html;
+  },
+  setAccess:function(mid,sid,val){
+    var s = loadStruct(), sub = findSub(s,mid,sid); if(!sub) return;
+    sub.access = val; saveStruct(s); log('ADMIN_SET_ACCESS', mid+'/'+sid+' -> '+val);
+  },
+
+  /* ---------- Stats tab: 📊 ---------- */
+  paneStats:function(){
+    var s = loadStruct();
+    var totalMains = s.mains.length;
+    var totalSubs = 0, visibleSubs=0, hiddenSubs=0, linkedScreens=0, editable=0, viewOnly=0, none=0;
+    s.mains.forEach(function(m){
+      m.subs.forEach(function(sub){
+        totalSubs++;
+        var eff = m.visible && sub.visible;
+        if(eff) visibleSubs++; else hiddenSubs++;
+        if(sub.screen) linkedScreens++;
+        if(sub.access==='edit') editable++; else if(sub.access==='view') viewOnly++; else none++;
+      });
+    });
+    var engineersCount = 0;
+    try{ if(typeof STATE!=='undefined' && STATE.engineersList) engineersCount = STATE.engineersList.length; }catch(e){}
+    var cards = [
+      [totalMains,'تخصصات رئيسية','Main Specialties'],
+      [totalSubs,'تخصصات فرعية','Sub Specialties'],
+      [visibleSubs,'ظاهر حالياً','Currently Visible'],
+      [hiddenSubs,'مخفي حالياً','Currently Hidden'],
+      [linkedScreens,'مرتبط بشاشة نظام','Linked to a Screen'],
+      [editable,'صلاحية تعديل','Edit Access'],
+      [viewOnly,'صلاحية مشاهدة فقط','View Only'],
+      [none,'بدون صلاحية','No Access'],
+      [engineersCount,'إجمالي المهندسين المسجلين','Registered Engineers']
+    ];
+    var html = '<div class="epa-stat-grid">'+cards.map(function(c){
+      return '<div class="epa-stat"><div class="n">'+c[0]+'</div><div class="l"><span data-ar>'+c[1]+'</span><span class="epms-en">'+c[2]+'</span></div></div>';
+    }).join('')+'</div>';
+    html += '<div class="epa-note"><span data-ar>آخر تحديث للهيكل: '+new Date(s.updatedAt).toLocaleString('ar-EG')+'</span>'+
+      '<span class="epms-en">Structure last updated: '+new Date(s.updatedAt).toLocaleString()+'</span></div>';
+    return html;
+  },
+
+  /* ---------- Summaries tab: 📑 x4 ---------- */
+  paneSummary:function(){
+    var self=this;
+    var tabs = [['eng','ملخص هندسي مستقل','Engineering Summary'],
+                ['other','ملخص الأقسام الأخرى','Other Departments Summary'],
+                ['full','ملخص شامل','Comprehensive Summary'],
+                ['ext','ملخص مطول للكل','Extended Full Summary']];
+    var head = '<div class="epa-sub-tabs">'+tabs.map(function(t){
+      return '<button class="epa-sub-tab '+(self._summaryTab===t[0]?'active':'')+'" onclick="EPMSAdmin.switchSummary(\''+t[0]+'\')">'+
+        '<span data-ar>'+t[1]+'</span><span class="epms-en">'+t[2]+'</span></button>';
+    }).join('')+'</div>';
+    var body='';
+    if(this._summaryTab==='eng') body = this.summaryEngineering();
+    else if(this._summaryTab==='other') body = this.summaryOther();
+    else if(this._summaryTab==='full') body = this.summaryFull();
+    else body = this.summaryExtended();
+    return head+body;
+  },
+
+  summaryEngineering:function(){
+    var s = loadStruct(), main = findMain(s,'eng');
+    var list=[]; try{ if(typeof STATE!=='undefined') list = STATE.engineersList||[]; }catch(e){}
+    var rows = (main?main.subs:[]).map(function(sub){
+      var cnt = list.filter(function(e){return e.specialty===sub.ar;}).length;
+      var active = list.filter(function(e){return e.specialty===sub.ar && e.status==='نشط';}).length;
+      return '<tr><td><span data-ar>'+sub.ar+'</span><span class="epms-en">'+sub.en+'</span></td>'+
+        '<td>'+cnt+'</td><td>'+active+'</td>'+
+        '<td>'+(sub.visible&&main.visible?'👁':'🚫')+'</td><td>'+sub.access+'</td></tr>';
+    }).join('');
+    return '<table class="epa-table"><thead><tr>'+
+      '<th><span data-ar>التخصص</span><span class="epms-en">Specialty</span></th>'+
+      '<th><span data-ar>إجمالي المهندسين</span><span class="epms-en">Total Engineers</span></th>'+
+      '<th><span data-ar>نشطون</span><span class="epms-en">Active</span></th>'+
+      '<th><span data-ar>الإظهار</span><span class="epms-en">Visibility</span></th>'+
+      '<th><span data-ar>الصلاحية</span><span class="epms-en">Access</span></th></tr></thead><tbody>'+
+      (rows||'<tr><td colspan="5"><span data-ar>لا توجد بيانات</span><span class="epms-en">No data</span></td></tr>')+'</tbody></table>';
+  },
+  summaryOther:function(){
+    var s = loadStruct(), main = findMain(s,'other');
+    var rows = (main?main.subs:[]).map(function(sub){
+      return '<tr><td><span data-ar>'+sub.ar+'</span><span class="epms-en">'+sub.en+'</span></td>'+
+        '<td>'+(sub.screen?('<code>'+sub.screen+'</code>'):'—')+'</td>'+
+        '<td>'+(sub.visible&&main.visible?'👁':'🚫')+'</td><td>'+sub.access+'</td></tr>';
+    }).join('');
+    return '<table class="epa-table"><thead><tr>'+
+      '<th><span data-ar>القسم</span><span class="epms-en">Department</span></th>'+
+      '<th><span data-ar>الشاشة</span><span class="epms-en">Screen</span></th>'+
+      '<th><span data-ar>الإظهار</span><span class="epms-en">Visibility</span></th>'+
+      '<th><span data-ar>الصلاحية</span><span class="epms-en">Access</span></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  },
+  summaryFull:function(){
+    return '<div class="epa-note"><span data-ar>ملخص شامل يجمع بين التخصصات الهندسية وباقي الأقسام في مكان واحد.</span>'+
+      '<span class="epms-en">A comprehensive summary combining engineering disciplines and all other departments in one place.</span></div>'+
+      '<h4 style="color:#16243C;">🏗 <span data-ar>الهندسة</span><span class="epms-en">Engineering</span></h4>'+this.summaryEngineering()+
+      '<h4 style="color:#16243C;">🏢 <span data-ar>الأقسام الأخرى</span><span class="epms-en">Other Departments</span></h4>'+this.summaryOther();
+  },
+  summaryExtended:function(){
+    var s = loadStruct();
+    var rows='';
+    s.mains.forEach(function(m){
+      m.subs.forEach(function(sub){
+        rows += '<tr><td><span data-ar>'+m.ar+'</span><span class="epms-en">'+m.en+'</span></td>'+
+          '<td><span data-ar>'+sub.ar+'</span><span class="epms-en">'+sub.en+'</span></td>'+
+          '<td>'+(sub.module||'—')+'</td><td>'+(sub.screen?('<code>'+sub.screen+'</code>'):'—')+'</td>'+
+          '<td>'+(m.visible?'✔':'✘')+'</td><td>'+(sub.visible?'✔':'✘')+'</td><td>'+sub.access+'</td></tr>';
+      });
+    });
+    return '<div class="epa-note"><span data-ar>عرض تفصيلي مطوّل لكل عنصر في الهيكل: القسم الرئيسي، الفرع، الوحدة المرتبطة، الشاشة، حالة الإظهار على المستويين، والصلاحية.</span>'+
+      '<span class="epms-en">A long, detailed listing of every structure item: main group, sub, linked module, screen, visibility at both levels, and access level.</span></div>'+
+      '<table class="epa-table"><thead><tr>'+
+      '<th><span data-ar>الرئيسي</span><span class="epms-en">Main</span></th>'+
+      '<th><span data-ar>الفرعي</span><span class="epms-en">Sub</span></th>'+
+      '<th><span data-ar>الوحدة</span><span class="epms-en">Module</span></th>'+
+      '<th><span data-ar>الشاشة</span><span class="epms-en">Screen</span></th>'+
+      '<th><span data-ar>إظهار الرئيسي</span><span class="epms-en">Main Visible</span></th>'+
+      '<th><span data-ar>إظهار الفرعي</span><span class="epms-en">Sub Visible</span></th>'+
+      '<th><span data-ar>الصلاحية</span><span class="epms-en">Access</span></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  },
+
+  /* ---------- Central keys tab: 🔗 ---------- */
+  paneKeys:function(){
+    var keys = [
+      [STRUCT_KEY,'هيكل التخصصات والصلاحيات والإظهار (هذه اللوحة)','Specialty / access / visibility structure (this panel)'],
+      [ACCESS_KEY,'صلاحيات الأدوار والمستخدمين (V8.2)','Role & user access (V8.2)'],
+      [PUB_KEY,'إعدادات المشاهدة العامة','Public view settings'],
+      [SESSION_KEY,'جلسة أداة الصلاحيات الإضافية (اختيارية، غير مرتبطة بتسجيل الدخول الفعلي)','Extra permissions tool session (optional, not the real login)'],
+      [LANG_KEY,'اللغة الحالية للواجهة','Current interface language'],
+      [LOG_KEY,'سجل نشاط النظام','System activity log']
+    ];
+    var html = '<div class="epa-note"><span data-ar>هذه هي المفاتيح المركزية التي تربط إعدادات هذه اللوحة بباقي شاشات النظام. اضغط «مزامنة الآن» لدفع أي تغييرات في الهيكل إلى كل هذه المفاتيح فوراً.</span>'+
+      '<span class="epms-en">These are the central keys linking this panel\'s settings to the rest of the system\'s screens. Press Sync Now to push any structure changes into all of them immediately.</span></div>';
+    html += keys.map(function(k){
+      var raw = localStorage.getItem(k[0]);
+      var size = raw ? (raw.length+' chars') : '—';
+      return '<div class="epa-key-row"><div><code>'+k[0]+'</code> — <span data-ar>'+k[1]+'</span><span class="epms-en">'+k[2]+'</span></div><div style="color:#9AA6B8;">'+size+'</div></div>';
+    }).join('');
+    html += '<div class="epa-btn-row">'+
+      '<button class="epa-btn primary" onclick="EPMSAdmin.save(true)">🔗 <span data-ar>مزامنة الآن</span><span class="epms-en">Sync Now</span></button>'+
+      '<button class="epa-btn ghost" onclick="EPMSAdmin.openV82()">🔐 <span data-ar>فتح شاشة صلاحيات V8.2</span><span class="epms-en">Open V8.2 Access Screen</span></button>'+
+      '</div>';
+    return html;
+  },
+  openV82:function(){ if(window.EPMSAccess && window.EPMSAccess.open) window.EPMSAccess.open(); else alert('EPMSAccess غير متاح'); },
+
+  /* ---------- Data tab: 💾📤📥 ---------- */
+  paneData:function(){
+    return '<div class="epa-note"><span data-ar>احفظ الإعدادات محلياً في هذا الجهاز، أو صدّرها كملف JSON لنقلها لجهاز آخر، أو استوردها من ملف سابق.</span>'+
+      '<span class="epms-en">Save settings locally on this device, export them as a JSON file to move to another device, or import them from a previous file.</span></div>'+
+      '<div class="epa-btn-row">'+
+      '<button class="epa-btn primary" onclick="EPMSAdmin.save(true)">💾 <span data-ar>حفظ محلياً</span><span class="epms-en">Save Locally</span></button>'+
+      '<button class="epa-btn amber" onclick="EPMSAdmin.exportSettings()">📤 <span data-ar>تصدير الإعدادات</span><span class="epms-en">Export Settings</span></button>'+
+      '<label class="epa-btn ghost" style="cursor:pointer;">📥 <span data-ar>استيراد الإعدادات</span><span class="epms-en">Import Settings</span>'+
+      '<input type="file" accept="application/json" style="display:none" onchange="EPMSAdmin.importSettings(this.files[0])"></label>'+
+      '<button class="epa-btn danger" onclick="EPMSAdmin.resetDefaults()">↺ <span data-ar>استعادة الإعدادات الافتراضية</span><span class="epms-en">Restore Defaults</span></button>'+
+      '</div>'+
+      '<div id="epaDataMsg" style="margin-top:12px;font-size:13px;color:#3F7D58;font-weight:700;"></div>';
+  },
+  save:function(sync){
+    var s = loadStruct();
+    saveStruct(s);
+    if(sync) syncNow();
+    log('ADMIN_PANEL_SAVE','');
+    var msg = document.getElementById('epaDataMsg');
+    if(msg){ msg.textContent = (document.body.classList.contains('epmsEnglish') ? 'Saved & synced successfully.' : 'تم الحفظ والمزامنة بنجاح.'); }
+    this.renderPane();
+  },
+  exportSettings:function(){
+    var bundle = {
+      exportedAt: nowISO(),
+      structure: loadStruct(),
+      access: accessGet(),
+      publicView: safeParse(localStorage.getItem(PUB_KEY),{})
+    };
+    var blob = new Blob([JSON.stringify(bundle,null,2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'epms-admin-settings-'+Date.now()+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    log('ADMIN_EXPORT','');
+  },
+  importSettings:function(file){
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var data = safeParse(e.target.result, null);
+      if(!data || !data.structure){ alert('ملف غير صالح / Invalid file'); return; }
+      saveStruct(data.structure);
+      if(data.access) accessSet(data.access);
+      if(data.publicView) localStorage.setItem(PUB_KEY, JSON.stringify(data.publicView));
+      syncNow();
+      log('ADMIN_IMPORT','');
+      alert('تم استيراد الإعدادات بنجاح / Settings imported successfully');
+      EPMSAdmin.renderPane();
+    };
+    reader.readAsText(file);
+  },
+  resetDefaults:function(){
+    if(!confirm('استعادة الإعدادات الافتراضية بالكامل؟ / Restore all defaults?')) return;
+    saveStruct(defaultStructure());
+    syncNow();
+    log('ADMIN_RESET_DEFAULTS','');
+    this.renderPane();
+  },
+
+  /* ---------- V9.3 control center tab: ⚙ ---------- */
+  paneV93:function(){
+    return '<div class="epa-note"><span data-ar>زر مباشر لفتح مركز تحكم المستخدمين والصلاحيات EPMS V9.3 من داخل هذه اللوحة المتكاملة، بدون الحاجة للخروج منها.</span>'+
+      '<span class="epms-en">A direct button to open the EPMS V9.3 users & permissions control center from inside this integrated panel, without leaving it.</span></div>'+
+      '<div class="epa-btn-row">'+
+      '<button class="epa-btn primary" onclick="EPMSAdmin.openV93()">⚙ <span data-ar>فتح مركز تحكم EPMS V9.3</span><span class="epms-en">Open EPMS V9.3 Control Center</span></button>'+
+      '<button class="epa-btn ghost" onclick="EPMSAdmin.openV82()">🔐 <span data-ar>فتح شاشة صلاحيات V8.2</span><span class="epms-en">Open V8.2 Access Screen</span></button>'+
+      '</div>';
+  },
+  openV93:function(){
+    if(window.EPMSV9 && window.EPMSV9.openUsers){ this.close(); window.EPMSV9.openUsers(); }
+    else alert('EPMSV9 غير متاح في هذه الصفحة');
+  }
+};
+
+window.EPMSAdmin = EPMSAdmin;
+
+document.addEventListener('DOMContentLoaded', function(){
+  // ensure a structure exists on first load
+  saveStruct(loadStruct());
+  refreshAuthClasses();
+});
+window.addEventListener('load', refreshAuthClasses);
+window.addEventListener('storage', refreshAuthClasses);
+setInterval(refreshAuthClasses, 800);
+})();
+</script>
+
+</body>
+</html>
