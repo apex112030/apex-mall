@@ -1199,117 +1199,90 @@ function noAccessHTML(){
 
 /* ---------- Dashboard ---------- */
 function dashboardHTML(executive=false){
-  const activeProjects=STATE.projects.filter(p=>p.status==='قيد التنفيذ').length;
-  const completedProjects=STATE.projects.filter(p=>p.status==='منتهي').length;
-  const pendingExtracts=STATE.extracts.filter(e=>e.status!=='مصروف').length;
-  const handoverRequestsCount=STATE.handoverRequests.filter(r=>!['مغلق','مقبول'].includes(r.status)).length;
-  const lowStock=STATE.warehouseItems.filter(i=>Number(i.qty||0)<=Number(i.minQty||0)).length;
-  const income=STATE.finance.filter(f=>f.type==='إيراد').reduce((s,f)=>s+Number(f.amount||0),0);
-  const expense=STATE.finance.filter(f=>f.type==='مصروف').reduce((s,f)=>s+Number(f.amount||0),0);
-  const handoverAlert = `<div class="section-note" style="border-inline-start:5px solid #00a6d6;background:#eefaff;"><b>طلبات الاستلام والتسليم:</b> ${handoverRequestsCount} طلب غير مغلق · <button class="link-btn" onclick="goRoute('handoverRequests')">فتح مركز الاستلام والتسليم</button></div>`;
-  const total=STATE.projects.length;
-  const avg=total?Math.round(STATE.projects.reduce((s,p)=>s+Number(p.percentComplete||p.percent||0),0)/total):0;
-  const stopped=STATE.projects.filter(p=>p.status==='متوقف').length;
-  const recentProjects=STATE.projects.slice(-5).reverse();
-  const projectRows=STATE.projects.slice(0,6).map(p=>{
+  // الصفحة الرئيسية تتغير تلقائياً حسب صلاحيات المستخدم: لا تظهر مؤشرات أو إجراءات
+  // تخص وحدات لا يملك المستخدم صلاحية مشاهدتها.
+  const can=(perm)=>currentUser && (currentUser.isAdmin || canView(perm));
+  const edit=(perm)=>currentUser && (currentUser.isAdmin || canEdit(perm));
+  const cards=[];
+  if(can('projects')){
+    const total=STATE.projects.length;
+    const active=STATE.projects.filter(p=>p.status==='قيد التنفيذ').length;
+    const done=STATE.projects.filter(p=>p.status==='منتهي').length;
+    const avg=total?Math.round(STATE.projects.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/total):0;
+    cards.push(['▤',total,'إجمالي المشاريع'],['▶',active,'قيد التنفيذ'],['✓',done,'مشاريع منتهية'],['◉',avg+'%','متوسط الإنجاز']);
+  }
+  if(can('extracts')) cards.push(['▣',STATE.extracts.filter(e=>e.status!=='مصروف').length,'مستخلصات معلقة']);
+  if(can('warehouse')) cards.push(['▦',STATE.warehouseItems.filter(i=>Number(i.qty||0)<=Number(i.minQty||0)).length,'أصناف عند حد الطلب']);
+  if(can('handoverRequests')) cards.push(['⇄',STATE.handoverRequests.filter(r=>!['مغلق','مقبول'].includes(r.status)).length,'طلبات استلام وتسليم مفتوحة']);
+  if(can('documents')) cards.push(['▤',STATE.documents.length,'المستندات والرسومات']);
+  if(can('finance')){
+    const income=STATE.finance.filter(f=>f.type==='إيراد').reduce((a,f)=>a+Number(f.amount||0),0);
+    const expense=STATE.finance.filter(f=>f.type==='مصروف').reduce((a,f)=>a+Number(f.amount||0),0);
+    cards.push(['¤',(income-expense).toLocaleString('ar-EG'),'صافي الرصيد']);
+  }
+
+  const projectTotal=STATE.projects.length;
+  const projectAvg=projectTotal?Math.round(STATE.projects.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/projectTotal):0;
+  const projectRows=can('projects')?STATE.projects.slice(0,6).map(p=>{
     const pct=Math.max(0,Math.min(100,Number(p.percentComplete||p.percent||0)));
     return `<div class="progress-row"><span>${escapeHtml(p.name||'مشروع')}</span><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
-  }).join('');
-  const projectPct=total?Math.round(activeProjects/total*100):0;
-  const completionPct=total?Math.round(completedProjects/total*100):0;
+  }).join(''):'<div class="section-note">لا توجد صلاحية لعرض بيانات المشاريع.</div>';
+
+  const quick=[];
+  const addQuick=(route,label,icon,perm)=>{if(perm==='__special__' || can(perm)) quick.push(`<button class="quick-btn" onclick="goRoute('${route}')"><b>${icon}</b>${label}</button>`);};
+  addQuick('projects','إضافة / إدارة المشاريع','＋','projects');
+  addQuick('handoverRequests','إضافة / إدارة الاستلام والتسليم','⇄','handoverRequests');
+  addQuick('documents','إدارة المستندات والرسومات','▤','documents');
+  addQuick('extracts','إضافة / إدارة المستخلصات','▣','extracts');
+  addQuick('purchases','المشتريات','🛒','purchases');
+  addQuick('reportsStats','التقارير والإحصائيات','▥','__special__');
+  addQuick('projectSummaries','الملخصات التفصيلية','▦','__special__');
+  addQuick('linksDrawings','الربط المركزي','⌗','__special__');
+
+  const sectionLinks=[];
+  const link=(route,label,icon,perm,count)=>{if(can(perm)) sectionLinks.push(`<button class="quick-btn" onclick="goRoute('${route}')"><b>${icon}</b>${label}<br><small>${count}</small></button>`);};
+  link('planning','التخطيط','◷','planning',STATE.planning.length);
+  link('siteExecution','التنفيذ','⚙','siteExecution',STATE.siteExecution.length);
+  link('techOffice','المكتب الفني','⌘','techoffice',STATE.techOffice.length);
+  link('boq','الكميات / BOQ','≡','boq',STATE.boq.length);
+  link('purchases','المشتريات','🛒','purchases',STATE.purchases.length);
+  link('warehouseItems','المخزن','⌂','warehouse',STATE.warehouseItems.length);
+  link('finance','المالية','¤','finance',STATE.finance.length);
+  link('contracts','العقود','▧','contracts',STATE.contracts.length);
+  link('labor','العمالة','♙','labor',STATE.labor.length);
+  link('qaqc','QA/QC','✓','qaqc',STATE.qaqc.length);
+  link('hse','HSE','⚠','hse',STATE.hse.length);
+  link('correspondence','المراسلات','✉','correspondence',STATE.correspondence.length);
+  link('risks','المخاطر','⚠','risks',STATE.risks.length);
+
+  const alertItems=[];
+  if(can('warehouse')) alertItems.push(`أصناف عند حد الطلب: <b>${STATE.warehouseItems.filter(i=>Number(i.qty||0)<=Number(i.minQty||0)).length}</b>`);
+  if(can('extracts')) alertItems.push(`مستخلصات غير مصروفة: <b>${STATE.extracts.filter(e=>e.status!=='مصروف').length}</b>`);
+  if(can('risks')) alertItems.push(`مخاطر مفتوحة: <b>${STATE.risks.filter(r=>r.status!=='مغلق').length}</b>`);
+  if(can('correspondence')) alertItems.push(`مراسلات مسجلة: <b>${STATE.correspondence.length}</b>`);
+  if(can('handoverRequests')) alertItems.push(`طلبات استلام وتسليم مفتوحة: <b>${STATE.handoverRequests.filter(r=>!['مغلق','مقبول'].includes(r.status)).length}</b>`);
+
   return `
     <div class="hero reference-hero">
-      <h1>${executive?'لوحة القيادة التنفيذية':'برنامج إدارة المشاريع لشركة المقاولات متعددة المهام'}</h1>
-      <p>إدارة متكاملة · تنفيذ احترافي · نجاح مستدام — متابعة المشاريع والماليات والمستندات والموارد من شاشة واحدة</p>
+      <h1>${executive?'لوحة القيادة التنفيذية':'الصفحة الرئيسية حسب صلاحيات المستخدم'}</h1>
+      <p>يعرض النظام فقط المؤشرات والأقسام والبيانات التي تسمح بها صلاحيات الحساب الحالي.</p>
     </div>
-    <div class="cards-row reference-stats">
-      <div class="stat-card"><span class="stat-icon">▤</span><div class="n">${total}</div><div class="l">إجمالي المشاريع</div></div>
-      <div class="stat-card"><span class="stat-icon">▶</span><div class="n">${activeProjects}</div><div class="l">مشاريع قيد التنفيذ</div></div>
-      <div class="stat-card"><span class="stat-icon">✓</span><div class="n">${completedProjects}</div><div class="l">مشاريع منتهية</div></div>
-      <div class="stat-card"><span class="stat-icon">▣</span><div class="n">${pendingExtracts}</div><div class="l">مستخلصات معلقة</div></div>
-      <div class="stat-card"><span class="stat-icon">▦</span><div class="n">${lowStock}</div><div class="l">أصناف عند حد الطلب</div></div>
-      <div class="stat-card"><span class="stat-icon">⇄</span><div class="n">${handoverRequestsCount}</div><div class="l">طلبات استلام وتسليم مفتوحة</div></div>
-      <div class="stat-card"><span class="stat-icon">≡</span><div class="n">${STATE.documents.length}</div><div class="l">إجمالي السجلات والمستندات</div></div>
-    </div>
-    ${handoverAlert}
+    ${cards.length?`<div class="cards-row reference-stats">${cards.map(c=>`<div class="stat-card"><span class="stat-icon">${c[0]}</span><div class="n">${c[1]}</div><div class="l">${c[2]}</div></div>`).join('')}</div>`:'<div class="section-note">لا توجد وحدات مسموح بعرض مؤشرات لها لهذا المستخدم.</div>'}
+    ${can('handoverRequests')?`<div class="section-note" style="border-inline-start:5px solid #00a6d6;background:#eefaff;"><b>الاستلام والتسليم:</b> ${STATE.handoverRequests.filter(r=>!['مغلق','مقبول'].includes(r.status)).length} طلب مفتوح · <button class="link-btn" onclick="goRoute('handoverRequests')">فتح المركز</button></div>`:''}
     <div class="dashboard-grid">
-      <div class="panel">
-        <div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◉</span>حالة المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div>
-        <div class="donut-wrap">
-          <div class="donut"><div class="donut-center">${total}<small>مشروع</small></div></div>
-          <div class="legend">
-            <div class="legend-row"><span class="legend-dot" style="background:#0873dd"></span>قيد التنفيذ <b>${projectPct}%</b></div>
-            <div class="legend-row"><span class="legend-dot" style="background:#10a86c"></span>مكتمل <b>${completionPct}%</b></div>
-            <div class="legend-row"><span class="legend-dot" style="background:#f2a11b"></span>متوقف <b>${stopped}</b></div>
-            <div class="legend-row"><span class="legend-dot" style="background:#e34b57"></span>إجمالي المستخلصات المعلقة <b>${pendingExtracts}</b></div>
-          </div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◫</span>تقدم المشاريع</span><span>${avg}% متوسط</span></div>
-        <div class="mini-bars">
-          ${STATE.projects.slice(0,5).map((p,i)=>{const pct=Math.max(0,Math.min(100,Number(p.percentComplete||p.percent||0)));return `<div class="mini-bar"><span>${escapeHtml(p.name||('مشروع '+(i+1)))}</span><div class="track"><div class="fill" style="width:${pct}%"></div></div><b>${pct}%</b></div>`}).join('') || '<div class="section-note">لا توجد مشاريع بعد.</div>'}
-        </div>
-      </div>
-      <div class="panel">
-        <div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">¤</span>ملخص مالي</span><span class="more" onclick="goRoute('finance')">التفاصيل</span></div>
-        <div style="display:grid;gap:9px;">
-          <div class="stat-card success"><div class="n">${income.toLocaleString('ar-EG')}</div><div class="l">إجمالي الإيرادات</div></div>
-          <div class="stat-card danger"><div class="n">${expense.toLocaleString('ar-EG')}</div><div class="l">إجمالي المصروفات</div></div>
-          <div class="stat-card"><div class="n">${(income-expense).toLocaleString('ar-EG')}</div><div class="l">صافي الرصيد</div></div>
-        </div>
-      </div>
+      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◉</span>حالة المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><div class="donut-wrap"><div class="donut"><div class="donut-center">${projectTotal}<small>مشروع</small></div></div><div class="legend"><div class="legend-row">قيد التنفيذ <b>${projectTotal?Math.round(STATE.projects.filter(p=>p.status==='قيد التنفيذ').length/projectTotal*100):0}%</b></div><div class="legend-row">مكتمل <b>${projectTotal?Math.round(STATE.projects.filter(p=>p.status==='منتهي').length/projectTotal*100):0}%</b></div><div class="legend-row">متوقف <b>${STATE.projects.filter(p=>p.status==='متوقف').length}</b></div><div class="legend-row">متوسط الإنجاز <b>${projectAvg}%</b></div></div></div></div>`:''}
+      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◫</span>تقدم المشاريع</span><span>${projectAvg}% متوسط</span></div><div class="mini-bars">${projectRows}</div></div>`:''}
+      ${can('finance')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">¤</span>الملخص المالي</span><span class="more" onclick="goRoute('finance')">التفاصيل</span></div><div style="display:grid;gap:9px;"><div class="stat-card success"><div class="n">${STATE.finance.filter(f=>f.type==='إيراد').reduce((a,f)=>a+Number(f.amount||0),0).toLocaleString('ar-EG')}</div><div class="l">إجمالي الإيرادات</div></div><div class="stat-card danger"><div class="n">${STATE.finance.filter(f=>f.type==='مصروف').reduce((a,f)=>a+Number(f.amount||0),0).toLocaleString('ar-EG')}</div><div class="l">إجمالي المصروفات</div></div></div></div>`:''}
     </div>
+    ${sectionLinks.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚙</span>الأقسام المتاحة لهذا المستخدم</span></div><div class="quick-grid">${sectionLinks.join('')}</div></div>`:''}
     <div class="dashboard-sections">
-      <div class="panel">
-        <div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚙</span>ملخص الأقسام</span></div>
-        <div class="quick-grid">
-          <button class="quick-btn" onclick="goRoute('purchases')"><b>🛒</b>مشتريات<br><small>${STATE.purchases.length}</small></button>
-          <button class="quick-btn" onclick="goRoute('warehousesLoc')"><b>⌂</b>مخازن<br><small>${STATE.warehousesLoc.length}</small></button>
-          <button class="quick-btn" onclick="goRoute('finance')"><b>¤</b>مالية<br><small>${STATE.finance.length}</small></button>
-          <button class="quick-btn" onclick="goRoute('extracts')"><b>▣</b>مستخلصات<br><small>${STATE.extracts.length}</small></button>
-          <button class="quick-btn" onclick="goRoute('contracts')"><b>▧</b>عقود<br><small>${STATE.contracts.length}</small></button>
-          <button class="quick-btn" onclick="goRoute('labor')"><b>♙</b>عمالة<br><small>${STATE.labor.length}</small></button>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">＋</span>إجراءات سريعة</span></div>
-        <div class="quick-grid">
-          <button class="quick-btn" onclick="goRoute('projects')"><b>＋</b>إضافة مشروع</button>
-          <button class="quick-btn" onclick="goRoute('documents')"><b>▤</b>إضافة مستند</button>
-          <button class="quick-btn" onclick="goRoute('extracts')"><b>▣</b>إضافة مستخلص</button>
-          <button class="quick-btn" onclick="goRoute('purchases')"><b>🛒</b>شراء جديد</button>
-          <button class="quick-btn" onclick="goRoute('reportsStats')"><b>▥</b>التقارير</button>
-          <button class="quick-btn" onclick="goRoute('linksDrawings')"><b>⌗</b>الربط المركزي</button>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◷</span>آخر المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div>
-        <table class="dashboard-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>الإنجاز</th></tr></thead><tbody>
-          ${recentProjects.map(p=>`<tr><td>${escapeHtml(p.name||'—')}</td><td>${formatCell(MODULES.projects,'status',p.status)}</td><td>${Number(p.percentComplete||p.percent||0)}%</td></tr>`).join('')||'<tr><td colspan="3">لا توجد مشاريع.</td></tr>'}
-        </tbody></table>
-      </div>
+      ${quick.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">＋</span>إجراءات سريعة</span></div><div class="quick-grid">${quick.join('')}</div></div>`:''}
+      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◷</span>آخر المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><table class="dashboard-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>الإنجاز</th></tr></thead><tbody>${STATE.projects.slice(-5).reverse().map(p=>`<tr><td>${escapeHtml(p.name||'—')}</td><td>${formatCell(MODULES.projects,'status',p.status)}</td><td>${Number(p.percentComplete||p.percent||0)}%</td></tr>`).join('')||'<tr><td colspan="3">لا توجد مشاريع.</td></tr>'}</tbody></table></div>`:''}
+      ${can('documents')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▤</span>آخر المستندات</span><span class="more" onclick="goRoute('documents')">عرض الكل</span></div>${STATE.documents.slice(-5).reverse().map(d=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:11px;"><span>${escapeHtml(d.title||'مستند')}</span><span class="badge">${escapeHtml(d.category||'مستند')}</span></div>`).join('')||'<div class="section-note">لا توجد مستندات.</div>'}</div>`:''}
     </div>
-    <div class="dashboard-sections">
-      <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▣</span>أحدث المستخلصات</span><span class="more" onclick="goRoute('extracts')">عرض الكل</span></div>
-        ${STATE.extracts.slice(-5).reverse().map(e=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:11px;"><span>${escapeHtml(e.number||'مستخلص')}</span><b>${Number(e.amount||0).toLocaleString('ar-EG')}</b></div>`).join('')||'<div class="section-note">لا توجد مستخلصات.</div>'}
-      </div>
-      <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▤</span>آخر المستندات</span><span class="more" onclick="goRoute('documents')">عرض الكل</span></div>
-        ${STATE.documents.slice(-5).reverse().map(d=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:11px;"><span>${escapeHtml(d.title||'مستند')}</span><span class="badge">${escapeHtml(d.category||'مستند')}</span></div>`).join('')||'<div class="section-note">لا توجد مستندات.</div>'}
-      </div>
-      <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚠</span>تنبيهات تشغيلية</span></div>
-        <div style="display:grid;gap:8px;font-size:11.5px;">
-          <div class="section-note" style="margin:0;">⚠️ أصناف عند حد الطلب: <b>${lowStock}</b></div>
-          <div class="section-note" style="margin:0;">▣ مستخلصات غير مصروفة: <b>${pendingExtracts}</b></div>
-          <div class="section-note" style="margin:0;">⚠️ مخاطر مفتوحة: <b>${STATE.risks.filter(r=>r.status!=='مغلق').length}</b></div>
-          <div class="section-note" style="margin:0;">📨 مراسلات مسجلة: <b>${STATE.correspondence.length}</b></div>
-        </div>
-      </div>
-    </div>
+    ${alertItems.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚠</span>التنبيهات التشغيلية حسب الصلاحيات</span></div><div style="display:grid;gap:8px;font-size:11.5px;">${alertItems.map(x=>`<div class="section-note" style="margin:0;">${x}</div>`).join('')}</div></div>`:''}
   `;
 }
-
-/* ===================== V6 Utility Centers ===================== */
 function projectManagementHTML(){
   const cards=[
     ['projects','المشاريع','إدارة بيانات المشاريع والعملاء والحالات','▤'],
@@ -1342,17 +1315,24 @@ function linksDrawingsHTML(){
   </div>`;
 }
 function reportsStatsHTML(){
-  const stats=[
-    ['المشاريع',STATE.projects.length],['المستخلصات',STATE.extracts.length],['العقود',STATE.contracts.length],
-    ['المشتريات',STATE.purchases.length],['المستندات',STATE.documents.length],['المراسلات',STATE.correspondence.length],
-    ['المخاطر',STATE.risks.length],['حركة المخزن',STATE.warehouseTx.length]
-  ];
-  return `<div class="hero"><h1>التقارير والإحصائيات</h1><p>لوحة مؤشرات موحدة مع الوصول إلى التقارير التفصيلية.</p></div>
-  <div class="cards-row">${stats.map(x=>`<div class="stat-card"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('')}</div>
+  const can=(perm)=>currentUser && (currentUser.isAdmin || canView(perm));
+  const stats=[];
+  if(can('projects')) stats.push(['المشاريع',STATE.projects.length,'projects']);
+  if(can('extracts')) stats.push(['المستخلصات',STATE.extracts.length,'extracts']);
+  if(can('contracts')) stats.push(['العقود',STATE.contracts.length,'contracts']);
+  if(can('purchases')) stats.push(['المشتريات',STATE.purchases.length,'purchases']);
+  if(can('documents')) stats.push(['المستندات',STATE.documents.length,'documents']);
+  if(can('correspondence')) stats.push(['المراسلات',STATE.correspondence.length,'correspondence']);
+  if(can('risks')) stats.push(['المخاطر',STATE.risks.length,'risks']);
+  if(can('warehouse')) stats.push(['حركة المخزن',STATE.warehouseTx.length,'warehouseTx']);
+  if(can('handoverRequests')) stats.push(['الاستلام والتسليم',STATE.handoverRequests.length,'handoverRequests']);
+  return `<div class="hero"><h1>التقارير والإحصائيات</h1><p>تظهر المؤشرات والبيانات وفق صلاحيات المستخدم الحالي فقط.</p></div>
+  <div class="cards-row">${stats.map(x=>`<button class="stat-card" style="border:0;text-align:right;cursor:pointer" onclick="goRoute('${x[2]}')"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></button>`).join('')||'<div class="section-note">لا توجد بيانات مسموح بعرضها.</div>'}</div>
   <div class="panel"><div class="panel-title"><span>التقارير المتاحة</span></div><div class="quick-grid">
-    <button class="quick-btn" onclick="goRoute('execReports')"><b>▥</b>التقارير التنفيذية</button>
+    <button class="quick-btn" onclick="goRoute('projectSummaries')"><b>▦</b>الملخص الشامل والتفصيلي للتخصصات</button>
+    ${can('execReports')?`<button class="quick-btn" onclick="goRoute('execReports')"><b>▥</b>التقارير التنفيذية</button>`:''}
     <button class="quick-btn" onclick="window.print()"><b>🖨</b>طباعة لوحة المؤشرات</button>
-    <button class="quick-btn" onclick="goRoute('activityLog')"><b>◷</b>سجل العمليات</button>
+    ${currentUser.isAdmin?`<button class="quick-btn" onclick="goRoute('activityLog')"><b>◷</b>سجل العمليات</button>`:''}
   </div></div>`;
 }
 function systemManagementHTML(){
@@ -1387,22 +1367,59 @@ function deleteSpecialty(name){
   STATE.specialties=specialtyList().filter(x=>x!==name); saveSpecialties();
 }
 function projectSummariesHTML(){
-  const specs=specialtyList(), selected=window.epmsSummarySpec||specs[0]||'عام', pid=window.epmsSummaryProject||'', type=window.epmsSummaryType||'overall';
-  const chosen=pid?STATE.projects.filter(p=>p.id===pid):STATE.projects, scopeIds=new Set(chosen.map(p=>p.id));
+  const can=(perm)=>currentUser && (currentUser.isAdmin || canView(perm));
+  const specs=specialtyList();
+  const selected=window.epmsSummarySpec||specs[0]||'عام';
+  const pid=window.epmsSummaryProject||'';
+  const type=window.epmsSummaryType||'overall';
+  const chosen=pid?STATE.projects.filter(p=>p.id===pid):STATE.projects;
+  const scopeIds=new Set(chosen.map(p=>p.id));
   const scoped=arr=>arr.filter(r=>!r.projectId||scopeIds.has(r.projectId));
-  const percent=p=>Number(p.percentComplete??p.percent??0)||0, avg=chosen.length?Math.round(chosen.reduce((a,p)=>a+percent(p),0)/chosen.length):0;
-  const counts=[['المشاريع',chosen.length],['المراحل',scoped(STATE.phases).length],['التنفيذ',scoped(STATE.siteExecution).length],['طلبات الاستلام والتسليم',scoped(STATE.handoverRequests).length],['المستخلصات',scoped(STATE.extracts).length],['المستندات',scoped(STATE.documents).length]];
-  const rows=specs.map(sp=>{const n=[...STATE.handoverRequests,...STATE.siteReports,...STATE.engineersList,...STATE.techOffice,...STATE.siteExecution].filter(r=>(!r.projectId||scopeIds.has(r.projectId))&&String(r.discipline||r.specialty||r.engineeringDiscipline||r.craft||'').trim()===sp).length;return [sp,n];});
-  const detail=type==='overall'?rows:rows.filter(x=>x[0]===selected), total=detail.reduce((a,z)=>a+z[1],0);
-  return `<div class="hero reference-hero"><h1>ملخصات المشاريع والتخصصات</h1><p>ملخص عام للمشروع أو مجموعة المشاريع، وملخص منفصل لكل تخصص، مع اختيار المشروع والقسم حسب الطلب.</p></div>
-  <div class="panel no-print"><div class="panel-title"><span>خيارات الملخص</span><small>تحديد نوع الملخص والمشروع والتخصص</small></div><div class="form-grid">
-  <div class="field"><label>نوع الملخص</label><select onchange="window.epmsSummaryType=this.value;render()"><option value="overall" ${type==='overall'?'selected':''}>ملخص عام حسب الأقسام</option><option value="specialty" ${type==='specialty'?'selected':''}>ملخص منفصل لتخصص</option></select></div>
-  <div class="field"><label>المشروع / المشاريع</label><select onchange="window.epmsSummaryProject=this.value;render()"><option value="">كل المشاريع</option>${STATE.projects.map(p=>`<option value="${p.id}" ${pid===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select></div>
-  <div class="field"><label>التخصص</label><select onchange="window.epmsSummarySpec=this.value;render()" ${type==='overall'?'disabled':''}>${specs.map(x=>`<option value="${escapeHtml(x)}" ${selected===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></div>
-  <div class="field"><label>إجراءات</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" onclick="window.print()">🖨️ طباعة الملخص</button><button class="btn btn-ghost" onclick="window.epmsSummaryProject='';window.epmsSummaryType='overall';render()">إعادة ضبط</button></div></div></div></div>
-  <div class="cards-row reference-stats">${counts.map(x=>`<div class="stat-card"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('')}<div class="stat-card"><div class="n">${avg}%</div><div class="l">متوسط إنجاز المشاريع</div></div></div>
-  <div class="panel"><div class="panel-title"><span>${type==='overall'?'الملخص العام حسب الأقسام':'ملخص التخصص: '+escapeHtml(selected)}</span><small>${pid?escapeHtml(projectName(pid)):'كل المشاريع'}</small></div><table><thead><tr><th>التخصص / القسم</th><th>عدد السجلات المرتبطة</th><th>النسبة</th></tr></thead><tbody>${detail.map(x=>`<tr><td><b>${escapeHtml(x[0])}</b></td><td>${x[1]}</td><td>${total?Math.round(x[1]*100/total):0}%</td></tr>`).join('')||'<tr><td colspan="3">لا توجد بيانات لهذا الاختيار.</td></tr>'}</tbody></table></div>
-  <div class="panel no-print"><div class="panel-title"><span>إدارة التخصصات</span><small>الإضافة والحذف لا يحذفان السجلات القديمة</small></div><div class="quick-grid">${specs.map(x=>`<div class="quick-btn" style="display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:right"><span>${escapeHtml(x)}</span>${x!=='عام'?`<button class="link-btn danger" onclick="deleteSpecialty(${JSON.stringify(x)})">حذف</button>`:''}</div>`).join('')}<button class="quick-btn" onclick="addSpecialty()"><b>＋</b>إضافة تخصص جديد</button></div></div>`;
+  const pct=p=>Math.max(0,Math.min(100,Number(p.percentComplete??p.percent??0)||0));
+  const avg=chosen.length?Math.round(chosen.reduce((a,p)=>a+pct(p),0)/chosen.length):0;
+  const datasets=[
+    ['المهندسون','engineersList','specialty'],['تقارير الموقع','siteReports','discipline'],['التنفيذ','siteExecution','discipline'],
+    ['المكتب الفني','techOffice','discipline'],['طلبات الاستلام والتسليم','handoverRequests','discipline'],['العمالة','labor','craft'],
+    ['الكميات / BOQ','boq','discipline'],['المستندات','documents','discipline']
+  ];
+  const allowedData=datasets.filter(x=>can(MODULES[x[1]]?.permKey||''));
+  const specRows=specs.map(sp=>{
+    const values=allowedData.map(([label,key,field])=>{
+      const n=scoped(STATE[key]||[]).filter(r=>String(r[field]||r.specialty||r.discipline||r.engineeringDiscipline||r.craft||'عام').trim()===sp).length;
+      return [label,n];
+    });
+    const total=values.reduce((a,z)=>a+z[1],0);
+    return {sp,values,total};
+  });
+  const visibleRows=type==='specialty'?specRows.filter(x=>x.sp===selected):specRows;
+  const allRecords=allowedData.reduce((a,[,key])=>a+scoped(STATE[key]||[]).length,0);
+  const counts=[];
+  if(can('projects')) counts.push(['المشاريع',chosen.length]);
+  if(can('planning')) counts.push(['البرنامج الزمني',scoped(STATE.planning).length]);
+  if(can('siteExecution')) counts.push(['التنفيذ',scoped(STATE.siteExecution).length]);
+  if(can('handoverRequests')) counts.push(['الاستلام والتسليم',scoped(STATE.handoverRequests).length]);
+  if(can('extracts')) counts.push(['المستخلصات',scoped(STATE.extracts).length]);
+  if(can('documents')) counts.push(['المستندات',scoped(STATE.documents).length]);
+  if(can('finance')) counts.push(['الحركات المالية',scoped(STATE.finance).length]);
+  if(can('contracts')) counts.push(['العقود',scoped(STATE.contracts).length]);
+
+  const tableHeader=allowedData.map(x=>`<th>${x[0]}</th>`).join('');
+  const tableRows=visibleRows.map(row=>`<tr><td><b>${escapeHtml(row.sp)}</b></td>${row.values.map(v=>`<td>${v[1]}</td>`).join('')}<td><b>${row.total}</b></td><td>${allRecords?Math.round(row.total*100/allRecords):0}%</td></tr>`).join('');
+  const detailCards=type==='specialty' && visibleRows[0]?visibleRows[0].values.map(v=>`<div class="stat-card"><div class="n">${v[1]}</div><div class="l">${escapeHtml(v[0])}</div></div>`).join(''):'';
+  return `<div class="hero reference-hero"><h1>الملخص الشامل والتفصيلي للتخصصات</h1><p>عرض شامل لكل التخصصات أو فتح تخصص واحد بالتفصيل، مع تصفية حسب المشروع، وبناء الملخص من الوحدات التي يملك المستخدم صلاحية مشاهدتها.</p></div>
+  <div class="panel no-print"><div class="panel-title"><span>إعدادات الملخص</span><small>الصلاحيات الحالية تتحكم في البيانات المعروضة</small></div><div class="form-grid">
+    <div class="field"><label>نوع الملخص</label><select onchange="window.epmsSummaryType=this.value;render()"><option value="overall" ${type==='overall'?'selected':''}>ملخص شامل لكل التخصصات</option><option value="specialty" ${type==='specialty'?'selected':''}>ملخص تفصيلي لتخصص واحد</option></select></div>
+    <div class="field"><label>المشروع / المشاريع</label>${can('projects')?`<select onchange="window.epmsSummaryProject=this.value;render()"><option value="">كل المشاريع</option>${STATE.projects.map(p=>`<option value="${p.id}" ${pid===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select>`:'<div class="section-note" style="margin:0">لا توجد صلاحية لعرض أسماء المشاريع.</div>'}</div>
+    <div class="field"><label>التخصص</label><select onchange="window.epmsSummarySpec=this.value;render()" ${type==='overall'?'disabled':''}>${specs.map(x=>`<option value="${escapeHtml(x)}" ${selected===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></div>
+    <div class="field"><label>إجراءات</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button><button class="btn btn-ghost" onclick="window.epmsSummaryProject='';window.epmsSummaryType='overall';render()">إعادة ضبط</button></div></div>
+  </div></div>
+  <div class="cards-row reference-stats">${counts.map(x=>`<div class="stat-card"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('')}<div class="stat-card"><div class="n">${avg}%</div><div class="l">متوسط إنجاز المشاريع</div></div><div class="stat-card"><div class="n">${allRecords}</div><div class="l">إجمالي السجلات الداخلة في الملخص</div></div></div>
+  ${detailCards?`<div class="cards-row">${detailCards}</div>`:''}
+  <div class="panel"><div class="panel-title"><span>${type==='overall'?'الملخص الشامل لكل التخصصات':'الملخص التفصيلي لتخصص: '+escapeHtml(selected)}</span><small>${pid?escapeHtml(projectName(pid)):'كل المشاريع'}</small></div>
+    <div style="overflow:auto"><table><thead><tr><th>التخصص</th>${tableHeader}<th>الإجمالي</th><th>النسبة من السجلات</th></tr></thead><tbody>${tableRows||'<tr><td colspan="20">لا توجد بيانات متاحة وفق صلاحيات المستخدم والاختيار الحالي.</td></tr>'}</tbody></table></div>
+  </div>
+  ${can('projects')?`<div class="panel"><div class="panel-title"><span>تفصيل المشاريع داخل الملخص</span></div><div style="overflow:auto"><table><thead><tr><th>المشروع</th><th>الحالة</th><th>الإنجاز</th><th>المراحل</th><th>التنفيذ</th><th>الاستلام والتسليم</th><th>المستندات</th></tr></thead><tbody>${chosen.map(p=>`<tr><td>${escapeHtml(p.name||'—')}</td><td>${formatCell(MODULES.projects,'status',p.status)}</td><td>${pct(p)}%</td><td>${can('details')?STATE.phases.filter(r=>r.projectId===p.id).length:'—'}</td><td>${can('siteExecution')?STATE.siteExecution.filter(r=>r.projectId===p.id).length:'—'}</td><td>${can('handoverRequests')?STATE.handoverRequests.filter(r=>r.projectId===p.id).length:'—'}</td><td>${can('documents')?STATE.documents.filter(r=>r.projectId===p.id).length:'—'}</td></tr>`).join('')||'<tr><td colspan="7">لا توجد مشاريع.</td></tr>'}</tbody></table></div></div>`:''}
+  ${currentUser.isAdmin?`<div class="panel no-print"><div class="panel-title"><span>إدارة التخصصات</span><small>الإضافة والحذف من قائمة الاختيارات فقط، ولا تحذف السجلات القديمة</small></div><div class="quick-grid">${specs.map(x=>`<div class="quick-btn" style="display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:right"><span>${escapeHtml(x)}</span>${x!=='عام'?`<button class="link-btn danger" onclick="deleteSpecialty(${JSON.stringify(x)})">حذف</button>`:''}</div>`).join('')}<button class="quick-btn" onclick="addSpecialty()"><b>＋</b>إضافة تخصص جديد</button></div></div>`:''}`;
 }
 function listManagementHTML(){
   const items=Object.entries(MODULES).map(([k,m])=>`<div class="section-note" style="margin:0;display:flex;justify-content:space-between;"><span>${escapeHtml(m.title)}</span><b>${(STATE[k]||[]).length}</b></div>`).join('');
