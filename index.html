@@ -448,7 +448,7 @@ let STATE = {
   company:[], planning:[], siteExecution:[], engineersList:[], labor:[], equipment:[],
   boq:[], purchases:[], suppliers:[], deliveries:[], warehousesLoc:[], invoices:[],
   accounting:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
-  claims:[], risks:[], handoverRequests:[], handoverInspections:[], handoverPunchList:[], handoverApprovals:[], handoverCloseouts:[], finalHandover:[], postHandoverMaint:[], execReports:[]
+  claims:[], risks:[], specialties:[], handoverRequests:[], handoverInspections:[], handoverPunchList:[], handoverApprovals:[], handoverCloseouts:[], finalHandover:[], postHandoverMaint:[], execReports:[]
 };
 let currentUser = null;
 let currentRoute = 'dashboard';
@@ -916,106 +916,118 @@ function canView(permKey){ return permLevel(permKey) === 'view' || permLevel(per
 function canEdit(permKey){ return permLevel(permKey) === 'edit'; }
 
 /* ===================== Boot ===================== */
+const EPMS_LOGIN_CACHE_KEY = 'EPMS_V6_LOGIN_USERS_CACHE';
+const EPMS_SESSION_KEY = 'EPMS_V6_FAST_SESSION';
+const EPMS_DATA_LOADED_KEY = 'EPMS_V6_DATA_READY';
+
+function readLoginCache(){
+  try{ const x=JSON.parse(localStorage.getItem(EPMS_LOGIN_CACHE_KEY)||'null'); return Array.isArray(x)?x:null; }catch(e){ return null; }
+}
+function writeLoginCache(users){
+  try{ if(Array.isArray(users) && users.length) localStorage.setItem(EPMS_LOGIN_CACHE_KEY,JSON.stringify(users)); }catch(e){}
+}
+function readFastSession(){
+  try{ const x=JSON.parse(localStorage.getItem(EPMS_SESSION_KEY)||'null'); return x && x.username ? x : null; }catch(e){ return null; }
+}
+function writeFastSession(user){
+  try{ localStorage.setItem(EPMS_SESSION_KEY,JSON.stringify({username:user.username,ts:Date.now()})); }catch(e){}
+}
+function clearFastSession(){ try{localStorage.removeItem(EPMS_SESSION_KEY)}catch(e){} }
+
 async function boot(){
   if(SUPABASE_URL.includes('PASTE_') || SUPABASE_ANON_KEY.includes('PASTE_')){
     document.getElementById('app').innerHTML = `
       <div class="login-wrap"><div class="login-card">
-        <h1>الإعداد غير مكتمل</h1>
-        <p class="sub">لم يتم توصيل قاعدة البيانات بعد.</p>
-        <div class="section-note">افتح ملف الصفحة وابحث عن السطرين:<br>
-        <b>SUPABASE_URL</b> و <b>SUPABASE_ANON_KEY</b> بالقرب من بداية الكود،
-        وضع فيهما بيانات مشروعك من Supabase كما هو موضح في دليل الإعداد.</div>
-      </div></div>`;
+        <h1>الإعداد غير مكتمل</h1><p class="sub">لم يتم توصيل قاعدة البيانات بعد.</p>
+        <div class="section-note">افتح ملف الصفحة وابحث عن <b>SUPABASE_URL</b> و <b>SUPABASE_ANON_KEY</b> وضع بيانات مشروعك من Supabase.</div>
+      </div></div>`; return;
+  }
+
+  // Fast start: use the locally cached users first so the login screen is not
+  // blocked by loading the entire application/database.
+  let users = readLoginCache();
+  if(users && users.length){
+    STATE.users = users;
+    render();
+    // Refresh users in the background only; never block the UI.
+    dbGet('users', users).then(remote=>{
+      if(Array.isArray(remote) && remote.length){ STATE.users=remote; writeLoginCache(remote); }
+    }).catch(e=>console.warn('Background users refresh:',e));
     return;
   }
-  let users = await dbGet('users', null);
-  if(!users || users.length === 0){
-    users = [{
-      id:genId(), username:'admin', password:'admin123', name:'مدير النظام',
-      isAdmin:true, permissions:{}
-    }];
-    await dbSet('users', users);
+
+  // First run only: users must be fetched once before login can be checked.
+  try{
+    users = await dbGet('users', null);
+    if(!users || users.length===0){
+      users=[{id:genId(),username:'admin',password:'admin123',name:'مدير النظام',isAdmin:true,permissions:{}}];
+      await dbSet('users',users);
+    }
+    STATE.users=users; writeLoginCache(users); render();
+  }catch(e){
+    document.getElementById('app').innerHTML=loginScreen('تعذر الاتصال بقاعدة البيانات. حاول مرة أخرى.');
+    attachLoginHandlers();
   }
-  STATE.users = users;
-  render();
 }
 
 async function loadAllData(){
-  STATE.projects = await dbGet('projects', []);
-  STATE.phases = await dbGet('phases', []);
-  STATE.siteReports = await dbGet('siteReports', []);
-  STATE.techOffice = await dbGet('techOffice', []);
-  STATE.warehouseItems = await dbGet('warehouseItems', []);
-  STATE.warehouseTx = await dbGet('warehouseTx', []);
-  STATE.finance = await dbGet('finance', []);
-  STATE.extracts = await dbGet('extracts', []);
-  STATE.contracts = await dbGet('contracts', []);
-  STATE.company = await dbGet('company', []);
-  STATE.planning = await dbGet('planning', []);
-  STATE.siteExecution = await dbGet('siteExecution', []);
-  STATE.engineersList = await dbGet('engineersList', []);
-  STATE.labor = await dbGet('labor', []);
-  STATE.equipment = await dbGet('equipment', []);
-  STATE.boq = await dbGet('boq', []);
-  STATE.purchases = await dbGet('purchases', []);
-  STATE.suppliers = await dbGet('suppliers', []);
-  STATE.deliveries = await dbGet('deliveries', []);
-  STATE.warehousesLoc = await dbGet('warehousesLoc', []);
-  STATE.invoices = await dbGet('invoices', []);
-  STATE.accounting = await dbGet('accounting', []);
-  STATE.qaqc = await dbGet('qaqc', []);
-  STATE.hse = await dbGet('hse', []);
-  STATE.documents = await dbGet('documents', []);
-  STATE.correspondence = await dbGet('correspondence', []);
-  STATE.changeOrders = await dbGet('changeOrders', []);
-  STATE.claims = await dbGet('claims', []);
-  STATE.risks = await dbGet('risks', []);
-  STATE.handoverRequests = await dbGet('handoverRequests', []);
-  STATE.handoverInspections = await dbGet('handoverInspections', []);
-  STATE.handoverPunchList = await dbGet('handoverPunchList', []);
-  STATE.handoverApprovals = await dbGet('handoverApprovals', []);
-  STATE.handoverCloseouts = await dbGet('handoverCloseouts', []);
-  STATE.finalHandover = await dbGet('finalHandover', []);
-  STATE.postHandoverMaint = await dbGet('postHandoverMaint', []);
-  STATE.execReports = await dbGet('execReports', []);
+  const load=(key)=>dbGet(key,[]).catch(e=>{console.warn('load '+key,e);return STATE[key]||[];});
+  const keys=['specialties','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports'];
+  // Small batches reduce connection pressure and make the first dashboard paint fast.
+  for(let i=0;i<keys.length;i+=5){
+    await Promise.all(keys.slice(i,i+5).map(async k=>{STATE[k]=await load(k);}));
+    if(i===0) render();
+  }
+  try{localStorage.setItem(EPMS_DATA_LOADED_KEY,String(Date.now()));}catch(e){}
 }
 
 /* ===================== Login ===================== */
 function loginScreen(err){
-  return `
-  <div class="login-wrap">
-    <div class="login-card">
-      <div class="brand-mark"><span class="sq"></span><span class="sq2"></span></div>
-      <h1>نظام إدارة المكتب الهندسي</h1>
-      <p class="sub">تسجيل الدخول للوصول إلى المشاريع والبيانات</p>
-      ${err ? `<div class="err">${err}</div>` : ''}
-      <form id="loginForm">
-        <div class="field"><label>اسم المستخدم</label><input type="text" id="loginUser" required autocomplete="username"></div>
-        <div class="field"><label>كلمة المرور</label><input type="password" id="loginPass" required autocomplete="current-password"></div>
-        <button class="btn btn-primary" type="submit">دخول</button>
-      </form>
-    </div>
-  </div>`;
+  return `<div class="login-wrap"><div class="login-card">
+    <div class="brand-mark"><span class="sq"></span><span class="sq2"></span></div>
+    <h1>نظام إدارة المكتب الهندسي</h1><p class="sub">تسجيل الدخول للوصول إلى المشاريع والبيانات</p>
+    ${err ? `<div class="err">${err}</div>` : ''}
+    <form id="loginForm">
+      <div class="field"><label>اسم المستخدم</label><input type="text" id="loginUser" required autocomplete="username"></div>
+      <div class="field"><label>كلمة المرور</label><input type="password" id="loginPass" required autocomplete="current-password"></div>
+      <button class="btn btn-primary" id="loginBtn" type="submit">دخول</button>
+    </form>
+    <div id="loginStatus" style="margin-top:8px;font-size:11px;color:#7b8794;text-align:center"></div>
+  </div></div>`;
 }
 
 function attachLoginHandlers(){
-  const f = document.getElementById('loginForm');
-  f.addEventListener('submit', async (e)=>{
+  const f=document.getElementById('loginForm'); if(!f)return;
+  f.addEventListener('submit',async(e)=>{
     e.preventDefault();
-    const u = document.getElementById('loginUser').value.trim();
-    const p = document.getElementById('loginPass').value;
-    const users = await dbGet('users', STATE.users);
-    STATE.users = users;
-    const found = users.find(x=>x.username === u && x.password === p);
+    const u=document.getElementById('loginUser').value.trim(), p=document.getElementById('loginPass').value;
+    const btn=document.getElementById('loginBtn'), status=document.getElementById('loginStatus');
+    if(btn){btn.disabled=true;btn.textContent='جارٍ الدخول...';}
+    let users=STATE.users&&STATE.users.length?STATE.users:readLoginCache()||[];
+    let found=users.find(x=>x.username===u&&x.password===p);
+
+    // Cached credentials make normal login immediate. If no match, do one
+    // central lookup so newly-created/changed users still work.
     if(!found){
-      document.getElementById('app').innerHTML = loginScreen('اسم المستخدم أو كلمة المرور غير صحيحة');
-      attachLoginHandlers();
-      return;
+      try{
+        status.textContent='جارٍ التحقق من قاعدة البيانات...';
+        const remote=await Promise.race([
+          dbGet('users',[]),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),5000))
+        ]);
+        if(Array.isArray(remote)){users=remote;STATE.users=remote;writeLoginCache(remote);found=users.find(x=>x.username===u&&x.password===p);}
+      }catch(err){ console.warn('Central login lookup:',err); }
     }
-    currentUser = found;
-    await loadAllData();
-    currentRoute = 'dashboard';
+    if(!found){
+      document.getElementById('app').innerHTML=loginScreen('اسم المستخدم أو كلمة المرور غير صحيحة');
+      attachLoginHandlers(); return;
+    }
+
+    currentUser=found; currentRoute='dashboard'; writeFastSession(found);
+    // Render immediately. Heavy modules are loaded after the dashboard appears.
     render();
+    if(status)status.textContent='';
+    loadAllData().then(()=>render()).catch(e=>console.warn('Background data load:',e));
   });
 }
 
@@ -1052,7 +1064,7 @@ const MENU_SECTIONS = [
   {key:'projectManagement',label:'إدارة المشاريع',icon:'⚙',items:[['company','الشركة والفروع'],['projectManagement','مركز إدارة المشاريع'],['engineersList','سجل المهندسين']]},
   {key:'technical',label:'المكتب الفني',icon:'⌘',items:[['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','إدارة المستندات والرسومات']]},
   {key:'links',label:'الترابط والرسومات',icon:'⌗',items:[['linksDrawings','الترابط والرسومات'],['documents','المستندات والإصدارات'],['techOffice','المراجعات الفنية']]},
-  {key:'reports',label:'التقارير والإحصائيات',icon:'▥',items:[['reportsStats','التقارير والإحصائيات'],['execReports','التقارير التنفيذية'],['activityLog','سجل العمليات']]},
+  {key:'reports',label:'التقارير والإحصائيات',icon:'▥',items:[['reportsStats','التقارير والإحصائيات'],['projectSummaries','ملخصات المشاريع والتخصصات'],['execReports','التقارير التنفيذية'],['activityLog','سجل العمليات']]},
   {key:'system',label:'إدارة النظام',icon:'⚙',adminOnly:true,items:[['systemManagement','إدارة النظام'],['admin','المستخدمون والصلاحيات'],['activityLog','سجل العمليات'],['backup','Backup / Restore'],['listManagement','إدارة القوائم']]}
 ];
 
@@ -1110,7 +1122,7 @@ function sidebarHTML(){
 function topbarTitle(){
   const titles={
     dashboard:'الرئيسية', executiveDashboard:'لوحة القيادة', linksDrawings:'الترابط والرسومات',
-    reportsStats:'التقارير والإحصائيات', systemManagement:'إدارة النظام',
+    reportsStats:'التقارير والإحصائيات', projectSummaries:'ملخصات المشاريع والتخصصات', systemManagement:'إدارة النظام',
     listManagement:'إدارة القوائم', changePassword:'تغيير كلمة المرور', language:'اللغة', globalSearch:'البحث الشامل', notifications:'مركز التنبيهات',
     admin:'المستخدمون والصلاحيات',activityLog:'سجل العمليات',backup:'Backup / Restore',
     projectManagement:'مركز إدارة المشاريع'
@@ -1164,6 +1176,7 @@ function routeContent(){
   if(currentRoute==='projectManagement') return projectManagementHTML();
   if(currentRoute==='linksDrawings') return linksDrawingsHTML();
   if(currentRoute==='reportsStats') return reportsStatsHTML();
+  if(currentRoute==='projectSummaries') return projectSummariesHTML();
   if(currentRoute==='systemManagement') return systemManagementHTML();
   if(currentRoute==='listManagement') return listManagementHTML();
   if(currentRoute==='changePassword') return changePasswordHTML();
@@ -1347,9 +1360,49 @@ function systemManagementHTML(){
   <div class="quick-grid">
     <button class="quick-btn" onclick="goRoute('admin')"><b>♙</b>المستخدمون والصلاحيات</button>
     <button class="quick-btn" onclick="goRoute('listManagement')"><b>☷</b>إدارة القوائم</button>
+    <button class="quick-btn" onclick="goRoute('projectSummaries')"><b>▥</b>ملخصات المشاريع والتخصصات</button>
     <button class="quick-btn" onclick="goRoute('activityLog')"><b>◷</b>سجل العمليات</button>
     <button class="quick-btn" onclick="goRoute('backup')"><b>⇩</b>Backup / Restore</button>
   </div>`;
+}
+function specialtyList(){
+  const defaults=['عام','مدني','معماري','كهرباء','ميكانيكا','صحي','حريق','HVAC','طرق وأعمال خارجية','تشطيبات','اختبارات وتشغيل'];
+  const arr=Array.isArray(STATE.specialties)&&STATE.specialties.length?STATE.specialties:defaults;
+  return [...new Set(arr.map(x=>String(x).trim()).filter(Boolean))];
+}
+async function saveSpecialties(){
+  STATE.specialties=specialtyList();
+  try{localStorage.setItem('EPMS_SPECIALTIES_CACHE',JSON.stringify(STATE.specialties));}catch(e){}
+  await dbSet('specialties',STATE.specialties); render();
+}
+function addSpecialty(){
+  const name=prompt('اكتب اسم التخصص الجديد:'); if(!name)return;
+  const n=name.trim(); if(!n)return;
+  const arr=specialtyList(); if(arr.some(x=>x.toLowerCase()===n.toLowerCase())){alert('التخصص موجود بالفعل.');return;}
+  arr.push(n); STATE.specialties=arr; saveSpecialties();
+}
+function deleteSpecialty(name){
+  if(name==='عام'){alert('لا يمكن حذف تخصص عام.');return;}
+  if(!confirm('حذف التخصص «'+name+'» من قائمة الاختيارات؟ السجلات القديمة لن تُحذف.'))return;
+  STATE.specialties=specialtyList().filter(x=>x!==name); saveSpecialties();
+}
+function projectSummariesHTML(){
+  const specs=specialtyList(), selected=window.epmsSummarySpec||specs[0]||'عام', pid=window.epmsSummaryProject||'', type=window.epmsSummaryType||'overall';
+  const chosen=pid?STATE.projects.filter(p=>p.id===pid):STATE.projects, scopeIds=new Set(chosen.map(p=>p.id));
+  const scoped=arr=>arr.filter(r=>!r.projectId||scopeIds.has(r.projectId));
+  const percent=p=>Number(p.percentComplete??p.percent??0)||0, avg=chosen.length?Math.round(chosen.reduce((a,p)=>a+percent(p),0)/chosen.length):0;
+  const counts=[['المشاريع',chosen.length],['المراحل',scoped(STATE.phases).length],['التنفيذ',scoped(STATE.siteExecution).length],['طلبات الاستلام والتسليم',scoped(STATE.handoverRequests).length],['المستخلصات',scoped(STATE.extracts).length],['المستندات',scoped(STATE.documents).length]];
+  const rows=specs.map(sp=>{const n=[...STATE.handoverRequests,...STATE.siteReports,...STATE.engineersList,...STATE.techOffice,...STATE.siteExecution].filter(r=>(!r.projectId||scopeIds.has(r.projectId))&&String(r.discipline||r.specialty||r.engineeringDiscipline||r.craft||'').trim()===sp).length;return [sp,n];});
+  const detail=type==='overall'?rows:rows.filter(x=>x[0]===selected), total=detail.reduce((a,z)=>a+z[1],0);
+  return `<div class="hero reference-hero"><h1>ملخصات المشاريع والتخصصات</h1><p>ملخص عام للمشروع أو مجموعة المشاريع، وملخص منفصل لكل تخصص، مع اختيار المشروع والقسم حسب الطلب.</p></div>
+  <div class="panel no-print"><div class="panel-title"><span>خيارات الملخص</span><small>تحديد نوع الملخص والمشروع والتخصص</small></div><div class="form-grid">
+  <div class="field"><label>نوع الملخص</label><select onchange="window.epmsSummaryType=this.value;render()"><option value="overall" ${type==='overall'?'selected':''}>ملخص عام حسب الأقسام</option><option value="specialty" ${type==='specialty'?'selected':''}>ملخص منفصل لتخصص</option></select></div>
+  <div class="field"><label>المشروع / المشاريع</label><select onchange="window.epmsSummaryProject=this.value;render()"><option value="">كل المشاريع</option>${STATE.projects.map(p=>`<option value="${p.id}" ${pid===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select></div>
+  <div class="field"><label>التخصص</label><select onchange="window.epmsSummarySpec=this.value;render()" ${type==='overall'?'disabled':''}>${specs.map(x=>`<option value="${escapeHtml(x)}" ${selected===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></div>
+  <div class="field"><label>إجراءات</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" onclick="window.print()">🖨️ طباعة الملخص</button><button class="btn btn-ghost" onclick="window.epmsSummaryProject='';window.epmsSummaryType='overall';render()">إعادة ضبط</button></div></div></div></div>
+  <div class="cards-row reference-stats">${counts.map(x=>`<div class="stat-card"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('')}<div class="stat-card"><div class="n">${avg}%</div><div class="l">متوسط إنجاز المشاريع</div></div></div>
+  <div class="panel"><div class="panel-title"><span>${type==='overall'?'الملخص العام حسب الأقسام':'ملخص التخصص: '+escapeHtml(selected)}</span><small>${pid?escapeHtml(projectName(pid)):'كل المشاريع'}</small></div><table><thead><tr><th>التخصص / القسم</th><th>عدد السجلات المرتبطة</th><th>النسبة</th></tr></thead><tbody>${detail.map(x=>`<tr><td><b>${escapeHtml(x[0])}</b></td><td>${x[1]}</td><td>${total?Math.round(x[1]*100/total):0}%</td></tr>`).join('')||'<tr><td colspan="3">لا توجد بيانات لهذا الاختيار.</td></tr>'}</tbody></table></div>
+  <div class="panel no-print"><div class="panel-title"><span>إدارة التخصصات</span><small>الإضافة والحذف لا يحذفان السجلات القديمة</small></div><div class="quick-grid">${specs.map(x=>`<div class="quick-btn" style="display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:right"><span>${escapeHtml(x)}</span>${x!=='عام'?`<button class="link-btn danger" onclick="deleteSpecialty(${JSON.stringify(x)})">حذف</button>`:''}</div>`).join('')}<button class="quick-btn" onclick="addSpecialty()"><b>＋</b>إضافة تخصص جديد</button></div></div>`;
 }
 function listManagementHTML(){
   const items=Object.entries(MODULES).map(([k,m])=>`<div class="section-note" style="margin:0;display:flex;justify-content:space-between;"><span>${escapeHtml(m.title)}</span><b>${(STATE[k]||[]).length}</b></div>`).join('');
@@ -1566,7 +1619,7 @@ function modalHTML(){
     if(f.type==='select'){
       input = `<select id="f_${f.name}" ${!editable?'disabled':''}>
         <option value="">—</option>
-        ${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+        ${(f.name==='specialty'||f.name==='discipline'?specialtyList():f.options).map(o=>`<option value="${o}" ${val===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}
       </select>`;
     } else if(f.type==='textarea'){
       input = `<textarea id="f_${f.name}" rows="3" ${!editable?'disabled':''}>${escapeHtml(val)}</textarea>`;
@@ -1834,7 +1887,7 @@ function activityLogHTML(){
 
 /* ===================== Backup / Restore ===================== */
 async function exportBackup(){
-  const allKeys = ['users', ...Object.keys(MODULES), 'handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts'];
+  const allKeys = ['users','specialties', ...Object.keys(MODULES), 'handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts'];
   const dump = {};
   for(const k of allKeys){ dump[k] = STATE[k] || []; }
   const blob = new Blob([JSON.stringify(dump, null, 2)], {type:'application/json'});
