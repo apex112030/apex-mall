@@ -465,7 +465,7 @@ let STATE = {
   company:[], planning:[], siteExecution:[], engineersList:[], labor:[], equipment:[],
   boq:[], purchases:[], suppliers:[], deliveries:[], warehousesLoc:[], invoices:[],
   accounting:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
-  claims:[], risks:[], specialties:[], handoverRequests:[], handoverInspections:[], handoverPunchList:[], handoverApprovals:[], handoverCloseouts:[], finalHandover:[], postHandoverMaint:[], execReports:[]
+  claims:[], risks:[], specialties:[], handoverRequests:[], handoverInspections:[], handoverPunchList:[], handoverApprovals:[], handoverCloseouts:[], finalHandover:[], postHandoverMaint:[], execReports:[], approvalPolicies:[]
 };
 let currentUser = null;
 let currentRoute = 'dashboard';
@@ -630,6 +630,22 @@ const MODULES = {
       {name:'issues',label:'معوقات / ملاحظات',type:'textarea'}
     ],
     columns:[['date','التاريخ'],['activity','النشاط'],['percentComplete','% الإنجاز']]
+  },
+  siteIncidents:{
+    title:'المستحدثات والطارئ بالموقع', permKey:'siteIncidents', hasProject:true,
+    fields:[
+      {name:'date',label:'التاريخ',type:'date',required:true},
+      {name:'type',label:'النوع',type:'select',options:['بند مستحدث','أمر طارئ','مشكلة بالموقع','تعليمات عاجلة','تغيير مطلوب','أعمال إضافية']},
+      {name:'title',label:'عنوان المستحدث / الطارئ',type:'text',required:true},
+      {name:'description',label:'الوصف والتفاصيل',type:'textarea',required:true},
+      {name:'location',label:'الموقع / المنطقة / الدور',type:'text'},
+      {name:'impact',label:'التأثير على المشروع',type:'textarea'},
+      {name:'action',label:'الإجراء المقترح / المطلوب',type:'textarea'},
+      {name:'requestedBy',label:'مقدم الطلب',type:'text'},
+      {name:'requiredSections',label:'الأقسام المطلوب اعتمادها',type:'multiselect'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['type','النوع'],['title','العنوان'],['location','الموقع'],['requestedBy','مقدم الطلب']]
   },
   engineersList:{
     title:'المهندسون', permKey:'engineersList',
@@ -899,6 +915,7 @@ const NAV = [
   {key:'phases',label:'تفاصيل المشروع',module:'phases'},
   {key:'planning',label:'التخطيط والبرنامج الزمني',module:'planning'},
   {key:'siteExecution',label:'التنفيذ ومتابعة الموقع',module:'siteExecution'},
+  {key:'siteIncidents',label:'المستحدثات والطارئ بالموقع',module:'siteIncidents'},
   {key:'contracts',label:'العقود',module:'contracts'},
   {key:'changeOrders',label:'الأوامر التغييرية',module:'changeOrders'},
   {key:'claims',label:'المطالبات',module:'claims'},
@@ -930,6 +947,7 @@ const NAV = [
   {key:'linksDrawings',label:'الترابط والرسومات',special:true},
   {key:'reportsStats',label:'التقارير والإحصائيات',special:true},
   {key:'execReports',label:'التقارير التنفيذية',module:'execReports'},
+  {key:'approvalSettings',label:'إدارة الاعتمادات',adminOnly:true},
   {key:'admin',label:'المستخدمون والصلاحيات',adminOnly:true},
   {key:'activityLog',label:'سجل العمليات',adminOnly:true},
   {key:'backup',label:'Backup / Restore',adminOnly:true},
@@ -949,6 +967,68 @@ function permLevel(permKey){
 }
 function canView(permKey){ return permLevel(permKey) === 'view' || permLevel(permKey) === 'edit'; }
 function canEdit(permKey){ return permLevel(permKey) === 'edit'; }
+function approvalPolicy(moduleKey){
+  const list=Array.isArray(STATE.approvalPolicies)?STATE.approvalPolicies:[];
+  return list.find(x=>x.moduleKey===moduleKey) || {moduleKey,enabled:false,permissionKey:'',approverIds:[],requiredLevel:'edit',label:''};
+}
+function approvalRequired(moduleKey){ return !!approvalPolicy(moduleKey).enabled; }
+function userHasApprovalPermission(user, policy){
+  if(!user) return false;
+  if(user.isAdmin) return true;
+  if(!policy || !policy.permissionKey) return false;
+  const level=(user.permissions&&user.permissions[policy.permissionKey])||'none';
+  return policy.requiredLevel==='view' ? (level==='view'||level==='edit') : level==='edit';
+}
+function isDesignatedApprover(moduleKey,user=currentUser){
+  const p=approvalPolicy(moduleKey);
+  if(!p.enabled || !userHasApprovalPermission(user,p)) return false;
+  const ids=Array.isArray(p.approverIds)?p.approverIds:[];
+  return user.isAdmin || ids.length===0 || ids.includes(user.id);
+}
+function recordApprovalStatus(moduleKey,record){
+  if(!approvalRequired(moduleKey)) return '';
+  return record.approvalStatus || 'قيد الاعتماد';
+}
+function canApproveRecord(moduleKey,record){
+  return !!record && approvalRequired(moduleKey) && recordApprovalStatus(moduleKey,record)!=='معتمد' && isDesignatedApprover(moduleKey);
+}
+async function approveRecord(moduleKey,id,decision='اعتماد'){
+  const rec=(STATE[moduleKey]||[]).find(x=>x.id===id); if(!rec)return;
+  if(!canApproveRecord(moduleKey,rec)){alert('لا تملك صلاحية اعتماد هذا البند.');return;}
+  rec.approvalStatus=decision==='اعتماد'?'معتمد':'مرفوض';
+  rec.approvedBy=currentUser.username; rec.approvedByName=currentUser.name; rec.approvedAt=new Date().toISOString();
+  rec.approvalDecision=decision;
+  await dbSet(moduleKey,STATE[moduleKey]); render();
+}
+function incidentApprovalSections(){
+  const base=[
+    ['projects','إدارة المشاريع'],['planning','التخطيط'],['siteExecution','التنفيذ'],['siteIncidents','المستحدثات والطارئ'],['contracts','العقود'],['changeOrders','الأوامر التغييرية'],['claims','المطالبات'],['purchases','المشتريات'],['suppliers','الموردون والمقاولون'],['deliveries','التوريدات والاستلام'],['handoverRequests','الاستلام والتسليم'],['warehouseItems','المخازن'],['extracts','المستخلصات'],['invoices','الفواتير'],['finance','الماليات'],['accounting','المحاسبة'],['labor','العمالة'],['equipment','المعدات'],['engineersList','المهندسون'],['correspondence','المراسلات'],['risks','المخاطر'],['hse','HSE والسلامة'],['qaqc','QA/QC والجودة'],['siteReports','تقارير الموقع'],['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','المستندات والرسومات'],['execReports','التقارير التنفيذية']
+  ];
+  return base.filter(([k])=>k!=='siteIncidents' || true);
+}
+function incidentApprovalSummary(r){
+  const sections=Array.isArray(r.requiredSections)?r.requiredSections:[];
+  if(!sections.length) return 'لا توجد أقسام محددة';
+  const approved=sections.filter(k=>r.incidentApprovals&&r.incidentApprovals[k]&&r.incidentApprovals[k].status==='معتمد').length;
+  return `${approved}/${sections.length} معتمد`;
+}
+function canApproveIncidentSection(r,section){
+  if(!r || !Array.isArray(r.requiredSections) || !r.requiredSections.includes(section)) return false;
+  const st=r.incidentApprovals&&r.incidentApprovals[section];
+  if(st&&st.status==='معتمد') return false;
+  return isDesignatedApprover(section,currentUser);
+}
+async function approveIncidentSection(id,section,decision='اعتماد'){
+  const r=(STATE.siteIncidents||[]).find(x=>x.id===id); if(!r)return;
+  if(!canApproveIncidentSection(r,section)){alert('لا تملك صلاحية اعتماد هذا القسم.');return;}
+  r.incidentApprovals=r.incidentApprovals||{};
+  r.incidentApprovals[section]={status:decision==='اعتماد'?'معتمد':'مرفوض',approvedBy:currentUser.username,approvedByName:currentUser.name,approvedAt:new Date().toISOString()};
+  const vals=Array.isArray(r.requiredSections)?r.requiredSections:[];
+  const allApproved=vals.length>0 && vals.every(k=>r.incidentApprovals[k]&&r.incidentApprovals[k].status==='معتمد');
+  const anyRejected=vals.some(k=>r.incidentApprovals[k]&&r.incidentApprovals[k].status==='مرفوض');
+  r.approvalStatus=allApproved?'معتمد':anyRejected?'مرفوض':'قيد الاعتماد';
+  await dbSet('siteIncidents',STATE.siteIncidents); render();
+}
 function projectScope(user=currentUser){
   if(!user || user.isAdmin) return {mode:'all', ids:[]};
   const s=user.projectScope||{mode:'all',ids:[]};
@@ -1055,7 +1135,7 @@ async function boot(){
 
 async function loadAllData(){
   const load=(key)=>dbGet(key,[]).catch(e=>{console.warn('load '+key,e);return STATE[key]||[];});
-  const keys=['specialties','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports'];
+  const keys=['approvalPolicies','specialties','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports'];
   // Small batches reduce connection pressure and make the first dashboard paint fast.
   for(let i=0;i<keys.length;i+=5){
     await Promise.all(keys.slice(i,i+5).map(async k=>{STATE[k]=await load(k);}));
@@ -1135,7 +1215,7 @@ const MENU_SECTIONS = [
   {key:'home',label:'القائمة الرئيسية',icon:'⌂',items:[['dashboard','الرئيسية']]},
   {key:'lead',label:'لوحة القيادة',icon:'▣',items:[['executiveDashboard','لوحة القيادة'],['notifications','مركز التنبيهات'],['globalSearch','البحث الشامل']]},
   {key:'projects',label:'المشاريع',icon:'▤',items:[['projects','المشاريع'],['phases','تفاصيل المشروع'],['siteExecution','التنفيذ ومتابعة الموقع'],['siteReports','تقارير الموقع'],['planning','البرنامج الزمني'],['finalHandover','التسليم النهائي'],['postHandoverMaint','الصيانة بعد التسليم']]},
-  {key:'siteHandover',label:'الاستلام والتسليم',icon:'⇄',items:[['handoverRequests','طلبات الاستلام والتسليم'],['handoverCenter','مركز دورة الاستلام والاعتماد'],['deliveries','التوريدات والاستلام'],['finalHandover','التسليم النهائي'],['postHandoverMaint','الصيانة بعد التسليم']]},
+  {key:'siteIncidents',label:'المستحدثات والطارئ بالموقع',icon:'⚠',items:[['siteIncidents','المستحدثات والطارئ بالموقع']]},{key:'siteHandover',label:'الاستلام والتسليم',icon:'⇄',items:[['handoverRequests','طلبات الاستلام والتسليم'],['handoverCenter','مركز دورة الاستلام والاعتماد'],['deliveries','التوريدات والاستلام'],['finalHandover','التسليم النهائي'],['postHandoverMaint','الصيانة بعد التسليم']]},
   {key:'contracts',label:'العقود',icon:'▧',items:[['contracts','العقود'],['changeOrders','الأوامر التغييرية'],['claims','المطالبات']]},
   {key:'purchases',label:'المشتريات',icon:'🛒',items:[['purchases','المشتريات'],['suppliers','الموردون والمقاولون'],['deliveries','التوريدات والاستلام']]},
   {key:'warehouse',label:'المخازن',icon:'⌂',items:[['warehousesLoc','المخازن'],['warehouseItems','أصناف المخزن'],['warehouseTx','حركة الوارد والمنصرف']]},
@@ -1148,7 +1228,7 @@ const MENU_SECTIONS = [
   {key:'technical',label:'المكتب الفني',icon:'⌘',items:[['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','إدارة المستندات والرسومات']]},
   {key:'links',label:'الترابط والرسومات',icon:'⌗',items:[['linksDrawings','الترابط والرسومات'],['documents','المستندات والإصدارات'],['techOffice','المراجعات الفنية']]},
   {key:'reports',label:'التقارير والإحصائيات',icon:'▥',items:[['reportsStats','التقارير والإحصائيات'],['projectSummaries','ملخصات المشاريع والتخصصات'],['execReports','التقارير التنفيذية'],['activityLog','سجل العمليات']]},
-  {key:'system',label:'إدارة النظام',icon:'⚙',adminOnly:true,items:[['systemManagement','إدارة النظام'],['admin','المستخدمون والصلاحيات'],['activityLog','سجل العمليات'],['backup','Backup / Restore'],['listManagement','إدارة القوائم']]}
+  {key:'system',label:'إدارة النظام',icon:'⚙',adminOnly:true,items:[['systemManagement','إدارة النظام'],['approvalSettings','إدارة الاعتمادات'],['admin','المستخدمون والصلاحيات'],['activityLog','سجل العمليات'],['backup','Backup / Restore'],['listManagement','إدارة القوائم']]}
 ];
 
 function menuItemAllowed(key){
@@ -1205,7 +1285,7 @@ function sidebarHTML(){
 function topbarTitle(){
   const titles={
     dashboard:'الرئيسية', executiveDashboard:'لوحة القيادة', linksDrawings:'الترابط والرسومات',
-    reportsStats:'التقارير والإحصائيات', projectSummaries:'ملخصات المشاريع والتخصصات', systemManagement:'إدارة النظام',
+    reportsStats:'التقارير والإحصائيات', projectSummaries:'ملخصات المشاريع والتخصصات', siteIncidents:'المستحدثات والطارئ بالموقع', systemManagement:'إدارة النظام', approvalSettings:'إدارة الاعتمادات',
     listManagement:'إدارة القوائم', changePassword:'تغيير كلمة المرور', language:'اللغة', globalSearch:'البحث الشامل', notifications:'مركز التنبيهات',
     admin:'المستخدمون والصلاحيات',activityLog:'سجل العمليات',backup:'Backup / Restore',
     projectManagement:'مركز إدارة المشاريع'
@@ -1261,6 +1341,7 @@ function routeContent(){
   if(currentRoute==='reportsStats') return reportsStatsHTML();
   if(currentRoute==='projectSummaries') return projectSummariesHTML();
   if(currentRoute==='systemManagement') return systemManagementHTML();
+  if(currentRoute==='approvalSettings') return currentUser.isAdmin ? approvalSettingsHTML() : noAccessHTML();
   if(currentRoute==='listManagement') return listManagementHTML();
   if(currentRoute==='changePassword') return changePasswordHTML();
   if(currentRoute==='language') return languageHTML();
@@ -1609,7 +1690,7 @@ function handoverCenterHTML(){
   <div class="section-note"><b>المشروع:</b> ${escapeHtml(projectName(r.projectId))} · <b>الموقع:</b> ${escapeHtml(r.location||'—')} · <b>التخصص:</b> ${escapeHtml(r.discipline||'—')}<br><b>البند:</b> ${escapeHtml(r.workItem||'—')}</div>
   <div class="workflow-steps">${steps.map((x,i)=>`<div class="workflow-step ${i<=idx?'done':''}"><b>${i+1}</b><span>${x}</span></div>`).join('')}</div>
   <div class="quick-actions">
-   ${canEdit('handoverRequests')?`<button class="btn btn-primary" onclick="advanceHandover('${id}','تحت المراجعة')">إرسال للمراجعة</button><button class="btn btn-ghost" onclick="advanceHandover('${id}','موعد معاينة')">تحديد المعاينة</button><button class="btn btn-ghost" onclick="advanceHandover('${id}','تمت المعاينة')">تسجيل المعاينة</button><button class="btn btn-ghost" onclick="advanceHandover('${id}','مقبول')">اعتماد</button><button class="btn btn-amber" onclick="advanceHandover('${id}','مغلق')">إغلاق الطلب</button>`:''}
+   ${canEdit('handoverRequests')?`<button class="btn btn-primary" onclick="advanceHandover('${id}','تحت المراجعة')">إرسال للمراجعة</button><button class="btn btn-ghost" onclick="advanceHandover('${id}','موعد معاينة')">تحديد المعاينة</button><button class="btn btn-ghost" onclick="advanceHandover('${id}','تمت المعاينة')">تسجيل المعاينة</button>${approvalRequired('handoverRequests') ? (canApproveRecord('handoverRequests',r)?`<button class="btn btn-ghost" onclick="approveRecord('handoverRequests','${id}','اعتماد')">اعتماد</button>`:'') : `<button class="btn btn-ghost" onclick="advanceHandover('${id}','مقبول')">اعتماد</button>`}<button class="btn btn-amber" onclick="advanceHandover('${id}','مغلق')">إغلاق الطلب</button>`:''}
   </div></div>
   <div class="cards-row"><div class="stat-card"><div class="n">${inspections.length}</div><div class="l">المعاينات</div><button class="link-btn" onclick="addWorkflowItem('inspection','${id}')">+ إضافة معاينة</button></div><div class="stat-card"><div class="n">${punch.length}</div><div class="l">Punch List / ملاحظات</div><button class="link-btn" onclick="addWorkflowItem('punch','${id}')">+ إضافة ملاحظة</button></div><div class="stat-card"><div class="n">${approvals.length}</div><div class="l">الاعتمادات</div><button class="link-btn" onclick="addWorkflowItem('approval','${id}')">+ طلب اعتماد</button></div><div class="stat-card"><div class="n">${closeouts.length}</div><div class="l">محاضر الإغلاق</div><button class="link-btn" onclick="addWorkflowItem('closeout','${id}')">+ إنشاء محضر</button></div></div>
   <div class="panel"><div class="panel-title"><span>المعاينات</span></div><table><thead><tr><th>التاريخ</th><th>المفتش</th><th>الحالة</th><th>النتيجة</th></tr></thead><tbody>${workflowRows(inspections,['date','inspector','status','result'])}</tbody></table></div>
@@ -1653,10 +1734,11 @@ function moduleHTML(key, mod){
       ${cells}
       ${creatorCell}
       ${attachCell}
+      ${key==='siteIncidents'?`<td><span class="badge ${r.approvalStatus==='معتمد'?'ok':r.approvalStatus==='مرفوض'?'bad':'warn'}">${escapeHtml(incidentApprovalSummary(r))}</span>${(Array.isArray(r.requiredSections)?r.requiredSections:[]).map(sec=>`<div style="font-size:10px;margin-top:3px"><b>${escapeHtml((incidentApprovalSections().find(x=>x[0]===sec)||['',sec])[1])}</b>: ${escapeHtml(r.incidentApprovals&&r.incidentApprovals[sec]?r.incidentApprovals[sec].status:'قيد الاعتماد')}${canApproveIncidentSection(r,sec)?` <button class="link-btn" onclick="approveIncidentSection('${r.id}','${sec}','اعتماد')">اعتماد</button><button class="link-btn danger" onclick="approveIncidentSection('${r.id}','${sec}','رفض')">رفض</button>`:''}</div>`).join('')}</td>`:(approvalRequired(key)?`<td>${formatApprovalBadge(key,r)}</td>`:'')}
       <td class="no-print"><div class="row-actions">
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?'تعديل':'عرض'}</button>
         <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ طباعة</button>
-        ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">حذف</button>`:''}
+        ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${canApproveRecord(key,r)?`<button class="link-btn" onclick="approveRecord('${key}','${r.id}','اعتماد')">اعتماد</button><button class="link-btn danger" onclick="approveRecord('${key}','${r.id}','رفض')">رفض</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">حذف</button>`:''}
       </div></td>
     </tr>`;
   }).join('');
@@ -1678,7 +1760,7 @@ function moduleHTML(key, mod){
     </div>
     <h3 class="print-only" style="margin:0 0 12px;">${mod.title}</h3>
     <table>
-      <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>الترتيب</th>${projHead}${headCols}<th>أُضيف بواسطة</th><th>المرفقات / المستندات</th><th class="no-print"></th></tr></thead>
+      <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>الترتيب</th>${projHead}${headCols}<th>أُضيف بواسطة</th><th>المرفقات / المستندات</th>${(key==='siteIncidents'||approvalRequired(key))?'<th>حالة الاعتماد</th>':''}<th class="no-print"></th></tr></thead>
       <tbody>
         ${rows || `<tr class="empty-row"><td colspan="13">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
       </tbody>
@@ -1724,6 +1806,10 @@ function printDocument(key,id){
   const w=window.open('','_blank'); if(!w)return; w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{background:#eee;font-family:Arial}.print-document{background:#fff;color:#111;max-width:900px;margin:20px auto;padding:30px;line-height:1.8}.doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #bbb;padding:12px}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center}.print-document table{width:100%;border-collapse:collapse}.print-document th,.print-document td{border:1px solid #999;padding:7px}</style></head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`); w.document.close();
 }
 function projectName(id){ const p = STATE.projects.find(x=>x.id===id); return p ? p.name : '—'; }
+function formatApprovalBadge(key,r){
+  const st=recordApprovalStatus(key,r); const cls=st==='معتمد'?'ok':st==='مرفوض'?'bad':'warn';
+  return `<span class="badge ${cls}">${escapeHtml(st)}</span>${r.approvedByName?`<div style="font-size:10px;margin-top:3px">${escapeHtml(r.approvedByName)}</div>`:''}`;
+}
 function formatCell(mod, field, val){
   if(val === undefined || val === null || val === '') return '<span style="color:#B7B0A0">—</span>';
   const fdef = mod.fields.find(f=>f.name===field);
@@ -1765,7 +1851,11 @@ function modalHTML(){
     const isFull = f.type==='textarea';
     const val = record[f.name] !== undefined ? record[f.name] : '';
     let input = '';
-    if(f.type==='select'){
+    if(f.type==='multiselect'){
+      const selected=Array.isArray(record[f.name])?record[f.name]:[];
+      const opts=incidentApprovalSections();
+      input=`<div id="f_${f.name}" class="multi-check-grid">${opts.map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;padding:6px;border:1px solid #e5e7eb;border-radius:6px;"><input type="checkbox" name="f_${f.name}" value="${k}" ${selected.includes(k)?'checked':''} ${!editable?'disabled':''}>${escapeHtml(l)}</label>`).join('')}</div>`;
+    } else if(f.type==='select'){
       input = `<select id="f_${f.name}" ${!editable?'disabled':''}>
         <option value="">—</option>
         ${(f.name==='specialty'||f.name==='discipline'?specialtyList():f.options).map(o=>`<option value="${o}" ${val===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}
@@ -1815,6 +1905,13 @@ async function saveRecord(){
     if(f.required && !v){ alert('من فضلك أدخل: '+f.label); return; }
     record[f.name] = v;
   }
+  if(moduleKey==='siteIncidents'){
+    record.requiredSections=Array.isArray(record.requiredSections)?record.requiredSections:[];
+    record.incidentApprovals=record.incidentApprovals||{};
+    record.requiredSections.forEach(sec=>{ if(!record.incidentApprovals[sec]) record.incidentApprovals[sec]={status:'قيد الاعتماد'}; });
+    record.approvalStatus=record.requiredSections.length?'قيد الاعتماد':'بدون اعتماد';
+  }
+  if(approvalRequired(moduleKey) && !record.approvalStatus){ record.approvalStatus='قيد الاعتماد'; }
   if(isNew){
     record.id = genId();
     record.createdBy = currentUser.username;
@@ -2051,6 +2148,50 @@ async function saveUser(){
   await dbSet('users', STATE.users);
   modalState = null;
   render();
+}
+
+/* ===================== Approval Settings ===================== */
+function approvalSettingsHTML(){
+  const moduleKeys=Object.keys(MODULES);
+  const rows=moduleKeys.map(k=>{
+    const mod=MODULES[k], p=approvalPolicy(k), approvers=(p.approverIds||[]).map(id=>STATE.users.find(u=>u.id===id)?.name).filter(Boolean);
+    return `<tr><td>${escapeHtml(mod.title)}</td><td>${p.enabled?'<span class="badge ok">مفعّل</span>':'<span class="badge">غير مفعّل</span>'}</td><td>${escapeHtml(p.label||p.permissionKey||'—')}</td><td>${approvers.length?approvers.map(escapeHtml).join('، '):'حسب الصلاحية'}</td><td><button class="link-btn" onclick="openApprovalPolicy('${k}')">إعداد</button></td></tr>`;
+  }).join('');
+  return `<div class="hero"><h1>إدارة الاعتمادات</h1><p>حدد البنود التي تحتاج اعتماداً، والصلاحية المطلوبة، ومن يملك حق الاعتماد وفق صلاحياته.</p></div>
+  <div class="panel"><div class="section-note">يمكن تفعيل الاعتماد لأي بند رئيسي. عند التفعيل يظهر للبند حالة <b>قيد الاعتماد</b>، ولا يستطيع تنفيذ الاعتماد إلا المستخدم الذي يملك الصلاحية المحددة والمختار ضمن المعتمدين.</div>
+  <table><thead><tr><th>البند الرئيسي</th><th>الاعتماد</th><th>الصلاحية المطلوبة</th><th>المعتمدون</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  ${modalState&&modalState.isApprovalModal?approvalPolicyModalHTML():''}`;
+}
+function openApprovalPolicy(moduleKey){
+  const p=approvalPolicy(moduleKey);
+  modalState={isApprovalModal:true,moduleKey,record:JSON.parse(JSON.stringify(p))}; render();
+}
+function approvalPolicyModalHTML(){
+  const k=modalState.moduleKey, p=modalState.record, mod=MODULES[k];
+  const eligible=STATE.users.filter(u=>u.username!=='admin' && userHasApprovalPermission(u,p));
+  const perms=PERM_KEYS.map(pk=>`<option value="${pk}" ${p.permissionKey===pk?'selected':''}>${escapeHtml(PERM_LABELS[pk])}</option>`).join('');
+  const checks=eligible.map(u=>`<label style="display:flex;gap:8px;align-items:center;margin:6px 0;"><input type="checkbox" class="approver-check" value="${u.id}" ${(p.approverIds||[]).includes(u.id)?'checked':''}>${escapeHtml(u.name)} (${escapeHtml(u.username)})</label>`).join('');
+  return `<div class="overlay" onclick="if(event.target===this) closeModal()"><div class="modal" style="max-width:720px"><h3>إعداد اعتماد — ${escapeHtml(mod.title)}</h3>
+  <div class="form-grid"><div class="field"><label>تفعيل الاعتماد</label><select id="ap_enabled"><option value="0" ${!p.enabled?'selected':''}>غير مفعّل</option><option value="1" ${p.enabled?'selected':''}>مفعّل</option></select></div>
+  <div class="field"><label>اسم الاعتماد</label><input id="ap_label" value="${escapeHtml(p.label||'')}" placeholder="مثال: اعتماد مدير المشروع"></div>
+  <div class="field full"><label>الصلاحية المطلوبة</label><select id="ap_permission" onchange="refreshApprovalApprovers()"><option value="">— اختر الصلاحية من القائمة —</option>${perms}</select></div>
+  <div class="field"><label>الحد الأدنى للصلاحية</label><select id="ap_level"><option value="edit" ${p.requiredLevel!=='view'?'selected':''}>تعديل / اعتماد</option><option value="view" ${p.requiredLevel==='view'?'selected':''}>مشاهدة أو تعديل</option></select></div></div>
+  <div class="field full" style="margin-top:12px"><label>من يقوم بالاعتماد؟</label><div id="approvalApprovers" style="max-height:220px;overflow:auto;border:1px solid var(--border);padding:10px;border-radius:8px">${checks||'<div class="section-note">لا يوجد مستخدمون يملكون الصلاحية المختارة حالياً.</div>'}</div><div class="section-note">إذا لم تحدد أشخاصاً، فإن أي مستخدم يملك الصلاحية المطلوبة يستطيع الاعتماد.</div></div>
+  <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">إلغاء</button><button class="btn btn-primary" onclick="saveApprovalPolicy()">حفظ إعداد الاعتماد</button></div></div></div>`;
+}
+function refreshApprovalApprovers(){
+  const p=modalState.record; p.permissionKey=document.getElementById('ap_permission')?.value||'';
+  const eligible=STATE.users.filter(u=>u.username!=='admin' && userHasApprovalPermission(u,p));
+  const old=new Set(p.approverIds||[]); const box=document.getElementById('approvalApprovers'); if(!box)return;
+  box.innerHTML=eligible.length?eligible.map(u=>`<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" class="approver-check" value="${u.id}" ${old.has(u.id)?'checked':''}>${escapeHtml(u.name)} (${escapeHtml(u.username)})</label>`).join(''):'<div class="section-note">لا يوجد مستخدمون يملكون الصلاحية المختارة حالياً.</div>';
+}
+async function saveApprovalPolicy(){
+  const k=modalState.moduleKey, p=modalState.record;
+  p.enabled=document.getElementById('ap_enabled').value==='1'; p.label=document.getElementById('ap_label').value.trim(); p.permissionKey=document.getElementById('ap_permission').value; p.requiredLevel=document.getElementById('ap_level').value;
+  p.approverIds=[...document.querySelectorAll('.approver-check:checked')].map(x=>x.value);
+  if(p.enabled && !p.permissionKey){alert('اختر الصلاحية المطلوبة للاعتماد.');return;}
+  const idx=(STATE.approvalPolicies||[]).findIndex(x=>x.moduleKey===k); if(idx>=0)STATE.approvalPolicies[idx]=p; else STATE.approvalPolicies.push(p);
+  await dbSet('approvalPolicies',STATE.approvalPolicies); modalState=null; render();
 }
 
 /* ===================== Activity Log ===================== */
