@@ -142,6 +142,11 @@
   .badge.warn{background:#FBF0DC;color:var(--amber-dark);}
   .badge.bad{background:#F6E0D8;color:var(--danger);}
   .row-actions{display:flex;gap:6px;justify-content:flex-end;}
+.attachment-inline{display:inline-flex;align-items:center;gap:2px;margin:2px 3px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.03)}
+.row-order{font-weight:800;text-align:center;min-width:42px}
+.sort-label{font-weight:800;color:var(--ink)}
+.sort-current{font-size:12px;color:var(--ink-soft);padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04)}
+
   .link-btn{background:none;border:none;color:var(--steel);cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:4px 6px;}
   .link-btn:hover{text-decoration:underline;}
   .link-btn.danger{color:var(--danger);}
@@ -157,6 +162,18 @@
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   .form-grid .full{grid-column:1 / -1;}
   .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;border-top:1px solid var(--line);padding-top:16px;}
+.pdf-viewer{position:fixed;inset:3vh 3vw;z-index:10000;background:#fff;border-radius:12px;box-shadow:0 20px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden;}
+.pdf-viewer-head{padding:10px 14px;background:#0b1f3a;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.pdf-viewer iframe{flex:1;border:0;width:100%;}
+.attachment-list{display:flex;flex-direction:column;gap:7px;margin-top:8px;}
+.attachment-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fafafa;}
+.print-document{background:#fff;color:#111;max-width:900px;margin:0 auto;padding:30px;font-family:Arial,sans-serif;line-height:1.8;}
+.print-document h1,.print-document h2{text-align:center;margin:8px 0;}
+.print-document .doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #bbb;padding:12px;margin:15px 0;}
+.print-document table{width:100%;border-collapse:collapse;margin:12px 0;}
+.print-document th,.print-document td{border:1px solid #999;padding:7px;text-align:right;}
+.print-document .signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center;}
+@media print{.no-print,.sidebar,.topbar{display:none!important}.print-document{max-width:none;padding:10px}.print-document{display:block!important}}
   .perm-table{width:100%;border-collapse:collapse;margin-top:6px;}
   .perm-table th{font-size:11.5px;color:var(--ink-soft);text-align:center;padding:6px 4px;font-weight:700;}
   .perm-table td{padding:6px 4px;font-size:12.5px;text-align:center;border-top:1px solid var(--line);}
@@ -538,29 +555,47 @@ const MODULES = {
     columns:[['date','التاريخ'],['type','النوع'],['category','البند'],['amount','المبلغ']]
   },
   extracts:{
-    title:'المستخلصات', permKey:'extracts', hasProject:true,
+    title:'المستخلصات بين المالك والمقاول', permKey:'extracts', hasProject:true,
     fields:[
       {name:'number',label:'رقم المستخلص',type:'text',required:true},
-      {name:'date',label:'التاريخ',type:'date'},
-      {name:'amount',label:'قيمة المستخلص',type:'number'},
-      {name:'deductions',label:'الاستقطاعات',type:'number'},
-      {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','مقدم للعميل','معتمد','مصروف']},
-      {name:'notes',label:'ملاحظات',type:'textarea'}
+      {name:'date',label:'تاريخ المستخلص',type:'date',required:true},
+      {name:'periodFrom',label:'عن الفترة من',type:'date'},
+      {name:'periodTo',label:'إلى',type:'date'},
+      {name:'owner',label:'اسم المالك',type:'text'},
+      {name:'contractor',label:'اسم المقاول',type:'text'},
+      {name:'contractNumber',label:'رقم العقد',type:'text'},
+      {name:'workDescription',label:'وصف الأعمال / بنود المستخلص',type:'textarea'},
+      {name:'previousAmount',label:'إجمالي الأعمال السابقة',type:'number'},
+      {name:'currentAmount',label:'أعمال الفترة الحالية',type:'number'},
+      {name:'amount',label:'إجمالي الأعمال حتى تاريخه',type:'number'},
+      {name:'deductions',label:'إجمالي الاستقطاعات',type:'number'},
+      {name:'netAmount',label:'صافي المستخلص المستحق',type:'number'},
+      {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','مقدم للعميل','مراجع','معتمد','مصروف','مرفوض']},
+      {name:'notes',label:'ملاحظات وشروط الدفع',type:'textarea'}
     ],
-    columns:[['number','رقم المستخلص'],['date','التاريخ'],['amount','القيمة'],['status','الحالة']]
+    columns:[['number','رقم المستخلص'],['date','التاريخ'],['owner','المالك'],['contractor','المقاول'],['amount','الإجمالي'],['netAmount','الصافي'],['status','الحالة']]
   },
   contracts:{
-    title:'العقود', permKey:'contracts', hasProject:true,
+    title:'عقود المالك والمقاول', permKey:'contracts', hasProject:true,
     fields:[
       {name:'contractNumber',label:'رقم العقد',type:'text',required:true},
-      {name:'party',label:'الطرف الثاني',type:'text'},
+      {name:'owner',label:'اسم المالك',type:'text',required:true},
+      {name:'contractor',label:'اسم المقاول',type:'text',required:true},
+      {name:'party',label:'الطرف الثاني (للتوافق مع البيانات السابقة)',type:'text'},
+      {name:'scope',label:'نطاق الأعمال',type:'textarea'},
       {name:'value',label:'قيمة العقد',type:'number'},
+      {name:'currency',label:'العملة',type:'text'},
       {name:'startDate',label:'تاريخ البدء',type:'date'},
       {name:'endDate',label:'تاريخ الانتهاء',type:'date'},
-      {name:'status',label:'الحالة',type:'select',options:['ساري','منتهي','ملغي']},
-      {name:'notes',label:'بنود وملاحظات',type:'textarea'}
+      {name:'duration',label:'مدة التنفيذ بالأيام',type:'number'},
+      {name:'advance',label:'الدفعة المقدمة',type:'number'},
+      {name:'retention',label:'نسبة / قيمة الاحتجاز',type:'text'},
+      {name:'paymentTerms',label:'شروط الدفع والمستخلصات',type:'textarea'},
+      {name:'clauses',label:'بنود وشروط العقد',type:'textarea'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','ساري','منتهي','ملغي']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['contractNumber','رقم العقد'],['party','الطرف الثاني'],['value','القيمة'],['status','الحالة']]
+    columns:[['contractNumber','رقم العقد'],['owner','المالك'],['contractor','المقاول'],['value','القيمة'],['startDate','البدء'],['endDate','الانتهاء'],['status','الحالة']]
   },
   company:{
     title:'الشركة والفروع', permKey:'company',
@@ -914,6 +949,25 @@ function permLevel(permKey){
 }
 function canView(permKey){ return permLevel(permKey) === 'view' || permLevel(permKey) === 'edit'; }
 function canEdit(permKey){ return permLevel(permKey) === 'edit'; }
+function projectScope(user=currentUser){
+  if(!user || user.isAdmin) return {mode:'all', ids:[]};
+  const s=user.projectScope||{mode:'all',ids:[]};
+  return {mode:s.mode||'all', ids:Array.isArray(s.ids)?s.ids:[]};
+}
+function canAccessProject(projectId, user=currentUser){
+  if(!projectId || !user || user.isAdmin) return true;
+  const s=projectScope(user);
+  if(s.mode==='all') return true;
+  return s.ids.includes(projectId);
+}
+function visibleProjects(user=currentUser){ return (STATE.projects||[]).filter(p=>canAccessProject(p.id,user)); }
+function scopeProjectIds(user=currentUser){ return new Set(visibleProjects(user).map(p=>p.id)); }
+function scopeRecords(list,user=currentUser){
+  if(!Array.isArray(list)) return [];
+  const s=projectScope(user); if(user?.isAdmin || s.mode==='all') return list;
+  const ids=new Set(s.ids||[]); return list.filter(r=>!r.projectId || ids.has(r.projectId));
+}
+
 
 /* ===================== Boot ===================== */
 const EPMS_LOGIN_CACHE_KEY = 'EPMS_V6_LOGIN_USERS_CACHE';
@@ -933,6 +987,15 @@ function writeFastSession(user){
   try{ localStorage.setItem(EPMS_SESSION_KEY,JSON.stringify({username:user.username,ts:Date.now()})); }catch(e){}
 }
 function clearFastSession(){ try{localStorage.removeItem(EPMS_SESSION_KEY)}catch(e){} }
+function restoreFastSession(users){
+  const sess=readFastSession();
+  if(!sess || !sess.username || !Array.isArray(users)) return false;
+  const found=users.find(x=>x.username===sess.username);
+  if(!found) return false;
+  currentUser=found;
+  if(!currentRoute || currentRoute==='login') currentRoute='dashboard';
+  return true;
+}
 
 async function boot(){
   if(SUPABASE_URL.includes('PASTE_') || SUPABASE_ANON_KEY.includes('PASTE_')){
@@ -948,10 +1011,24 @@ async function boot(){
   let users = readLoginCache();
   if(users && users.length){
     STATE.users = users;
-    render();
+    // Keep the authenticated session across normal page refresh/reload.
+    // The session is local to this browser and is cleared only by explicit Logout.
+    if(restoreFastSession(users)){
+      render();
+      loadAllData().then(()=>render()).catch(e=>console.warn('Background data load:',e));
+    }else{
+      render();
+    }
     // Refresh users in the background only; never block the UI.
     dbGet('users', users).then(remote=>{
-      if(Array.isArray(remote) && remote.length){ STATE.users=remote; writeLoginCache(remote); }
+      if(Array.isArray(remote) && remote.length){
+        STATE.users=remote; writeLoginCache(remote);
+        if(currentUser){
+          const fresh=remote.find(x=>x.username===currentUser.username);
+          if(fresh) currentUser=fresh; else { currentUser=null; clearFastSession(); render(); return; }
+          render();
+        }
+      }
     }).catch(e=>console.warn('Background users refresh:',e));
     return;
   }
@@ -963,7 +1040,13 @@ async function boot(){
       users=[{id:genId(),username:'admin',password:'admin123',name:'مدير النظام',isAdmin:true,permissions:{}}];
       await dbSet('users',users);
     }
-    STATE.users=users; writeLoginCache(users); render();
+    STATE.users=users; writeLoginCache(users);
+    if(restoreFastSession(users)){
+      render();
+      loadAllData().then(()=>render()).catch(e=>console.warn('Background data load:',e));
+    }else{
+      render();
+    }
   }catch(e){
     document.getElementById('app').innerHTML=loginScreen('تعذر الاتصال بقاعدة البيانات. حاول مرة أخرى.');
     attachLoginHandlers();
@@ -1163,7 +1246,7 @@ function mainLayout(){
   `;
 }
 function toggleSidebar(){ sidebarOpen = !sidebarOpen; render(); }
-function logout(){ currentUser = null; render(); }
+function logout(){ clearFastSession(); currentUser = null; currentRoute='dashboard'; render(); }
 
 function goRoute(key){
   currentRoute = key; sidebarOpen = false; render();
@@ -1221,9 +1304,10 @@ function dashboardHTML(executive=false){
     cards.push(['¤',(income-expense).toLocaleString('ar-EG'),'صافي الرصيد']);
   }
 
-  const projectTotal=STATE.projects.length;
-  const projectAvg=projectTotal?Math.round(STATE.projects.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/projectTotal):0;
-  const projectRows=can('projects')?STATE.projects.slice(0,6).map(p=>{
+  const scopedProjects=visibleProjects();
+  const projectTotal=scopedProjects.length;
+  const projectAvg=projectTotal?Math.round(scopedProjects.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/projectTotal):0;
+  const projectRows=can('projects')?scopedProjects.slice(0,6).map(p=>{
     const pct=Math.max(0,Math.min(100,Number(p.percentComplete||p.percent||0)));
     return `<div class="progress-row"><span>${escapeHtml(p.name||'مشروع')}</span><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
   }).join(''):'<div class="section-note">لا توجد صلاحية لعرض بيانات المشاريع.</div>';
@@ -1270,7 +1354,7 @@ function dashboardHTML(executive=false){
     ${cards.length?`<div class="cards-row reference-stats">${cards.map(c=>`<div class="stat-card"><span class="stat-icon">${c[0]}</span><div class="n">${c[1]}</div><div class="l">${c[2]}</div></div>`).join('')}</div>`:'<div class="section-note">لا توجد وحدات مسموح بعرض مؤشرات لها لهذا المستخدم.</div>'}
     ${can('handoverRequests')?`<div class="section-note" style="border-inline-start:5px solid #00a6d6;background:#eefaff;"><b>الاستلام والتسليم:</b> ${STATE.handoverRequests.filter(r=>!['مغلق','مقبول'].includes(r.status)).length} طلب مفتوح · <button class="link-btn" onclick="goRoute('handoverRequests')">فتح المركز</button></div>`:''}
     <div class="dashboard-grid">
-      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◉</span>حالة المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><div class="donut-wrap"><div class="donut"><div class="donut-center">${projectTotal}<small>مشروع</small></div></div><div class="legend"><div class="legend-row">قيد التنفيذ <b>${projectTotal?Math.round(STATE.projects.filter(p=>p.status==='قيد التنفيذ').length/projectTotal*100):0}%</b></div><div class="legend-row">مكتمل <b>${projectTotal?Math.round(STATE.projects.filter(p=>p.status==='منتهي').length/projectTotal*100):0}%</b></div><div class="legend-row">متوقف <b>${STATE.projects.filter(p=>p.status==='متوقف').length}</b></div><div class="legend-row">متوسط الإنجاز <b>${projectAvg}%</b></div></div></div></div>`:''}
+      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◉</span>حالة المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><div class="donut-wrap"><div class="donut"><div class="donut-center">${projectTotal}<small>مشروع</small></div></div><div class="legend"><div class="legend-row">قيد التنفيذ <b>${projectTotal?Math.round(scopedProjects.filter(p=>p.status==='قيد التنفيذ').length/projectTotal*100):0}%</b></div><div class="legend-row">مكتمل <b>${projectTotal?Math.round(scopedProjects.filter(p=>p.status==='منتهي').length/projectTotal*100):0}%</b></div><div class="legend-row">متوقف <b>${scopedProjects.filter(p=>p.status==='متوقف').length}</b></div><div class="legend-row">متوسط الإنجاز <b>${projectAvg}%</b></div></div></div></div>`:''}
       ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◫</span>تقدم المشاريع</span><span>${projectAvg}% متوسط</span></div><div class="mini-bars">${projectRows}</div></div>`:''}
       ${can('finance')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">¤</span>الملخص المالي</span><span class="more" onclick="goRoute('finance')">التفاصيل</span></div><div style="display:grid;gap:9px;"><div class="stat-card success"><div class="n">${STATE.finance.filter(f=>f.type==='إيراد').reduce((a,f)=>a+Number(f.amount||0),0).toLocaleString('ar-EG')}</div><div class="l">إجمالي الإيرادات</div></div><div class="stat-card danger"><div class="n">${STATE.finance.filter(f=>f.type==='مصروف').reduce((a,f)=>a+Number(f.amount||0),0).toLocaleString('ar-EG')}</div><div class="l">إجمالي المصروفات</div></div></div></div>`:''}
     </div>
@@ -1504,7 +1588,7 @@ function addWorkflowItem(kind,id){
   render();
 }
 async function advanceHandover(id,next){
-  const r=handoverRequestById(id); if(!r || !canEdit('handoverRequests')) return;
+  const r=handoverRequestById(id); if(!r || !canEdit('handoverRequests')) return; if(!canAccessProject(r.projectId)){alert('المشروع غير ضمن صلاحيات المستخدم.');return;}
   r.status=next;
   if(next==='مغلق'){ r.closeDate=todayISO(); r.result=r.result||'تم الإغلاق'; }
   r.updatedBy=currentUser.username; r.updatedByName=currentUser.name;
@@ -1536,11 +1620,14 @@ function handoverCenterHTML(){
 
 /* ---------- Generic module list ---------- */
 function moduleHTML(key, mod){
-  const list = STATE[key] || [];
+  const list = scopeRecords(STATE[key] || []);
   const editable = canEdit(mod.permKey);
 
   let filterBar = '';
-  let filtered = list;
+  let filtered = list.slice();
+  const sortField = projectFilter[key+'_sortField'] || '';
+  const sortDir = projectFilter[key+'_sortDir'] || 'desc';
+  const dateFields = mod.fields.filter(f=>f.type==='date').map(f=>[f.name,f.label]);
   if(mod.hasProject){
     const pid = projectFilter[key] || '';
     filterBar = `
@@ -1550,20 +1637,25 @@ function moduleHTML(key, mod){
       </select>`;
     if(pid) filtered = list.filter(r=>r.projectId===pid);
   }
+  if(sortField){ filtered.sort((a,b)=>{ const av=a[sortField]||'', bv=b[sortField]||''; return (String(av).localeCompare(String(bv)))*(sortDir==='asc'?1:-1); }); }
 
-  const rows = filtered.map(r=>{
+  const rows = filtered.map((r,rowIndex)=>{
     const cells = mod.columns.map(([f,_])=>`<td>${formatCell(mod,f,r[f])}</td>`).join('');
     const projCell = mod.hasProject ? `<td>${escapeHtml(projectName(r.projectId))}</td>` : '';
     const creator = r.createdByName || r.createdBy || '—';
     const creatorCell = `<td><span class="badge">${escapeHtml(creator)}</span></td>`;
-    const attachCell = `<td>${r.hasAttachment ? `<button class="link-btn" onclick="openAttachment('${key}','${r.id}')">📎 مرفقات</button>` : '<span style="color:#B7B0A0">—</span>'}</td>`;
+    const attachments = Array.isArray(r.attachments) ? r.attachments : [];
+    const attachCell = `<td>${attachments.length ? attachments.map(a=>`<span class="attachment-inline" title="${escapeHtml(a.name||'مرفق')}"><button class="link-btn" onclick="openAttachment('${key}','${r.id}','${a.id||''}')">📄 فتح</button><button class="link-btn" onclick="downloadAttachment('${key}','${r.id}','${a.id||''}')">⬇ تنزيل</button></span>`).join(' ') : (r.hasAttachment ? `<button class="link-btn" onclick="openAttachment('${key}','${r.id}')">📎 فتح المرفق</button>` : '<span style="color:#B7B0A0">—</span>')}</td>`;
     return `<tr>
+      <td class="no-print"><input type="checkbox" class="record-print-check" data-key="${key}" value="${r.id}" aria-label="اختيار للطباعة"></td>
+      <td class="row-order">${rowIndex+1}</td>
       ${projCell}
       ${cells}
       ${creatorCell}
       ${attachCell}
       <td class="no-print"><div class="row-actions">
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?'تعديل':'عرض'}</button>
+        <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ طباعة</button>
         ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">حذف</button>`:''}
       </div></td>
     </tr>`;
@@ -1574,23 +1666,63 @@ function moduleHTML(key, mod){
 
   return `
     <div class="toolbar no-print">
-      <div class="filters">${filterBar}</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+      <div class="filters">${filterBar}
+        ${dateFields.length?`<span class="sort-label">ترتيب البنود:</span><select onchange="setSort('${key}',this.value)"><option value="">بدون ترتيب زمني</option>${dateFields.map(([f,l])=>`<option value="${f}" ${sortField===f?'selected':''}>حسب ${l}</option>`).join('')}</select><select onchange="setSortDir('${key}',this.value)"><option value="desc" ${sortDir==='desc'?'selected':''}>الأحدث أولاً ↓</option><option value="asc" ${sortDir==='asc'?'selected':''}>الأقدم أولاً ↑</option></select><span class="sort-current">${sortField ? (sortDir==='desc'?'الأحدث ← الأقدم':'الأقدم ← الأحدث') : 'الترتيب الافتراضي'}</span>`:''}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة الصفحة</button>
+        <button class="btn btn-primary" onclick="printSelectedRecords('${key}')">📑 طباعة المحدد</button>
+        ${(key==='contracts'||key==='extracts') && filtered.length ? `<button class="btn btn-primary" onclick="printDocument('${key}','${filtered[0].id}')">📄 طباعة نموذج كامل</button>`:''}
         ${editable ? `<button class="btn btn-amber" onclick="openNew('${key}')">+ إضافة</button>` : ''}
       </div>
     </div>
     <h3 class="print-only" style="margin:0 0 12px;">${mod.title}</h3>
     <table>
-      <thead><tr>${projHead}${headCols}<th>أُضيف بواسطة</th><th>المرفقات</th><th class="no-print"></th></tr></thead>
+      <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>الترتيب</th>${projHead}${headCols}<th>أُضيف بواسطة</th><th>المرفقات / المستندات</th><th class="no-print"></th></tr></thead>
       <tbody>
-        ${rows || `<tr class="empty-row"><td colspan="12">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
+        ${rows || `<tr class="empty-row"><td colspan="13">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
       </tbody>
     </table>
   `;
 }
 
+function toggleAllPrintChecks(master){
+  document.querySelectorAll('.record-print-check').forEach(cb=>{ cb.checked=master.checked; });
+}
+function printSelectedRecords(key){
+  const ids=[...document.querySelectorAll(`.record-print-check[data-key="${key}"]:checked`)].map(x=>x.value);
+  if(!ids.length){ alert('اختر بنداً واحداً على الأقل للطباعة.'); return; }
+  if(ids.length===1){ printAnyRecord(key,ids[0]); return; }
+  const records=(STATE[key]||[]).filter(x=>ids.includes(x.id));
+  printRecordsBatch(key,records);
+}
+function printAnyRecord(key,id){
+  if(key==='contracts' || key==='extracts'){ printDocument(key,id); return; }
+  const r=(STATE[key]||[]).find(x=>x.id===id); if(!r)return;
+  printRecordsBatch(key,[r]);
+}
+function printRecordsBatch(key,records){
+  if(!records.length)return;
+  const mod=MODULES[key] || {title:key,fields:[]};
+  const title=`${mod.title||key} — طباعة`;
+  const blocks=records.map((r,i)=>{
+    const project=mod.hasProject?`<div><b>المشروع:</b> ${escapeHtml(projectName(r.projectId))}</div>`:'';
+    const rows=(mod.columns||Object.keys(r).map(k=>[k,k])).map(([f,l])=>`<tr><th>${escapeHtml(l)}</th><td>${escapeHtml(r[f]??'')}</td></tr>`).join('');
+    return `<section class="print-document ${i<records.length-1?'page-break':''}"><h1>${escapeHtml(mod.title||key)}</h1><div class="doc-meta">${project}<div><b>رقم السجل:</b> ${escapeHtml(r.id||'')}</div></div><table>${rows}</table><div class="signatures"><div>المعتمد<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div>المسؤول<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></section>`;
+  }).join('');
+  const w=window.open('','_blank'); if(!w)return;
+  w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{background:#eee;font-family:Arial;margin:0}.print-document{background:#fff;color:#111;max-width:900px;margin:20px auto;padding:30px;line-height:1.8}.doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #bbb;padding:12px;margin-bottom:15px}.print-document table{width:100%;border-collapse:collapse}.print-document th,.print-document td{border:1px solid #999;padding:7px;text-align:right}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center}.page-break{page-break-after:always}@media print{body{background:#fff}.print-document{margin:0;max-width:none}.page-break{page-break-after:always}}</style></head><body>${blocks}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`); w.document.close();
+}
 function setProjectFilter(key, val){ projectFilter[key] = val; render(); }
+function setSort(key,val){ projectFilter[key+'_sortField']=val; render(); }
+function setSortDir(key,val){ projectFilter[key+'_sortDir']=val; render(); }
+function printDocument(key,id){
+  const r=(STATE[key]||[]).find(x=>x.id===id); if(!r)return;
+  const title=key==='contracts'?'عقد مقاولة بين المالك والمقاول':'مستخلص أعمال بين المالك والمقاول';
+  const p=projectName(r.projectId);
+  const html=key==='contracts'?`<div class="print-document"><h1>عقد مقاولة</h1><h2>بين المالك والمقاول</h2><div class="doc-meta"><div><b>المشروع:</b> ${escapeHtml(p)}</div><div><b>رقم العقد:</b> ${escapeHtml(r.contractNumber||'')}</div><div><b>المالك:</b> ${escapeHtml(r.owner||'')}</div><div><b>المقاول:</b> ${escapeHtml(r.contractor||r.party||'')}</div><div><b>قيمة العقد:</b> ${escapeHtml(r.value||'')} ${escapeHtml(r.currency||'')}</div><div><b>مدة التنفيذ:</b> ${escapeHtml(r.duration||'')} يوم</div><div><b>تاريخ البدء:</b> ${escapeHtml(r.startDate||'')}</div><div><b>تاريخ الانتهاء:</b> ${escapeHtml(r.endDate||'')}</div><div><b>الاحتجاز:</b> ${escapeHtml(r.retention||'')}</div><div><b>الدفعة المقدمة:</b> ${escapeHtml(r.advance||'')}</div></div><h3>أولاً: نطاق الأعمال</h3><p>${escapeHtml(r.scope||'')}</p><h3>ثانياً: شروط الدفع والمستخلصات</h3><p>${escapeHtml(r.paymentTerms||'')}</p><h3>ثالثاً: بنود وشروط العقد</h3><p style="white-space:pre-wrap">${escapeHtml(r.clauses||'')}</p><h3>رابعاً: أحكام عامة</h3><p>يلتزم الطرفان بتنفيذ الأعمال طبقاً للمخططات والمواصفات والعقد والبرنامج الزمني، وتوثيق المستخلصات والمراسلات والاستلامات طبقاً لإجراءات المشروع.</p><div class="signatures"><div><b>المالك</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div><b>المقاول</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></div>`:`<div class="print-document"><h1>مستخلص أعمال</h1><h2>بين المالك والمقاول</h2><div class="doc-meta"><div><b>المشروع:</b> ${escapeHtml(p)}</div><div><b>رقم المستخلص:</b> ${escapeHtml(r.number||'')}</div><div><b>المالك:</b> ${escapeHtml(r.owner||'')}</div><div><b>المقاول:</b> ${escapeHtml(r.contractor||'')}</div><div><b>رقم العقد:</b> ${escapeHtml(r.contractNumber||'')}</div><div><b>تاريخ المستخلص:</b> ${escapeHtml(r.date||'')}</div><div><b>الفترة:</b> ${escapeHtml(r.periodFrom||'')} إلى ${escapeHtml(r.periodTo||'')}</div><div><b>الحالة:</b> ${escapeHtml(r.status||'')}</div></div><h3>بيان الأعمال</h3><p style="white-space:pre-wrap">${escapeHtml(r.workDescription||'')}</p><table><tr><th>البيان</th><th>القيمة</th></tr><tr><td>إجمالي الأعمال السابقة</td><td>${escapeHtml(r.previousAmount||0)}</td></tr><tr><td>أعمال الفترة الحالية</td><td>${escapeHtml(r.currentAmount||0)}</td></tr><tr><td>إجمالي الأعمال حتى تاريخه</td><td>${escapeHtml(r.amount||0)}</td></tr><tr><td>إجمالي الاستقطاعات</td><td>${escapeHtml(r.deductions||0)}</td></tr><tr><td><b>صافي المستخلص المستحق</b></td><td><b>${escapeHtml(r.netAmount||0)}</b></td></tr></table><h3>ملاحظات وشروط الدفع</h3><p style="white-space:pre-wrap">${escapeHtml(r.notes||'')}</p><div class="signatures"><div><b>اعتماد المالك / الاستشاري</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div><b>المقاول</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></div>`;
+  const w=window.open('','_blank'); if(!w)return; w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{background:#eee;font-family:Arial}.print-document{background:#fff;color:#111;max-width:900px;margin:20px auto;padding:30px;line-height:1.8}.doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #bbb;padding:12px}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center}.print-document table{width:100%;border-collapse:collapse}.print-document th,.print-document td{border:1px solid #999;padding:7px}</style></head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`); w.document.close();
+}
 function projectName(id){ const p = STATE.projects.find(x=>x.id===id); return p ? p.name : '—'; }
 function formatCell(mod, field, val){
   if(val === undefined || val === null || val === '') return '<span style="color:#B7B0A0">—</span>';
@@ -1654,11 +1786,11 @@ function modalHTML(){
       <div class="form-grid">
         ${projField}
         ${fieldsHTML}
-        ${editable ? `<div class="field full">
-          <label>مرفق (صورة أو ملف)</label>
-          <input type="file" id="f_attachment">
-          ${record.hasAttachment ? `<div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">📎 يوجد مرفق حالياً: ${escapeHtml(record.attachmentName||'')} — اختيار ملف جديد هيستبدله</div>` : ''}
-        </div>` : (record.hasAttachment ? `<div class="field full"><label>المرفق</label><button class="link-btn" onclick="openAttachment('${moduleKey}','${record.id}')">📎 ${escapeHtml(record.attachmentName||'فتح المرفق')}</button></div>` : '')}
+        <div class="field full">
+          <label>المرفقات — يمكن إضافة أكثر من ملف</label>
+          ${editable ? `<input type="file" id="f_attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">` : ''}
+          ${renderAttachmentList(moduleKey, record)}
+        </div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>
@@ -1695,24 +1827,20 @@ async function saveRecord(){
     STATE[moduleKey][idx] = record;
   }
 
-  const fileInput = document.getElementById('f_attachment');
-  const file = fileInput && fileInput.files && fileInput.files[0];
-  if(file){
-    if(file.size > 4 * 1024 * 1024){
-      alert('حجم المرفق كبير جداً (الحد الأقصى تقريباً 4 ميجا). لم يتم رفع المرفق، لكن باقي بيانات السجل اتحفظت.');
-    } else {
+  const fileInput = document.getElementById('f_attachments');
+  const files = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
+  if(files.length){
+    const attachments = Array.isArray(record.attachments) ? record.attachments.slice() : [];
+    for(const file of files){
+      if(file.size > 4 * 1024 * 1024){ alert('تم تجاوز 4 ميجا للملف: '+file.name); continue; }
       try{
-        const dataUrl = await new Promise((resolve, reject)=>{
-          const reader = new FileReader();
-          reader.onload = ()=>resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        await dbSet('attach_'+moduleKey+'_'+record.id, {name:file.name, dataUrl});
-        record.hasAttachment = true;
-        record.attachmentName = file.name;
-      }catch(e){ console.error('attachment error', e); alert('تعذر رفع المرفق.'); }
+        const dataUrl = await new Promise((resolve, reject)=>{ const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file); });
+        const attId=genId();
+        await dbSet('attach_'+moduleKey+'_'+record.id+'_'+attId,{id:attId,name:file.name,dataUrl,type:file.type||'',size:file.size});
+        attachments.push({id:attId,name:file.name,type:file.type||'',size:file.size});
+      }catch(e){ console.error(e); alert('تعذر رفع المرفق: '+file.name); }
     }
+    record.attachments=attachments; record.hasAttachment=attachments.length>0; record.attachmentName=attachments[0]?.name||'';
   }
 
   await dbSet(moduleKey, STATE[moduleKey]);
@@ -1720,19 +1848,31 @@ async function saveRecord(){
   render();
 }
 
-async function openAttachment(moduleKey, id){
-  const data = await dbGet('attach_'+moduleKey+'_'+id, null);
-  if(!data){ alert('تعذر العثور على المرفق.'); return; }
-  const a = document.createElement('a');
-  a.href = data.dataUrl;
-  a.download = data.name || 'attachment';
-  a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+function renderAttachmentList(moduleKey, record){
+  const arr=Array.isArray(record.attachments)?record.attachments:(record.hasAttachment?[{id:'legacy',name:record.attachmentName||'المرفق'}]:[]);
+  if(!arr.length) return '<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">لا توجد مرفقات.</div>';
+  return '<div class="attachment-list">'+arr.map(a=>`<div class="attachment-item"><span>📎 ${escapeHtml(a.name||'مرفق')}</span><span><button type="button" class="link-btn" onclick="openAttachment('${moduleKey}','${record.id}','${a.id||''}')">فتح</button> <button type="button" class="link-btn" onclick="downloadAttachment('${moduleKey}','${record.id}','${a.id||''}')">تنزيل</button></span></div>`).join('')+'</div>';
+}
+async function getAttachment(moduleKey,id,attId){
+  if(attId){ const x=await dbGet('attach_'+moduleKey+'_'+id+'_'+attId,null); if(x)return x; }
+  return await dbGet('attach_'+moduleKey+'_'+id,null);
+}
+async function openAttachment(moduleKey,id,attId){
+  const data=await getAttachment(moduleKey,id,attId); if(!data){alert('تعذر العثور على المرفق.');return;}
+  if((data.type||'').includes('pdf') || /^data:application\/pdf/i.test(data.dataUrl||'')){
+    const wrap=document.createElement('div'); wrap.className='pdf-viewer';
+    wrap.innerHTML=`<div class="pdf-viewer-head"><b>📄 ${escapeHtml(data.name||'PDF')}</b><div><button class="btn btn-ghost" style="color:#fff" onclick="downloadAttachment('${moduleKey}','${id}','${attId||''}')">تنزيل</button> <button class="btn btn-amber" onclick="this.closest('.pdf-viewer').remove()">إغلاق</button></div></div><iframe src="${data.dataUrl}" title="PDF"></iframe>`;
+    document.body.appendChild(wrap);
+  }else{ const w=window.open(); if(w){w.document.write(`<title>${escapeHtml(data.name||'مرفق')}</title><img src="${data.dataUrl}" style="max-width:100%;max-height:95vh;display:block;margin:auto">`);} }
+}
+async function downloadAttachment(moduleKey,id,attId){
+  const data=await getAttachment(moduleKey,id,attId); if(!data){alert('تعذر العثور على المرفق.');return;}
+  const a=document.createElement('a'); a.href=data.dataUrl; a.download=data.name||'attachment'; document.body.appendChild(a); a.click(); a.remove();
 }
 
 async function deleteRecord(moduleKey, id){
+  const target=(STATE[moduleKey]||[]).find(r=>r.id===id);
+  if(target && !canAccessProject(target.projectId)){ alert('هذا المشروع غير ضمن المشاريع المسموح بها لهذا المستخدم.'); return; }
   if(!confirm('هل تريد حذف هذا السجل؟')) return;
   STATE[moduleKey] = STATE[moduleKey].filter(r=>r.id!==id);
   await dbSet(moduleKey, STATE[moduleKey]);
@@ -1767,7 +1907,7 @@ function adminHTML(){
 }
 
 function openUserNew(){
-  modalState = {isUserModal:true, isNew:true, record:{isAdmin:false, permissions:{}}};
+  modalState = {isUserModal:true, isNew:true, record:{isAdmin:false, permissions:{}, projectScope:{mode:'all',ids:[]}}};
   render();
 }
 function openUserEdit(id){
@@ -1780,6 +1920,39 @@ async function deleteUser(id){
   STATE.users = STATE.users.filter(u=>u.id!==id);
   await dbSet('users', STATE.users);
   render();
+}
+
+function projectScopeEditorHTML(record){
+  const s=record.projectScope||{mode:'all',ids:[]};
+  const ids=Array.isArray(s.ids)?s.ids:[];
+  const selected=(STATE.projects||[]).filter(p=>ids.includes(p.id));
+  return `<select id="u_projectScopeMode" onchange="renderProjectScopeOptions()">
+    <option value="all" ${s.mode==='all'?'selected':''}>كافة المشاريع</option>
+    <option value="selected" ${s.mode==='selected'?'selected':''}>مشاريع محددة</option>
+    <option value="count" ${s.mode==='count'?'selected':''}>عدد محدد من المشاريع</option>
+  </select>
+  <div id="projectScopeOptions" style="margin-top:10px;">
+    ${projectScopeOptionsHTML(s)}
+  </div>`;
+}
+function projectScopeOptionsHTML(s){
+  if(!s || s.mode==='all') return `<div class="section-note">المستخدم يستطيع الوصول إلى جميع المشاريع المتاحة في النظام.</div>`;
+  const ids=new Set(Array.isArray(s.ids)?s.ids:[]);
+  if(!(STATE.projects||[]).length) return `<div class="section-note">لا توجد مشاريع مضافة حالياً.</div>`;
+  const boxes=(STATE.projects||[]).map(p=>`<label style="display:flex;gap:8px;align-items:center;margin:6px 0;"><input type="checkbox" class="project-scope-check" value="${p.id}" ${ids.has(p.id)?'checked':''}> ${escapeHtml(p.name||p.projectName||p.code||p.id)}</label>`).join('');
+  return `<div class="section-note">${s.mode==='selected'?'حدد المشاريع المسموح بها لهذا المستخدم.':'حدد عدد المشاريع المسموح بها؛ اختر المشاريع التي تدخل ضمن العدد المحدد.'}</div>
+  <div style="max-height:180px;overflow:auto;border:1px solid var(--border);padding:8px;border-radius:8px;">${boxes}</div>
+  <div id="projectScopeCount" class="section-note" style="margin-top:6px;">المحدد: ${ids.size} مشروع</div>`;
+}
+function renderProjectScopeOptions(){
+  const mode=document.getElementById('u_projectScopeMode')?.value||'all';
+  const old=[...document.querySelectorAll('.project-scope-check:checked')].map(x=>x.value);
+  const box=document.getElementById('projectScopeOptions'); if(!box)return;
+  box.innerHTML=projectScopeOptionsHTML({mode,ids:old});
+  document.querySelectorAll('.project-scope-check').forEach(x=>x.addEventListener('change',()=>{
+    const n=document.querySelectorAll('.project-scope-check:checked').length;
+    const c=document.getElementById('projectScopeCount'); if(c)c.textContent='المحدد: '+n+' مشروع';
+  }));
 }
 
 function userModalHTML(){
@@ -1811,6 +1984,10 @@ function userModalHTML(){
             <option value="1" ${record.isAdmin?'selected':''}>مدير كامل الصلاحيات</option>
           </select>
         </div>
+      </div>
+      <div class="field full" style="margin-top:14px;">
+        <label>نطاق صلاحية المشاريع</label>
+        ${projectScopeEditorHTML(record)}
       </div>
       <div class="field full" style="margin-top:14px;">
         <label>صلاحيات الأقسام</label>
@@ -1852,10 +2029,14 @@ async function saveUser(){
     const el = document.getElementById('perm_'+pk);
     permissions[pk] = el ? el.value : 'none';
   });
+  const scopeMode=document.getElementById('u_projectScopeMode')?.value||'all';
+  const scopeIds=[...document.querySelectorAll('.project-scope-check:checked')].map(x=>x.value);
+  if(!isAdmin && scopeMode!=='all' && scopeIds.length===0){ alert('حدد مشروعاً واحداً على الأقل أو اختر كافة المشاريع.'); return; }
+  const projectScope={mode:scopeMode,ids:scopeMode==='all'?[]:scopeIds};
 
   if(isNew){
     STATE.users.push({
-      id:genId(), name, username, password, isAdmin, permissions
+      id:genId(), name, username, password, isAdmin, permissions, projectScope
     });
   } else {
     const idx = STATE.users.findIndex(u=>u.id===record.id);
@@ -1864,6 +2045,7 @@ async function saveUser(){
     if(password) STATE.users[idx].password = password;
     STATE.users[idx].isAdmin = isAdmin;
     STATE.users[idx].permissions = permissions;
+    STATE.users[idx].projectScope = projectScope;
     if(currentUser.id === record.id) currentUser = STATE.users[idx];
   }
   await dbSet('users', STATE.users);
