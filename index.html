@@ -283,7 +283,19 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 .user-chip .who b{color:#fff;}
 .user-avatar{width:42px;height:42px;border-radius:50%;background:#cfe7ff;color:#0a3a69;display:grid;place-items:center;font-size:22px;border:2px solid rgba(255,255,255,.65);}
 .topbar-actions{display:flex;align-items:center;gap:9px;}
-.top-action{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);color:#fff;border-radius:9px;padding:8px 10px;cursor:pointer;font-family:inherit;}
+.top-action{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);color:#fff;border-radius:9px;padding:8px 10px;cursor:pointer;font-family:inherit;position:relative;}
+.top-action.has-label{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;font-size:12px;font-weight:700;min-width:auto;height:auto;}
+.top-action .tb-badge{position:absolute;top:-6px;left:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:10px;font-size:10px;font-weight:900;display:grid;place-items:center;line-height:1;border:2px solid #0b5cae;}
+.top-action .tb-badge.warn{background:#f0a11a;color:#fff;}
+.top-action .tb-badge.ok{background:#11a96b;color:#fff;}
+.top-action .tb-badge.bad{background:#e34b57;color:#fff;}
+.top-action.pending-btn{background:rgba(240,161,26,.22);border-color:rgba(240,161,26,.45);}
+.top-action.decided-btn{background:rgba(17,169,107,.18);border-color:rgba(17,169,107,.4);}
+.approval-inbox-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #dbe7f1;border-radius:10px;background:#fbfdff;margin-bottom:8px;}
+.approval-inbox-row:hover{background:#eef7ff;border-color:#a9d1f2;}
+.approval-inbox-row .meta{font-size:12px;color:#53677b;margin-top:4px;line-height:1.6;}
+.approval-inbox-row .acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;}
+
 .content{padding:18px 20px 45px;max-width:1600px;margin:auto;}
 
 .hero{
@@ -447,7 +459,7 @@ function todayISO(){ return new Date().toISOString().slice(0,10); }
 /* ===================== State ===================== */
 const PERM_KEYS = ['company','projects','details','planning','siteExecution','engineer','engineersList','labor','equipment',
   'techoffice','boq','purchases','suppliers','deliveries','warehouse','warehousesLoc','contracts','extracts',
-  'invoices','finance','accounting','qaqc','hse','handoverRequests','documents','correspondence','changeOrders','claims','risks','handover','reports'];
+  'invoices','finance','accounting','qaqc','hse','handoverRequests','documents','correspondence','changeOrders','claims','risks','handover','reports','siteIncidents'];
 const PERM_LABELS = {
   company:'الشركة والفروع', projects:'المشاريع', details:'تفاصيل المشروع', planning:'التخطيط والبرنامج الزمني',
   siteExecution:'التنفيذ ومتابعة الموقع', engineer:'المهندس المدني (تقارير الموقع)', engineersList:'المهندسون (سجل)', labor:'العمالة', equipment:'المعدات',
@@ -456,7 +468,7 @@ const PERM_LABELS = {
   contracts:'العقود', extracts:'المستخلصات', invoices:'الفواتير', finance:'الماليات', accounting:'المحاسبة',
   qaqc:'QA/QC والجودة', hse:'HSE والسلامة', handoverRequests:'طلبات الاستلام والتسليم', documents:'إدارة المستندات والرسومات',
   correspondence:'المراسلات والخطابات', changeOrders:'الأوامر التغييرية', claims:'Claims المطالبات',
-  risks:'المخاطر', handover:'التسليم والصيانة بعد التسليم', reports:'التقارير التنفيذية'
+  risks:'المخاطر', handover:'التسليم والصيانة بعد التسليم', reports:'التقارير التنفيذية', siteIncidents:'المستحدثات والطارئ بالموقع'
 };
 
 let STATE = {
@@ -955,6 +967,8 @@ const NAV = [
   {key:'listManagement',label:'إدارة القوائم',adminOnly:true},
   {key:'globalSearch',label:'البحث الشامل',special:true},
   {key:'notifications',label:'مركز التنبيهات',special:true},
+  {key:'pendingApprovals',label:'بنود قيد الاعتماد',special:true},
+  {key:'decidedApprovals',label:'المعتمد والمرفوض',special:true},
   {key:'changePassword',label:'تغيير كلمة المرور',special:true},
   {key:'language',label:'اللغة',special:true}
 ];
@@ -969,37 +983,174 @@ function canView(permKey){ return permLevel(permKey) === 'view' || permLevel(per
 function canEdit(permKey){ return permLevel(permKey) === 'edit'; }
 function approvalPolicy(moduleKey){
   const list=Array.isArray(STATE.approvalPolicies)?STATE.approvalPolicies:[];
-  return list.find(x=>x.moduleKey===moduleKey) || {moduleKey,enabled:false,permissionKey:'',approverIds:[],requiredLevel:'edit',label:''};
+  const found=list.find(x=>x.moduleKey===moduleKey);
+  return found || {moduleKey,enabled:false,permissionKey:'',approverIds:[],approverSpecialties:[],requiredLevel:'edit',label:'',requireAll:false};
 }
 function approvalRequired(moduleKey){ return !!approvalPolicy(moduleKey).enabled; }
 function userHasApprovalPermission(user, policy){
   if(!user) return false;
   if(user.isAdmin) return true;
-  if(!policy || !policy.permissionKey) return false;
+  if(!policy) return false;
+  // إذا حُددت تخصصات مؤهّلة: يكفي تطابق التخصص (أو كون المستخدم مختاراً بالاسم)
+  const specs=Array.isArray(policy.approverSpecialties)?policy.approverSpecialties:[];
+  const ids=Array.isArray(policy.approverIds)?policy.approverIds:[];
+  if(specs.length || ids.length){
+    const userSpec=(user.specialty||user.speciality||'').trim();
+    const bySpec=specs.length && userSpec && specs.includes(userSpec);
+    const byId=ids.length && ids.includes(user.id);
+    if(bySpec || byId) return true;
+    // إن وُجدت قوائم مؤهلين ولم يطابق المستخدم → لا يعتمد حتى لو كان لديه صلاحية القسم
+    if(specs.length || ids.length) return false;
+  }
+  if(!policy.permissionKey) return false;
   const level=(user.permissions&&user.permissions[policy.permissionKey])||'none';
   return policy.requiredLevel==='view' ? (level==='view'||level==='edit') : level==='edit';
 }
 function isDesignatedApprover(moduleKey,user=currentUser){
   const p=approvalPolicy(moduleKey);
-  if(!p.enabled || !userHasApprovalPermission(user,p)) return false;
-  const ids=Array.isArray(p.approverIds)?p.approverIds:[];
-  return user.isAdmin || ids.length===0 || ids.includes(user.id);
+  if(!p.enabled) return false;
+  if(user && user.isAdmin) return true;
+  return userHasApprovalPermission(user,p);
 }
 function recordApprovalStatus(moduleKey,record){
   if(!approvalRequired(moduleKey)) return '';
   return record.approvalStatus || 'قيد الاعتماد';
 }
 function canApproveRecord(moduleKey,record){
-  return !!record && approvalRequired(moduleKey) && recordApprovalStatus(moduleKey,record)!=='معتمد' && isDesignatedApprover(moduleKey);
+  if(!record || !approvalRequired(moduleKey)) return false;
+  const st=recordApprovalStatus(moduleKey,record);
+  if(st==='معتمد') return false;
+  return isDesignatedApprover(moduleKey);
 }
 async function approveRecord(moduleKey,id,decision='اعتماد'){
   const rec=(STATE[moduleKey]||[]).find(x=>x.id===id); if(!rec)return;
-  if(!canApproveRecord(moduleKey,rec)){alert('لا تملك صلاحية اعتماد هذا البند.');return;}
+  if(!canApproveRecord(moduleKey,rec)){alert('لا تملك صلاحية اعتماد هذا البند. يجب أن تكون من التخصصات أو المديرين المحددين من الأدمن.');return;}
   rec.approvalStatus=decision==='اعتماد'?'معتمد':'مرفوض';
-  rec.approvedBy=currentUser.username; rec.approvedByName=currentUser.name; rec.approvedAt=new Date().toISOString();
+  rec.approvedBy=currentUser.username;
+  rec.approvedByName=currentUser.name;
+  rec.approvedAt=new Date().toISOString();
   rec.approvalDecision=decision;
-  await dbSet(moduleKey,STATE[moduleKey]); render();
+  rec.approverSpecialty=currentUser.specialty||'';
+  await dbSet(moduleKey,STATE[moduleKey]);
+  render();
 }
+/** الوحدات التي يُفضّل تفعيل الاعتماد لها افتراضياً (يمكن للأدمن تعديلها) */
+const DEFAULT_APPROVAL_MODULES=['purchases','deliveries','warehouseItems','warehouseTx','warehousesLoc','siteExecution','siteIncidents','contracts','extracts','changeOrders','claims','handoverRequests'];
+function ensureDefaultApprovalPolicies(){
+  if(!Array.isArray(STATE.approvalPolicies)) STATE.approvalPolicies=[];
+  // لا نفرض التفعيل تلقائياً؛ فقط نضمن أن الحقول الجديدة موجودة في السياسات المحفوظة
+  STATE.approvalPolicies=STATE.approvalPolicies.map(p=>({
+    approverSpecialties:[],
+    requireAll:false,
+    ...p,
+    approverSpecialties:Array.isArray(p.approverSpecialties)?p.approverSpecialties:[],
+    approverIds:Array.isArray(p.approverIds)?p.approverIds:[]
+  }));
+}
+function approvalRecordTitle(moduleKey, r){
+  if(!r) return 'سجل';
+  return r.name||r.title||r.number||r.contractNumber||r.requestNo||r.itemName||r.activity||r.subject||r.phase||r.entryType||r.requestType||r.id||'سجل';
+}
+function collectApprovalItems(statusFilter){
+  // statusFilter: 'pending' | 'decided' | 'approved' | 'rejected'
+  const out=[];
+  for(const key of Object.keys(MODULES)){
+    if(!approvalRequired(key)) continue;
+    const mod=MODULES[key];
+    if(!canView(mod.permKey) && !(currentUser&&currentUser.isAdmin)) continue;
+    const list=scopeRecords(STATE[key]||[]);
+    for(const r of list){
+      const st=recordApprovalStatus(key,r);
+      if(!st) continue;
+      if(statusFilter==='pending' && st!=='قيد الاعتماد') continue;
+      if(statusFilter==='approved' && st!=='معتمد') continue;
+      if(statusFilter==='rejected' && st!=='مرفوض') continue;
+      if(statusFilter==='decided' && st!=='معتمد' && st!=='مرفوض') continue;
+      out.push({
+        moduleKey:key,
+        title:mod.title,
+        record:r,
+        status:st,
+        label:approvalRecordTitle(key,r),
+        project:mod.hasProject?projectName(r.projectId):'',
+        createdBy:r.createdByName||r.createdBy||'—',
+        approvedBy:r.approvedByName||r.approvedBy||'',
+        approvedAt:r.approvedAt||'',
+        canApprove:canApproveRecord(key,r)
+      });
+    }
+  }
+  // الأحدث أولاً قدر الإمكان
+  out.sort((a,b)=>{
+    const ad=a.record.updatedAt||a.record.approvedAt||a.record.date||a.record.requestDate||a.record.createdAt||'';
+    const bd=b.record.updatedAt||b.record.approvedAt||b.record.date||b.record.requestDate||b.record.createdAt||'';
+    return String(bd).localeCompare(String(ad));
+  });
+  return out;
+}
+function pendingApprovalCount(){ return collectApprovalItems('pending').length; }
+function decidedApprovalCount(){ return collectApprovalItems('decided').length; }
+function approvalInboxHTML(mode){
+  // mode: pending | decided
+  const isPending=mode==='pending';
+  const items=collectApprovalItems(isPending?'pending':'decided');
+  const filter=window.epmsApprovalInboxFilter||'all'; // all|approved|rejected for decided
+  let shown=items;
+  if(!isPending && filter==='approved') shown=items.filter(x=>x.status==='معتمد');
+  if(!isPending && filter==='rejected') shown=items.filter(x=>x.status==='مرفوض');
+  const rows=shown.map(x=>{
+    const badgeCls=x.status==='معتمد'?'ok':x.status==='مرفوض'?'bad':'warn';
+    const acts=[];
+    acts.push(`<button class="btn btn-ghost btn-sm" onclick="goRoute('${x.moduleKey==='handoverRequests'?'handoverRequests':x.moduleKey}');">فتح القسم</button>`);
+    if(isPending && x.canApprove){
+      acts.push(`<button class="btn btn-primary btn-sm" onclick="approveRecord('${x.moduleKey}','${x.record.id}','اعتماد')">اعتماد</button>`);
+      acts.push(`<button class="btn btn-danger btn-sm" onclick="approveRecord('${x.moduleKey}','${x.record.id}','رفض')">رفض</button>`);
+    } else if(isPending){
+      acts.push(`<span class="badge warn">بانتظار المعتمد</span>`);
+    }
+    return `<div class="approval-inbox-row">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <b style="color:#0c4b83">${escapeHtml(x.label)}</b>
+          <span class="badge ${badgeCls}">${escapeHtml(x.status)}</span>
+          <span class="badge">${escapeHtml(x.title)}</span>
+        </div>
+        <div class="meta">
+          ${x.project?`<span><b>المشروع:</b> ${escapeHtml(x.project)}</span> · `:''}
+          <span><b>أُضيف بواسطة:</b> ${escapeHtml(x.createdBy)}</span>
+          ${x.approvedBy?` · <span><b>المعتمد:</b> ${escapeHtml(x.approvedBy)}</span>`:''}
+          ${x.approvedAt?` · <span>${escapeHtml(String(x.approvedAt).slice(0,16).replace('T',' '))}</span>`:''}
+        </div>
+      </div>
+      <div class="acts">${acts.join('')}</div>
+    </div>`;
+  }).join('') || `<div class="section-note">${isPending?'لا توجد بنود قيد الاعتماد حالياً.':'لا توجد بنود معتمدة أو مرفوضة حالياً.'}</div>`;
+
+  const tabs=!isPending?`<div class="toolbar no-print"><div class="filters">
+    <button class="btn ${filter==='all'?'btn-primary':'btn-ghost'} btn-sm" onclick="window.epmsApprovalInboxFilter='all';render()">الكل (${items.length})</button>
+    <button class="btn ${filter==='approved'?'btn-primary':'btn-ghost'} btn-sm" onclick="window.epmsApprovalInboxFilter='approved';render()">معتمد (${items.filter(x=>x.status==='معتمد').length})</button>
+    <button class="btn ${filter==='rejected'?'btn-primary':'btn-ghost'} btn-sm" onclick="window.epmsApprovalInboxFilter='rejected';render()">مرفوض (${items.filter(x=>x.status==='مرفوض').length})</button>
+  </div>
+  <button class="btn btn-ghost btn-sm" onclick="goRoute('pendingApprovals')">⬅ قيد الاعتماد</button>
+  </div>`:`<div class="toolbar no-print"><div class="filters"><span class="section-note" style="margin:0">البنود التي تحتاج اعتماداً من الأقسام المفعّلة</span></div>
+  <button class="btn btn-ghost btn-sm" onclick="goRoute('decidedApprovals')">المعتمد / المرفوض ➡</button></div>`;
+
+  return `<div class="hero reference-hero">
+    <h1>${isPending?'بنود قيد الاعتماد':'المعتمد والمرفوض'}</h1>
+    <p>${isPending?'عرض كل السجلات في الأقسام التي تحتاج اعتماداً وما زالت بانتظار القرار.':'سجل القرارات: البنود التي تم اعتمادها أو رفضها.'}</p>
+  </div>
+  <div class="cards-row">
+    <div class="stat-card amber"><div class="n">${collectApprovalItems('pending').length}</div><div class="l">قيد الاعتماد</div></div>
+    <div class="stat-card success"><div class="n">${collectApprovalItems('approved').length}</div><div class="l">معتمد</div></div>
+    <div class="stat-card danger"><div class="n">${collectApprovalItems('rejected').length}</div><div class="l">مرفوض</div></div>
+  </div>
+  ${tabs}
+  <div class="panel"><div class="dashboard-card-title"><span>${isPending?'قائمة الانتظار':'سجل القرارات'}</span><small>${shown.length} بند</small></div>
+  ${rows}
+  </div>`;
+}
+function pendingApprovalsHTML(){ return approvalInboxHTML('pending'); }
+function decidedApprovalsHTML(){ return approvalInboxHTML('decided'); }
 function incidentApprovalSections(){
   const base=[
     ['projects','إدارة المشاريع'],['planning','التخطيط'],['siteExecution','التنفيذ'],['siteIncidents','المستحدثات والطارئ'],['contracts','العقود'],['changeOrders','الأوامر التغييرية'],['claims','المطالبات'],['purchases','المشتريات'],['suppliers','الموردون والمقاولون'],['deliveries','التوريدات والاستلام'],['handoverRequests','الاستلام والتسليم'],['warehouseItems','المخازن'],['extracts','المستخلصات'],['invoices','الفواتير'],['finance','الماليات'],['accounting','المحاسبة'],['labor','العمالة'],['equipment','المعدات'],['engineersList','المهندسون'],['correspondence','المراسلات'],['risks','المخاطر'],['hse','HSE والسلامة'],['qaqc','QA/QC والجودة'],['siteReports','تقارير الموقع'],['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','المستندات والرسومات'],['execReports','التقارير التنفيذية']
@@ -1141,6 +1292,7 @@ async function loadAllData(){
     await Promise.all(keys.slice(i,i+5).map(async k=>{STATE[k]=await load(k);}));
     if(i===0) render();
   }
+  ensureDefaultApprovalPolicies();
   try{localStorage.setItem(EPMS_DATA_LOADED_KEY,String(Date.now()));}catch(e){}
 }
 
@@ -1213,7 +1365,7 @@ let openMenuSections = JSON.parse(localStorage.getItem('epms_open_menus') || '{}
 
 const MENU_SECTIONS = [
   {key:'home',label:'القائمة الرئيسية',icon:'⌂',items:[['dashboard','الرئيسية']]},
-  {key:'lead',label:'لوحة القيادة',icon:'▣',items:[['executiveDashboard','لوحة القيادة'],['notifications','مركز التنبيهات'],['globalSearch','البحث الشامل']]},
+  {key:'lead',label:'لوحة القيادة',icon:'▣',items:[['executiveDashboard','لوحة القيادة'],['notifications','مركز التنبيهات'],['pendingApprovals','بنود قيد الاعتماد'],['decidedApprovals','المعتمد والمرفوض'],['globalSearch','البحث الشامل']]},
   {key:'projects',label:'المشاريع',icon:'▤',items:[['projects','المشاريع'],['phases','تفاصيل المشروع'],['siteExecution','التنفيذ ومتابعة الموقع'],['siteReports','تقارير الموقع'],['planning','البرنامج الزمني'],['finalHandover','التسليم النهائي'],['postHandoverMaint','الصيانة بعد التسليم']]},
   {key:'siteIncidents',label:'المستحدثات والطارئ بالموقع',icon:'⚠',items:[['siteIncidents','المستحدثات والطارئ بالموقع']]},{key:'siteHandover',label:'الاستلام والتسليم',icon:'⇄',items:[['handoverRequests','طلبات الاستلام والتسليم'],['handoverCenter','مركز دورة الاستلام والاعتماد'],['deliveries','التوريدات والاستلام'],['finalHandover','التسليم النهائي'],['postHandoverMaint','الصيانة بعد التسليم']]},
   {key:'contracts',label:'العقود',icon:'▧',items:[['contracts','العقود'],['changeOrders','الأوامر التغييرية'],['claims','المطالبات']]},
@@ -1286,7 +1438,7 @@ function topbarTitle(){
   const titles={
     dashboard:'الرئيسية', executiveDashboard:'لوحة القيادة', linksDrawings:'الترابط والرسومات',
     reportsStats:'التقارير والإحصائيات', projectSummaries:'ملخصات المشاريع والتخصصات', siteIncidents:'المستحدثات والطارئ بالموقع', systemManagement:'إدارة النظام', approvalSettings:'إدارة الاعتمادات',
-    listManagement:'إدارة القوائم', changePassword:'تغيير كلمة المرور', language:'اللغة', globalSearch:'البحث الشامل', notifications:'مركز التنبيهات',
+    listManagement:'إدارة القوائم', changePassword:'تغيير كلمة المرور', language:'اللغة', globalSearch:'البحث الشامل', notifications:'مركز التنبيهات', pendingApprovals:'بنود قيد الاعتماد', decidedApprovals:'المعتمد والمرفوض',
     admin:'المستخدمون والصلاحيات',activityLog:'سجل العمليات',backup:'Backup / Restore',
     projectManagement:'مركز إدارة المشاريع'
   };
@@ -1312,6 +1464,12 @@ function mainLayout(){
           <button class="top-action" onclick="goRoute('reportsStats')" title="التقارير">▥</button>
           <button class="top-action" onclick="goRoute('globalSearch')" title="البحث الشامل">⌕</button>
           <button class="top-action" onclick="goRoute('notifications')" title="التنبيهات">🔔</button>
+          <button class="top-action has-label pending-btn" onclick="goRoute('pendingApprovals')" title="بنود قيد الاعتماد">⏳ اعتماد
+            ${pendingApprovalCount()?`<span class="tb-badge warn">${pendingApprovalCount()}</span>`:''}
+          </button>
+          <button class="top-action has-label decided-btn" onclick="goRoute('decidedApprovals')" title="المعتمد والمرفوض">✓ قرارات
+            ${decidedApprovalCount()?`<span class="tb-badge ok">${decidedApprovalCount()}</span>`:''}
+          </button>
           <button class="top-action" onclick="goRoute('documents')" title="المستندات">▤</button>
           <div class="user-chip">
             <div class="user-avatar">♙</div>
@@ -1322,7 +1480,7 @@ function mainLayout(){
       <div class="content" id="content">${routeContent()}</div>
     </div>
   </div>
-  ${modalState && !modalState.isUserModal ? modalHTML() : ''}
+  ${modalState && !modalState.isUserModal && !modalState.isApprovalModal ? modalHTML() : ''}${modalState && modalState.isApprovalModal ? approvalPolicyModalHTML() : ''}
   `;
 }
 function toggleSidebar(){ sidebarOpen = !sidebarOpen; render(); }
@@ -1347,6 +1505,8 @@ function routeContent(){
   if(currentRoute==='language') return languageHTML();
   if(currentRoute==='globalSearch') return globalSearchHTML();
   if(currentRoute==='notifications') return notificationsHTML();
+  if(currentRoute==='pendingApprovals') return pendingApprovalsHTML();
+  if(currentRoute==='decidedApprovals') return decidedApprovalsHTML();
   if(currentRoute==='handoverCenter') return handoverCenterHTML();
   if(currentRoute==='admin') return currentUser.isAdmin ? adminHTML() : noAccessHTML();
   if(currentRoute==='activityLog') return currentUser.isAdmin ? activityLogHTML() : noAccessHTML();
@@ -1808,7 +1968,10 @@ function printDocument(key,id){
 function projectName(id){ const p = STATE.projects.find(x=>x.id===id); return p ? p.name : '—'; }
 function formatApprovalBadge(key,r){
   const st=recordApprovalStatus(key,r); const cls=st==='معتمد'?'ok':st==='مرفوض'?'bad':'warn';
-  return `<span class="badge ${cls}">${escapeHtml(st)}</span>${r.approvedByName?`<div style="font-size:10px;margin-top:3px">${escapeHtml(r.approvedByName)}</div>`:''}`;
+  const who=r.approvedByName?`<div style="font-size:10px;margin-top:3px">${escapeHtml(r.approvedByName)}${r.approverSpecialty?' · '+escapeHtml(r.approverSpecialty):''}</div>`:'';
+  const policy=approvalPolicy(key);
+  const hint=st==='قيد الاعتماد' && (policy.approverSpecialties||[]).length?`<div style="font-size:10px;color:#6c7d91;margin-top:2px">مطلوب: ${(policy.approverSpecialties||[]).map(escapeHtml).join(' / ')}</div>`:'';
+  return `<span class="badge ${cls}">${escapeHtml(st)}</span>${who}${hint}`;
 }
 function formatCell(mod, field, val){
   if(val === undefined || val === null || val === '') return '<span style="color:#B7B0A0">—</span>';
@@ -1834,6 +1997,7 @@ function closeModal(){ modalState = null; render(); }
 function modalHTML(){
   const {moduleKey, record, isNew} = modalState;
   const mod = MODULES[moduleKey];
+  if(!mod){ console.warn('modalHTML: unknown module', moduleKey); return ''; }
   const editable = canEdit(mod.permKey);
 
   let projField = '';
@@ -1901,17 +2065,44 @@ async function saveRecord(){
   }
   for(const f of mod.fields){
     const el = document.getElementById('f_'+f.name);
-    const v = el.value;
-    if(f.required && !v){ alert('من فضلك أدخل: '+f.label); return; }
+    let v = '';
+    if(f.type==='multiselect'){
+      v = [...document.querySelectorAll('input[name=\"f_'+f.name+'\"]:checked')].map(x=>x.value);
+      if(f.required && !v.length){ alert('من فضلك اختر: '+f.label); return; }
+    }else{
+      v = el ? el.value : '';
+      if(f.required && !v){ alert('من فضلك أدخل: '+f.label); return; }
+    }
     record[f.name] = v;
   }
   if(moduleKey==='siteIncidents'){
     record.requiredSections=Array.isArray(record.requiredSections)?record.requiredSections:[];
     record.incidentApprovals=record.incidentApprovals||{};
+    // Create a pending approval item only for newly selected sections; keep prior decisions.
     record.requiredSections.forEach(sec=>{ if(!record.incidentApprovals[sec]) record.incidentApprovals[sec]={status:'قيد الاعتماد'}; });
-    record.approvalStatus=record.requiredSections.length?'قيد الاعتماد':'بدون اعتماد';
+    // Remove approvals for sections that are no longer required.
+    Object.keys(record.incidentApprovals).forEach(sec=>{ if(!record.requiredSections.includes(sec)) delete record.incidentApprovals[sec]; });
+    const vals=record.requiredSections;
+    const allApproved=vals.length>0 && vals.every(sec=>record.incidentApprovals[sec]&&record.incidentApprovals[sec].status==='معتمد');
+    const anyRejected=vals.some(sec=>record.incidentApprovals[sec]&&record.incidentApprovals[sec].status==='مرفوض');
+    record.approvalStatus=vals.length?(allApproved?'معتمد':anyRejected?'مرفوض':'قيد الاعتماد'):'بدون اعتماد';
   }
-  if(approvalRequired(moduleKey) && !record.approvalStatus){ record.approvalStatus='قيد الاعتماد'; }
+  if(approvalRequired(moduleKey)){
+    // أي سجل جديد أو معدّل (غير معتمد بعد / أو أُعيد تعديله) يعود لقيد الاعتماد
+    // إلا إذا كان المعتمد الحالي يعتمده مباشرة من شاشة القائمة
+    if(isNew || record.approvalStatus==='معتمد' || record.approvalStatus==='مرفوض' || !record.approvalStatus){
+      // إعادة التعديل بعد الاعتماد تعيد الطلب إلى دورة الاعتماد
+      if(!isNew && (record.approvalStatus==='معتمد' || record.approvalStatus==='مرفوض')){
+        record.previousApprovalStatus=record.approvalStatus;
+        record.previousApprovedBy=record.approvedByName||record.approvedBy||'';
+      }
+      record.approvalStatus='قيد الاعتماد';
+      record.approvedBy='';
+      record.approvedByName='';
+      record.approvedAt='';
+      record.approvalDecision='';
+    }
+  }
   if(isNew){
     record.id = genId();
     record.createdBy = currentUser.username;
@@ -1982,6 +2173,7 @@ function adminHTML(){
     <tr>
       <td>${escapeHtml(u.name)}</td>
       <td>${escapeHtml(u.username)}</td>
+      <td>${escapeHtml(u.specialty||'—')}</td>
       <td>${u.isAdmin ? '<span class="badge ok">مدير كامل الصلاحيات</span>' : '<span class="badge">مستخدم</span>'}</td>
       <td><div class="row-actions">
         <button class="link-btn" onclick="openUserEdit('${u.id}')">تعديل</button>
@@ -1990,13 +2182,13 @@ function adminHTML(){
     </tr>`).join('');
 
   return `
-    <div class="section-note">من هنا تنشئ حسابات للمهندسين والموظفين، وتحدد لكل واحد صلاحية «مشاهدة فقط» أو «تعديل» في كل قسم على حدة، أو تجعله مديراً بكامل الصلاحيات.</div>
+    <div class="section-note">من هنا تنشئ حسابات للمهندسين والموظفين، وتحدد لكل واحد <b>التخصص</b> وصلاحية «مشاهدة فقط» أو «تعديل» في كل قسم. التخصص يُستخدم في دورة الاعتماد عندما يحدد الأدمن التخصصات المؤهّلة لاعتماد قسم معيّن.</div>
     <div class="toolbar">
       <div></div>
       <button class="btn btn-amber" onclick="openUserNew()">+ إضافة مستخدم</button>
     </div>
     <table>
-      <thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الدور</th><th></th></tr></thead>
+      <thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>التخصص</th><th>الدور</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     ${modalState && modalState.isUserModal ? userModalHTML() : ''}
@@ -2081,6 +2273,13 @@ function userModalHTML(){
             <option value="1" ${record.isAdmin?'selected':''}>مدير كامل الصلاحيات</option>
           </select>
         </div>
+        <div class="field">
+          <label>التخصص (لاعتماد الأقسام)</label>
+          <select id="u_specialty">
+            <option value="">— بدون تخصص —</option>
+            ${specialtyList().map(sp=>`<option value="${escapeHtml(sp)}" ${(record.specialty||'')===sp?'selected':''}>${escapeHtml(sp)}</option>`).join('')}
+          </select>
+        </div>
       </div>
       <div class="field full" style="margin-top:14px;">
         <label>نطاق صلاحية المشاريع</label>
@@ -2131,9 +2330,10 @@ async function saveUser(){
   if(!isAdmin && scopeMode!=='all' && scopeIds.length===0){ alert('حدد مشروعاً واحداً على الأقل أو اختر كافة المشاريع.'); return; }
   const projectScope={mode:scopeMode,ids:scopeMode==='all'?[]:scopeIds};
 
+  const specialty=(document.getElementById('u_specialty')?.value||'').trim();
   if(isNew){
     STATE.users.push({
-      id:genId(), name, username, password, isAdmin, permissions, projectScope
+      id:genId(), name, username, password, isAdmin, permissions, projectScope, specialty
     });
   } else {
     const idx = STATE.users.findIndex(u=>u.id===record.id);
@@ -2143,6 +2343,7 @@ async function saveUser(){
     STATE.users[idx].isAdmin = isAdmin;
     STATE.users[idx].permissions = permissions;
     STATE.users[idx].projectScope = projectScope;
+    STATE.users[idx].specialty = specialty;
     if(currentUser.id === record.id) currentUser = STATE.users[idx];
   }
   await dbSet('users', STATE.users);
@@ -2152,46 +2353,132 @@ async function saveUser(){
 
 /* ===================== Approval Settings ===================== */
 function approvalSettingsHTML(){
-  const moduleKeys=Object.keys(MODULES);
+  ensureDefaultApprovalPolicies();
+  const priority=DEFAULT_APPROVAL_MODULES;
+  const moduleKeys=[...priority.filter(k=>MODULES[k]), ...Object.keys(MODULES).filter(k=>!priority.includes(k))];
   const rows=moduleKeys.map(k=>{
-    const mod=MODULES[k], p=approvalPolicy(k), approvers=(p.approverIds||[]).map(id=>STATE.users.find(u=>u.id===id)?.name).filter(Boolean);
-    return `<tr><td>${escapeHtml(mod.title)}</td><td>${p.enabled?'<span class="badge ok">مفعّل</span>':'<span class="badge">غير مفعّل</span>'}</td><td>${escapeHtml(p.label||p.permissionKey||'—')}</td><td>${approvers.length?approvers.map(escapeHtml).join('، '):'حسب الصلاحية'}</td><td><button class="link-btn" onclick="openApprovalPolicy('${k}')">إعداد</button></td></tr>`;
+    const mod=MODULES[k], p=approvalPolicy(k);
+    const specs=(p.approverSpecialties||[]);
+    const approvers=(p.approverIds||[]).map(id=>STATE.users.find(u=>u.id===id)?.name).filter(Boolean);
+    const who=[];
+    if(specs.length) who.push('تخصصات: '+specs.join('، '));
+    if(approvers.length) who.push('مديرون: '+approvers.join('، '));
+    if(!who.length && p.permissionKey) who.push('حسب صلاحية: '+(PERM_LABELS[p.permissionKey]||p.permissionKey));
+    if(!who.length) who.push('—');
+    const highlight=priority.includes(k)?'style="background:#f0f8ff"':'';
+    return `<tr ${highlight}><td>${escapeHtml(mod.title)}${priority.includes(k)?' <span class="badge warn">مهم</span>':''}</td><td>${p.enabled?'<span class="badge ok">مفعّل</span>':'<span class="badge">غير مفعّل</span>'}</td><td>${escapeHtml(p.label||'—')}</td><td style="font-size:12px">${who.map(escapeHtml).join(' · ')}</td><td><button class="link-btn" onclick="openApprovalPolicy('${k}')">إعداد</button></td></tr>`;
   }).join('');
-  return `<div class="hero"><h1>إدارة الاعتمادات</h1><p>حدد البنود التي تحتاج اعتماداً، والصلاحية المطلوبة، ومن يملك حق الاعتماد وفق صلاحياته.</p></div>
-  <div class="panel"><div class="section-note">يمكن تفعيل الاعتماد لأي بند رئيسي. عند التفعيل يظهر للبند حالة <b>قيد الاعتماد</b>، ولا يستطيع تنفيذ الاعتماد إلا المستخدم الذي يملك الصلاحية المحددة والمختار ضمن المعتمدين.</div>
-  <table><thead><tr><th>البند الرئيسي</th><th>الاعتماد</th><th>الصلاحية المطلوبة</th><th>المعتمدون</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-  ${modalState&&modalState.isApprovalModal?approvalPolicyModalHTML():''}`;
+  return `<div class="hero"><h1>إدارة الاعتمادات</h1><p>تفعيل دورة الاعتماد للأقسام (المخازن، المشتريات، التوريدات، التنفيذ، المستحدثات، العقود، المستخلصات...). الأدمن وحده يختار التخصصات والمديرين المؤهلين للاعتماد.</p></div>
+  <div class="panel"><div class="section-note">
+    <b>كيف تعمل الدورة:</b>
+    <ol style="margin:8px 0 0;padding-inline-start:20px;line-height:1.9">
+      <li>فعّل الاعتماد للقسم المطلوب من زر «إعداد».</li>
+      <li>اختر <b>التخصصات المؤهّلة</b> و/أو <b>المديرين المحددين</b> — هذا الإعداد للأدمن فقط.</li>
+      <li>عند إضافة أو تعديل سجل في ذلك القسم يصبح حالته <b>قيد الاعتماد</b>.</li>
+      <li>يظهر زر الاعتماد فقط للمستخدمين من التخصصات/المديرين المحددين (أو لمدير النظام).</li>
+      <li>تعديل سجل معتمد يعيده تلقائياً إلى <b>قيد الاعتماد</b>.</li>
+    </ol>
+  </div>
+  <div class="toolbar no-print"><div></div>
+    <button class="btn btn-amber" onclick="enableSuggestedApprovals()">تفعيل سريع للأقسام المهمة</button>
+  </div>
+  <table><thead><tr><th>البند / القسم</th><th>الاعتماد</th><th>اسم الاعتماد</th><th>التخصصات والمديرون المؤهلون</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  `;
 }
 function openApprovalPolicy(moduleKey){
-  const p=approvalPolicy(moduleKey);
-  modalState={isApprovalModal:true,moduleKey,record:JSON.parse(JSON.stringify(p))}; render();
+  try{
+    if(!MODULES[moduleKey]){ alert('القسم غير موجود: '+moduleKey); return; }
+    const p=approvalPolicy(moduleKey);
+    modalState={
+      isApprovalModal:true,
+      isUserModal:false,
+      moduleKey,
+      record:{
+        moduleKey,
+        enabled:!!p.enabled,
+        label:p.label||'',
+        permissionKey:p.permissionKey||'',
+        requiredLevel:p.requiredLevel||'edit',
+        approverSpecialties:Array.isArray(p.approverSpecialties)?p.approverSpecialties.slice():[],
+        approverIds:Array.isArray(p.approverIds)?p.approverIds.slice():[]
+      }
+    };
+    render();
+  }catch(err){
+    console.error('openApprovalPolicy', err);
+    alert('تعذر فتح إعداد الاعتماد: '+(err&&err.message?err.message:err));
+  }
 }
 function approvalPolicyModalHTML(){
-  const k=modalState.moduleKey, p=modalState.record, mod=MODULES[k];
-  const eligible=STATE.users.filter(u=>u.username!=='admin' && userHasApprovalPermission(u,p));
+  if(!modalState || !modalState.isApprovalModal) return '';
+  const k=modalState.moduleKey, p=modalState.record||{}, mod=MODULES[k];
+  if(!mod){ return `<div class="overlay" onclick="closeModal()"><div class="modal"><h3>قسم غير معروف</h3><p>${escapeHtml(k||'')}</p><button class="btn btn-ghost" onclick="closeModal()">إغلاق</button></div></div>`; }
+  const specs=specialtyList();
+  const selectedSpecs=new Set(Array.isArray(p.approverSpecialties)?p.approverSpecialties:[]);
+  const selectedIds=new Set(Array.isArray(p.approverIds)?p.approverIds:[]);
   const perms=PERM_KEYS.map(pk=>`<option value="${pk}" ${p.permissionKey===pk?'selected':''}>${escapeHtml(PERM_LABELS[pk])}</option>`).join('');
-  const checks=eligible.map(u=>`<label style="display:flex;gap:8px;align-items:center;margin:6px 0;"><input type="checkbox" class="approver-check" value="${u.id}" ${(p.approverIds||[]).includes(u.id)?'checked':''}>${escapeHtml(u.name)} (${escapeHtml(u.username)})</label>`).join('');
-  return `<div class="overlay" onclick="if(event.target===this) closeModal()"><div class="modal" style="max-width:720px"><h3>إعداد اعتماد — ${escapeHtml(mod.title)}</h3>
-  <div class="form-grid"><div class="field"><label>تفعيل الاعتماد</label><select id="ap_enabled"><option value="0" ${!p.enabled?'selected':''}>غير مفعّل</option><option value="1" ${p.enabled?'selected':''}>مفعّل</option></select></div>
-  <div class="field"><label>اسم الاعتماد</label><input id="ap_label" value="${escapeHtml(p.label||'')}" placeholder="مثال: اعتماد مدير المشروع"></div>
-  <div class="field full"><label>الصلاحية المطلوبة</label><select id="ap_permission" onchange="refreshApprovalApprovers()"><option value="">— اختر الصلاحية من القائمة —</option>${perms}</select></div>
-  <div class="field"><label>الحد الأدنى للصلاحية</label><select id="ap_level"><option value="edit" ${p.requiredLevel!=='view'?'selected':''}>تعديل / اعتماد</option><option value="view" ${p.requiredLevel==='view'?'selected':''}>مشاهدة أو تعديل</option></select></div></div>
-  <div class="field full" style="margin-top:12px"><label>من يقوم بالاعتماد؟</label><div id="approvalApprovers" style="max-height:220px;overflow:auto;border:1px solid var(--border);padding:10px;border-radius:8px">${checks||'<div class="section-note">لا يوجد مستخدمون يملكون الصلاحية المختارة حالياً.</div>'}</div><div class="section-note">إذا لم تحدد أشخاصاً، فإن أي مستخدم يملك الصلاحية المطلوبة يستطيع الاعتماد.</div></div>
+  const specChecks=specs.map(sp=>`<label style="display:flex;gap:8px;align-items:center;margin:6px 0;padding:6px 8px;border:1px solid #e5eef6;border-radius:6px;"><input type="checkbox" class="approver-spec-check" value="${escapeHtml(sp)}" ${selectedSpecs.has(sp)?'checked':''}><span>${escapeHtml(sp)}</span></label>`).join('');
+  const managers=STATE.users.filter(u=>!u.isAdmin || true);
+  const userChecks=managers.map(u=>{
+    const sp=(u.specialty||'').trim();
+    return `<label style="display:flex;gap:8px;align-items:center;margin:6px 0;padding:6px 8px;border:1px solid #e5eef6;border-radius:6px;"><input type="checkbox" class="approver-check" value="${u.id}" ${selectedIds.has(u.id)?'checked':''}><span><b>${escapeHtml(u.name)}</b> <small style="color:#6c7d91">(${escapeHtml(u.username)}${sp?' · '+escapeHtml(sp):''}${u.isAdmin?' · مدير نظام':''})</small></span></label>`;
+  }).join('');
+  return `<div class="overlay" onclick="if(event.target===this) closeModal()"><div class="modal" style="max-width:780px"><h3>إعداد اعتماد — ${escapeHtml(mod.title)}</h3>
+  <div class="section-note">الأدمن فقط يحدد من يحق له الاعتماد: عبر <b>التخصص</b> (مثل مدني / معماري / مدير مشروع) و/أو اختيار <b>مديرين بأسمائهم</b>.</div>
+  <div class="form-grid">
+    <div class="field"><label>تفعيل الاعتماد لهذا القسم</label><select id="ap_enabled"><option value="0" ${!p.enabled?'selected':''}>غير مفعّل</option><option value="1" ${p.enabled?'selected':''}>مفعّل</option></select></div>
+    <div class="field"><label>اسم الاعتماد الظاهر</label><input id="ap_label" value="${escapeHtml(p.label||'')}" placeholder="مثال: اعتماد مدير المشروع / المكتب الفني"></div>
+    <div class="field full"><label>صلاحية القسم المرتبطة (اختياري — كاحتياطي إن لم تُحدد تخصصات أو مديرون)</label><select id="ap_permission"><option value="">— بدون ربط بصلاحية قسم —</option>${perms}</select></div>
+    <div class="field"><label>الحد الأدنى لصلاحية القسم (إن وُجدت)</label><select id="ap_level"><option value="edit" ${p.requiredLevel!=='view'?'selected':''}>تعديل</option><option value="view" ${p.requiredLevel==='view'?'selected':''}>مشاهدة أو تعديل</option></select></div>
+  </div>
+  <div class="field full" style="margin-top:14px"><label>التخصصات المؤهّلة للاعتماد (يختارها الأدمن)</label>
+    <div style="max-height:180px;overflow:auto;border:1px solid #d3e0ec;padding:10px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">${specChecks||'<div class="section-note">لا توجد تخصصات. أضفها من ملخصات التخصصات.</div>'}</div>
+    <div class="section-note" style="margin-top:6px">أي مستخدم مُسجَّل بتخصص مطابق يصبح مؤهلاً للاعتماد تلقائياً.</div>
+  </div>
+  <div class="field full" style="margin-top:12px"><label>مديرون / أشخاص محددون بالاسم (اختياري)</label>
+    <div style="max-height:200px;overflow:auto;border:1px solid #d3e0ec;padding:10px;border-radius:8px">${userChecks||'<div class="section-note">لا يوجد مستخدمون.</div>'}</div>
+    <div class="section-note" style="margin-top:6px">يمكن الجمع بين التخصصات والأشخاص. إن تُرك الاثنان فارغين مع وجود صلاحية قسم، يعتمد من يملك تلك الصلاحية.</div>
+  </div>
   <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">إلغاء</button><button class="btn btn-primary" onclick="saveApprovalPolicy()">حفظ إعداد الاعتماد</button></div></div></div>`;
 }
-function refreshApprovalApprovers(){
-  const p=modalState.record; p.permissionKey=document.getElementById('ap_permission')?.value||'';
-  const eligible=STATE.users.filter(u=>u.username!=='admin' && userHasApprovalPermission(u,p));
-  const old=new Set(p.approverIds||[]); const box=document.getElementById('approvalApprovers'); if(!box)return;
-  box.innerHTML=eligible.length?eligible.map(u=>`<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" class="approver-check" value="${u.id}" ${old.has(u.id)?'checked':''}>${escapeHtml(u.name)} (${escapeHtml(u.username)})</label>`).join(''):'<div class="section-note">لا يوجد مستخدمون يملكون الصلاحية المختارة حالياً.</div>';
-}
+function refreshApprovalApprovers(){ /* لم يعد مطلوباً — القوائم ثابتة في النافذة */ }
 async function saveApprovalPolicy(){
   const k=modalState.moduleKey, p=modalState.record;
-  p.enabled=document.getElementById('ap_enabled').value==='1'; p.label=document.getElementById('ap_label').value.trim(); p.permissionKey=document.getElementById('ap_permission').value; p.requiredLevel=document.getElementById('ap_level').value;
+  p.enabled=document.getElementById('ap_enabled').value==='1';
+  p.label=document.getElementById('ap_label').value.trim();
+  p.permissionKey=document.getElementById('ap_permission').value;
+  p.requiredLevel=document.getElementById('ap_level').value;
   p.approverIds=[...document.querySelectorAll('.approver-check:checked')].map(x=>x.value);
-  if(p.enabled && !p.permissionKey){alert('اختر الصلاحية المطلوبة للاعتماد.');return;}
-  const idx=(STATE.approvalPolicies||[]).findIndex(x=>x.moduleKey===k); if(idx>=0)STATE.approvalPolicies[idx]=p; else STATE.approvalPolicies.push(p);
-  await dbSet('approvalPolicies',STATE.approvalPolicies); modalState=null; render();
+  p.approverSpecialties=[...document.querySelectorAll('.approver-spec-check:checked')].map(x=>x.value);
+  if(p.enabled && !p.permissionKey && !p.approverSpecialties.length && !p.approverIds.length){
+    alert('لتفعيل الاعتماد: اختر تخصصاً واحداً على الأقل، أو مديراً بالاسم، أو صلاحية قسم مرتبطة.');
+    return;
+  }
+  if(!Array.isArray(STATE.approvalPolicies)) STATE.approvalPolicies=[];
+  const idx=STATE.approvalPolicies.findIndex(x=>x.moduleKey===k);
+  if(idx>=0) STATE.approvalPolicies[idx]=p; else STATE.approvalPolicies.push(p);
+  await dbSet('approvalPolicies',STATE.approvalPolicies);
+  modalState=null; render();
+}
+async function enableSuggestedApprovals(){
+  if(!confirm('تفعيل الاعتماد للأقسام المهمة (مشتريات، توريدات، مخازن، تنفيذ، مستحدثات، عقود، مستخلصات، أوامر تغييرية، مطالبات، استلام وتسليم)؟\nيمكنك لاحقاً تحديد التخصصات والمديرين لكل قسم.')) return;
+  ensureDefaultApprovalPolicies();
+  for(const k of DEFAULT_APPROVAL_MODULES){
+    if(!MODULES[k]) continue;
+    const mod=MODULES[k];
+    let p=STATE.approvalPolicies.find(x=>x.moduleKey===k);
+    if(!p){
+      p={moduleKey:k,enabled:true,permissionKey:mod.permKey||'',approverIds:[],approverSpecialties:[],requiredLevel:'edit',label:'اعتماد '+mod.title};
+      STATE.approvalPolicies.push(p);
+    }else{
+      p.enabled=true;
+      if(!p.label) p.label='اعتماد '+mod.title;
+      if(!p.permissionKey) p.permissionKey=mod.permKey||'';
+    }
+  }
+  await dbSet('approvalPolicies',STATE.approvalPolicies);
+  alert('تم تفعيل الاعتماد للأقسام المهمة. افتح «إعداد» لكل قسم لاختيار التخصصات والمديرين المؤهلين.');
+  render();
 }
 
 /* ===================== Activity Log ===================== */
