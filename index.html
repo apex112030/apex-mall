@@ -1188,15 +1188,60 @@ function permLevel(permKey){
   return (currentUser.permissions && currentUser.permissions[permKey]) || 'none';
 }
 function canView(permKey){
+  if(currentUser && currentUser.isAdmin) return true;
   const lv=permLevel(permKey);
+  // مشاهدة / تعديل / اعتماد — كلها ترى الطلبات والسجلات
   return lv==='view' || lv==='edit' || lv==='approve';
 }
 function canEdit(permKey){
-  const lv=permLevel(permKey);
-  return lv==='edit' || lv==='approve';
+  // الاعتماد لا يمنح حق التعديل — فقط من لديه تعديل أو مدير النظام
+  if(currentUser && currentUser.isAdmin) return true;
+  return permLevel(permKey)==='edit';
 }
 function canApprovePerm(permKey){
-  return permLevel(permKey)==='approve' || !!(currentUser&&currentUser.isAdmin);
+  // صلاحية اعتماد فقط (مع مشاهدة) — بدون تعديل
+  if(currentUser && currentUser.isAdmin) return true;
+  return permLevel(permKey)==='approve';
+}
+function pushEditHistory(record, action){
+  if(!record) return;
+  if(!Array.isArray(record.editHistory)) record.editHistory=[];
+  const at=new Date().toISOString();
+  record.editHistory.push({
+    action: action || 'تعديل',
+    by: currentUser ? currentUser.username : '',
+    byName: currentUser ? (currentUser.name||currentUser.username) : '',
+    at
+  });
+  // حد أقصى معقول للسجل
+  if(record.editHistory.length>200) record.editHistory=record.editHistory.slice(-200);
+}
+function formatEditHistoryHTML(record){
+  const hist=Array.isArray(record&&record.editHistory)?record.editHistory:[];
+  if(!hist.length){
+    // توافق مع السجلات القديمة
+    const lines=[];
+    if(record&& (record.createdByName||record.createdBy)){
+      lines.push(`إضافة بواسطة <b>${escapeHtml(record.createdByName||record.createdBy)}</b>`);
+    }
+    if(record&& (record.updatedByName||record.updatedBy)){
+      lines.push(`آخر تعديل بواسطة <b>${escapeHtml(record.updatedByName||record.updatedBy)}</b>`);
+    }
+    if(!lines.length) return '';
+    return `<div class="section-note"><b>سجل العمليات:</b><br>${lines.join('<br>')}</div>`;
+  }
+  const rows=hist.slice().reverse().map((h,i)=>{
+    let when=h.at||'';
+    try{ when=new Date(h.at).toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'}); }catch(e){}
+    return `<div style="padding:4px 0;border-bottom:1px solid #eef3f8;font-size:12.5px;">
+      <span class="badge ${h.action==='إضافة'?'ok':h.action==='اعتماد'||h.action==='رفض'?'warn':''}">${escapeHtml(h.action||'تعديل')}</span>
+      بواسطة <b>${escapeHtml(h.byName||h.by||'—')}</b>
+      <span style="color:#6c7d91;margin-inline-start:6px;">${escapeHtml(when)}</span>
+    </div>`;
+  }).join('');
+  return `<div class="field full" style="margin-top:8px;"><label>سجل التعديلات والعمليات (كل مرة)</label>
+    <div style="max-height:160px;overflow:auto;border:1px solid var(--epms-line);border-radius:8px;padding:8px;background:#fbfdff;">${rows}</div>
+  </div>`;
 }
 function approvalPolicy(moduleKey){
   const list=Array.isArray(STATE.approvalPolicies)?STATE.approvalPolicies:[];
@@ -1247,13 +1292,14 @@ function canApproveRecord(moduleKey,record){
 }
 async function approveRecord(moduleKey,id,decision='اعتماد'){
   const rec=(STATE[moduleKey]||[]).find(x=>x.id===id); if(!rec)return;
-  if(!canApproveRecord(moduleKey,rec)){alert('لا تملك صلاحية اعتماد هذا البند. يجب أن تكون من التخصصات أو المديرين المحددين من الأدمن.');return;}
+  if(!canApproveRecord(moduleKey,rec)){alert('لا تملك صلاحية اعتماد هذا البند. يجب أن تكون من التخصصات أو المديرين المحددين من الأدمن، أو لديك صلاحية اعتماد لهذا القسم.');return;}
   rec.approvalStatus=decision==='اعتماد'?'معتمد':'مرفوض';
   rec.approvedBy=currentUser.username;
   rec.approvedByName=currentUser.name;
   rec.approvedAt=new Date().toISOString();
   rec.approvalDecision=decision;
   rec.approverSpecialty=currentUser.specialty||'';
+  pushEditHistory(rec, decision==='اعتماد'?'اعتماد':'رفض');
   await dbSet(moduleKey,STATE[moduleKey]);
   render();
 }
@@ -2330,7 +2376,16 @@ function moduleHTML(key, mod){
     const projLabel = key==='surveillanceCameras' && (r.scopeMode==='كل المشاريع' || !r.projectId) ? 'كل المشاريع' : projectName(r.projectId);
     const projCell = mod.hasProject ? `<td>${escapeHtml(projLabel)}</td>` : '';
     const creator = r.createdByName || r.createdBy || '—';
-    const creatorCell = `<td><span class="badge">${escapeHtml(creator)}</span></td>`;
+    const lastEdit = (Array.isArray(r.editHistory)&&r.editHistory.length)
+      ? r.editHistory[r.editHistory.length-1]
+      : (r.updatedByName||r.updatedBy ? {byName:r.updatedByName||r.updatedBy, at:r.updatedAt, action:'تعديل'} : null);
+    let lastEditTxt='';
+    if(lastEdit){
+      let when=lastEdit.at||'';
+      try{ when=new Date(lastEdit.at).toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'}); }catch(e){}
+      lastEditTxt=`<div style="font-size:10px;color:#6c7d91;margin-top:3px;">آخر ${escapeHtml(lastEdit.action||'تعديل')}: ${escapeHtml(lastEdit.byName||lastEdit.by||'')} · ${escapeHtml(when)}</div>`;
+    }
+    const creatorCell = `<td><span class="badge">${escapeHtml(creator)}</span>${lastEditTxt}</td>`;
     const attachments = Array.isArray(r.attachments) ? r.attachments : [];
     const attachCell = `<td>${attachments.length ? attachments.map(a=>`<span class="attachment-inline" title="${escapeHtml(a.name||'مرفق')}"><button class="link-btn" onclick="openAttachment('${key}','${r.id}','${a.id||''}')">📄 فتح</button><button class="link-btn" onclick="downloadAttachment('${key}','${r.id}','${a.id||''}')">⬇ تنزيل</button></span>`).join(' ') : (r.hasAttachment ? `<button class="link-btn" onclick="openAttachment('${key}','${r.id}')">📎 فتح المرفق</button>` : '<span style="color:#B7B0A0">—</span>')}</td>`;
     return `<tr>
@@ -2459,6 +2514,7 @@ function modalHTML(){
   const mod = MODULES[moduleKey];
   if(!mod){ console.warn('modalHTML: unknown module', moduleKey); return ''; }
   const editable = canEdit(mod.permKey);
+  const canApproveHere = !isNew && canApproveRecord(moduleKey, record);
 
   let projField = '';
   if(mod.hasProject){
@@ -2496,7 +2552,8 @@ function modalHTML(){
   <div class="overlay" onclick="if(event.target===this) closeModal()">
     <div class="modal">
       <h3>${isNew ? 'إضافة سجل — ' : (editable?'تعديل سجل — ':'عرض سجل — ')}${mod.title}</h3>
-      ${!isNew && (record.createdByName||record.createdBy) ? `<div class="section-note">تمت الإضافة بواسطة: <b>${escapeHtml(record.createdByName||record.createdBy)}</b>${record.updatedByName?` — آخر تعديل بواسطة: <b>${escapeHtml(record.updatedByName)}</b>`:''}</div>` : ''}
+      ${!editable && !isNew ? `<div class="section-note">وضع العرض فقط — يمكنك مشاهدة الطلب${canApproveHere?' واعتماده أو رفضه':''} دون تعديل بياناته.</div>` : ''}
+      ${formatEditHistoryHTML(record)}
       <div class="form-grid">
         ${projField}
         ${fieldsHTML}
@@ -2508,6 +2565,7 @@ function modalHTML(){
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>
+        ${canApproveHere?`<button class="btn btn-primary" onclick="approveRecord('${moduleKey}','${record.id}','اعتماد');closeModal();">✓ اعتماد</button><button class="btn btn-danger" onclick="approveRecord('${moduleKey}','${record.id}','رفض');closeModal();">✗ رفض</button>`:''}
         ${editable ? `<button class="btn btn-primary" onclick="saveRecord()">حفظ</button>` : ''}
       </div>
     </div>
@@ -2517,6 +2575,7 @@ function modalHTML(){
 async function saveRecord(){
   const {moduleKey, record, isNew} = modalState;
   const mod = MODULES[moduleKey];
+  if(!canEdit(mod.permKey)){ alert('ليس لديك صلاحية تعديل هذا القسم. صلاحية الاعتماد تسمح بالمشاهدة والاعتماد فقط.'); return; }
 
   for(const f of mod.fields){
     const el = document.getElementById('f_'+f.name);
@@ -2572,10 +2631,14 @@ async function saveRecord(){
     record.id = genId();
     record.createdBy = currentUser.username;
     record.createdByName = currentUser.name;
+    record.createdAt = new Date().toISOString();
+    pushEditHistory(record, 'إضافة');
     STATE[moduleKey].push(record);
   } else {
     record.updatedBy = currentUser.username;
     record.updatedByName = currentUser.name;
+    record.updatedAt = new Date().toISOString();
+    pushEditHistory(record, 'تعديل');
     const idx = STATE[moduleKey].findIndex(r=>r.id===record.id);
     STATE[moduleKey][idx] = record;
   }
@@ -2759,7 +2822,7 @@ function userModalHTML(){
       </div>
       <div class="field full" style="margin-top:14px;">
         <label>صلاحيات الأقسام</label>
-        <div class="section-note" style="margin-bottom:8px">المستويات: <b>لا أحد</b> · <b>مشاهدة</b> · <b>تعديل</b> · <b>اعتماد</b> (يشمل المشاهدة والتعديل + أزرار الاعتماد)</div>
+        <div class="section-note" style="margin-bottom:8px">المستويات: <b>لا أحد</b> · <b>مشاهدة</b> (عرض فقط) · <b>تعديل</b> (إضافة/تعديل/حذف) · <b>اعتماد</b> (مشاهدة الطلب + اعتماد/رفض بدون تعديل)</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
           <button type="button" class="btn btn-ghost btn-sm" onclick="setAllPermissions('none')" ${record.isAdmin?'disabled':''}>إلغاء الكل (لا أحد)</button>
           <button type="button" class="btn btn-ghost btn-sm" onclick="setAllPermissions('view')" ${record.isAdmin?'disabled':''}>اختيار الكل كمشاهدة</button>
@@ -3581,11 +3644,13 @@ async function saveJobTask(){
     record.createdBy = currentUser.username;
     record.createdByName = currentUser.name;
     record.createdAt = new Date().toISOString();
+    pushEditHistory(record, 'إضافة');
     (STATE.jobTasks = STATE.jobTasks||[]).push(record);
   } else {
     record.updatedBy = currentUser.username;
     record.updatedByName = currentUser.name;
     record.updatedAt = new Date().toISOString();
+    pushEditHistory(record, 'تعديل');
     const idx = (STATE.jobTasks||[]).findIndex(x=>x.id===record.id);
     if(idx>=0) STATE.jobTasks[idx]=record;
   }
