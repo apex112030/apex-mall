@@ -394,7 +394,8 @@ let STATE = {
   ownerDirectives:[], ownerApprovalRequests:[], pmDirectives:[], pmApprovalRequests:[],
   projectMgrDirectives:[], projectMgrApprovalRequests:[],
   adminMgrDirectives:[], adminMgrApprovalRequests:[],
-  surveillanceCameras:[], electronicSignatures:[], companyStamps:[], socialMedia:[]
+  surveillanceCameras:[], electronicSignatures:[], companyStamps:[], socialMedia:[],
+  menuVisibility:{sections:{}, items:{}}
 };
 let currentUser = null;
 let currentRoute = 'dashboard';
@@ -1183,11 +1184,20 @@ const NAV = [
 /* ===================== Permissions ===================== */
 function permLevel(permKey){
   if(!currentUser) return 'none';
-  if(currentUser.isAdmin) return 'edit';
+  if(currentUser.isAdmin) return 'approve';
   return (currentUser.permissions && currentUser.permissions[permKey]) || 'none';
 }
-function canView(permKey){ return permLevel(permKey) === 'view' || permLevel(permKey) === 'edit'; }
-function canEdit(permKey){ return permLevel(permKey) === 'edit'; }
+function canView(permKey){
+  const lv=permLevel(permKey);
+  return lv==='view' || lv==='edit' || lv==='approve';
+}
+function canEdit(permKey){
+  const lv=permLevel(permKey);
+  return lv==='edit' || lv==='approve';
+}
+function canApprovePerm(permKey){
+  return permLevel(permKey)==='approve' || !!(currentUser&&currentUser.isAdmin);
+}
 function approvalPolicy(moduleKey){
   const list=Array.isArray(STATE.approvalPolicies)?STATE.approvalPolicies:[];
   const found=list.find(x=>x.moduleKey===moduleKey);
@@ -1211,7 +1221,11 @@ function userHasApprovalPermission(user, policy){
   }
   if(!policy.permissionKey) return false;
   const level=(user.permissions&&user.permissions[policy.permissionKey])||'none';
-  return policy.requiredLevel==='view' ? (level==='view'||level==='edit') : level==='edit';
+  if(level==='approve') return true;
+  if(policy.requiredLevel==='view') return level==='view'||level==='edit'||level==='approve';
+  if(policy.requiredLevel==='edit') return level==='edit'||level==='approve';
+  if(policy.requiredLevel==='approve') return level==='approve';
+  return level==='edit'||level==='approve';
 }
 function isDesignatedApprover(moduleKey,user=currentUser){
   const p=approvalPolicy(moduleKey);
@@ -1227,6 +1241,8 @@ function canApproveRecord(moduleKey,record){
   if(!record || !approvalRequired(moduleKey)) return false;
   const st=recordApprovalStatus(moduleKey,record);
   if(st==='معتمد') return false;
+  const mod=MODULES[moduleKey];
+  if(mod && canApprovePerm(mod.permKey)) return true;
   return isDesignatedApprover(moduleKey);
 }
 async function approveRecord(moduleKey,id,decision='اعتماد'){
@@ -1487,13 +1503,16 @@ async function boot(){
 
 async function loadAllData(){
   const load=(key)=>dbGet(key,[]).catch(e=>{console.warn('load '+key,e);return STATE[key]||[];});
-  const keys=['approvalPolicies','specialties','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
+  const keys=['approvalPolicies','specialties','menuVisibility','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
   // Small batches reduce connection pressure and make the first dashboard paint fast.
   for(let i=0;i<keys.length;i+=5){
     await Promise.all(keys.slice(i,i+5).map(async k=>{STATE[k]=await load(k);}));
     if(i===0) render();
   }
   ensureDefaultApprovalPolicies();
+  if(!STATE.menuVisibility || typeof STATE.menuVisibility!=='object') STATE.menuVisibility={sections:{},items:{}};
+  if(!STATE.menuVisibility.sections) STATE.menuVisibility.sections={};
+  if(!STATE.menuVisibility.items) STATE.menuVisibility.items={};
   try{localStorage.setItem(EPMS_DATA_LOADED_KEY,String(Date.now()));}catch(e){}
 }
 
@@ -1593,13 +1612,48 @@ const MENU_SECTIONS = [
   {key:'system',label:'إدارة النظام',icon:'⚙',adminOnly:true,items:[['systemManagement','إدارة النظام'],['jobTasks','المهام الوظيفية'],['approvalSettings','إدارة الاعتمادات'],['admin','المستخدمون والصلاحيات'],['activityLog','سجل العمليات'],['backup','Backup / Restore'],['listManagement','إدارة القوائم']]}
 ];
 
+function getMenuVisibility(){
+  if(!STATE.menuVisibility || typeof STATE.menuVisibility!=='object') STATE.menuVisibility={sections:{},items:{}};
+  if(!STATE.menuVisibility.sections) STATE.menuVisibility.sections={};
+  if(!STATE.menuVisibility.items) STATE.menuVisibility.items={};
+  return STATE.menuVisibility;
+}
+function isMenuSectionVisible(secKey){
+  const v=getMenuVisibility();
+  return v.sections[secKey]!==false; // default visible
+}
+function isMenuItemVisible(itemKey){
+  const v=getMenuVisibility();
+  return v.items[itemKey]!==false; // default visible
+}
 function menuItemAllowed(key){
+  if(!isMenuItemVisible(key)) return false;
   const item=NAV.find(x=>x.key===key);
   if(!item) return false;
   return navAllowed(item);
 }
 function toggleMenuSection(key){
+  // حفظ موضع التمرير قبل إعادة الرسم
+  const sb=document.getElementById('sidebar');
+  if(sb) window.__epmsSidebarScroll=sb.scrollTop;
   openMenuSections[key]=!openMenuSections[key];
+  localStorage.setItem('epms_open_menus',JSON.stringify(openMenuSections));
+  render();
+}
+function expandAllMenuSections(){
+  const sb=document.getElementById('sidebar');
+  if(sb) window.__epmsSidebarScroll=sb.scrollTop;
+  for(const sec of MENU_SECTIONS){ openMenuSections[sec.key]=true; }
+  localStorage.setItem('epms_open_menus',JSON.stringify(openMenuSections));
+  render();
+}
+function collapseAllMenuSections(){
+  const sb=document.getElementById('sidebar');
+  if(sb) window.__epmsSidebarScroll=sb.scrollTop;
+  for(const sec of MENU_SECTIONS){
+    if(sec.key==='home') openMenuSections[sec.key]=true;
+    else openMenuSections[sec.key]=false;
+  }
   localStorage.setItem('epms_open_menus',JSON.stringify(openMenuSections));
   render();
 }
@@ -1607,6 +1661,7 @@ function sidebarHTML(){
   let html='';
   for(const sec of MENU_SECTIONS){
     if(sec.adminOnly && !currentUser.isAdmin) continue;
+    if(!isMenuSectionVisible(sec.key)) continue;
     const visible=sec.items.filter(([key])=>menuItemAllowed(key));
     if(!visible.length) continue;
     const active=visible.some(([key])=>currentRoute===key);
@@ -1632,6 +1687,10 @@ function sidebarHTML(){
     </div>
     <div class="sidebar-header-user">
       <div class="mini-avatar">♙</div><div class="u-text"><b>${escapeHtml(currentUser.name)}</b><span>${currentUser.isAdmin?'مدير النظام':'مستخدم'} · ${escapeHtml(currentUser.username)}</span></div>
+    </div>
+    <div class="nav-toolbar" style="display:flex;gap:6px;padding:8px 10px 4px;border-bottom:1px solid rgba(255,255,255,.08);">
+      <button type="button" class="utility-btn" style="flex:1;justify-content:center;font-size:11px;padding:6px 4px;" onclick="expandAllMenuSections()">▼ إظهار الكل</button>
+      <button type="button" class="utility-btn" style="flex:1;justify-content:center;font-size:11px;padding:6px 4px;" onclick="collapseAllMenuSections()">▲ طي الكل</button>
     </div>
     <div class="nav">${html}</div>
     <div class="sidebar-utility">
@@ -1704,6 +1763,8 @@ function toggleSidebar(){ sidebarOpen = !sidebarOpen; render(); }
 function logout(){ clearFastSession(); currentUser = null; currentRoute='dashboard'; render(); }
 
 function goRoute(key){
+  const sb=document.getElementById('sidebar');
+  if(sb) window.__epmsSidebarScroll=sb.scrollTop;
   currentRoute = key; sidebarOpen = false; render();
 }
 
@@ -1908,6 +1969,35 @@ function systemManagementHTML(){
     <button class="quick-btn" onclick="goRoute('approvalSettings')"><b>✓</b>إدارة الاعتمادات</button>
     <button class="quick-btn" onclick="goRoute('jobTasks')"><b>📋</b>المهام الوظيفية${jobCount?` (${jobCount})`:''}</button>
   </div>
+
+  <div class="panel" style="margin-top:16px;">
+    <div class="panel-title"><span>إظهار / إخفاء أقسام القائمة الرئيسية</span><small>علامة ✓ = ظاهر في الشريط الجانبي</small></div>
+    <div class="section-note">تحكم في ظهور مجموعات القائمة والبنود الفرعية. الإخفاء لا يحذف البيانات — يخفي القسم من القائمة فقط. يمكن إظهاره لاحقاً بوضع علامة الصح.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="setAllMenuVisibility(true)">✓ إظهار كل الأقسام</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="setAllMenuVisibility(false)">إخفاء كل الأقسام (ما عدا الرئيسية)</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="saveMenuVisibility()">💾 حفظ إعدادات الظهور</button>
+    </div>
+    <div id="menuVisibilityEditor" style="display:grid;gap:10px;max-height:55vh;overflow:auto;padding:4px;">
+      ${MENU_SECTIONS.map(sec=>{
+        const secOn=isMenuSectionVisible(sec.key);
+        const items=sec.items.map(([k,label])=>{
+          const on=isMenuItemVisible(k);
+          return `<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid #e5eef6;border-radius:6px;background:${on?'#f7fbff':'#fafafa'};font-size:12.5px;">
+            <input type="checkbox" class="mv-item" data-item="${k}" ${on?'checked':''}> <span>${escapeHtml(label)}</span>
+          </label>`;
+        }).join('');
+        return `<div style="border:1px solid var(--epms-line);border-radius:10px;padding:10px 12px;background:#fff;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:800;color:#103b6c;margin-bottom:8px;">
+            <input type="checkbox" class="mv-section" data-section="${sec.key}" ${secOn?'checked':''} ${sec.key==='home'?'disabled':''}>
+            <span>${sec.icon} ${escapeHtml(sec.label)}</span>
+            ${sec.adminOnly?'<span class="badge warn">مدير فقط</span>':''}
+          </label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;padding-right:8px;">${items}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
   <div class="panel" style="margin-top:16px;border:1px solid #f0c2c2;background:#fff8f8;">
     <div class="panel-title"><span style="color:#b4472a">⚠ ضبط المصنع ومسح البيانات</span><small>للمدير فقط — عمليات لا يمكن التراجع عنها بسهولة</small></div>
     <div class="section-note">قبل المسح يُفضّل تنزيل نسخة احتياطية من شاشة Backup / Restore. مسح بند معيّن يحذف كل سجلاته فقط (يشمل المهام الوظيفية إن اخترتها). ضبط المصنع يعيد النظام لحالة نظيفة مع الإبقاء على حساب المدير.</div>
@@ -1926,6 +2016,37 @@ function systemManagementHTML(){
       </div>
     </div>
   </div>`;
+}
+
+
+async function setAllMenuVisibility(show){
+  const v=getMenuVisibility();
+  for(const sec of MENU_SECTIONS){
+    if(sec.key==='home'){ v.sections[sec.key]=true; continue; }
+    v.sections[sec.key]=!!show;
+    for(const [k] of sec.items){ v.items[k]=!!show; }
+  }
+  // reflect in UI without full save yet
+  document.querySelectorAll('.mv-section').forEach(cb=>{
+    if(cb.dataset.section==='home') return;
+    cb.checked=!!show;
+  });
+  document.querySelectorAll('.mv-item').forEach(cb=>{ cb.checked=!!show; });
+}
+async function saveMenuVisibility(){
+  if(!currentUser || !currentUser.isAdmin){ alert('هذه العملية للمدير فقط.'); return; }
+  const v={sections:{}, items:{}};
+  document.querySelectorAll('.mv-section').forEach(cb=>{
+    v.sections[cb.dataset.section]=cb.checked;
+  });
+  v.sections.home=true;
+  document.querySelectorAll('.mv-item').forEach(cb=>{
+    v.items[cb.dataset.item]=cb.checked;
+  });
+  STATE.menuVisibility=v;
+  await dbSet('menuVisibility', v);
+  alert('تم حفظ إعدادات إظهار/إخفاء الأقسام.');
+  render();
 }
 
 async function clearModuleData(){
@@ -1975,6 +2096,8 @@ async function factoryReset(){
     STATE[extra] = [];
     await dbSet(extra, []);
   }
+  STATE.menuVisibility={sections:{},items:{}};
+  await dbSet('menuVisibility', STATE.menuVisibility);
   // Keep only admin user
   const adminUser = STATE.users.find(u=>u.username==='admin') || {
     id: genId(), name:'مدير النظام', username:'admin', password:'admin123', isAdmin:true, permissions:{}, projectScope:{mode:'all',ids:[]}, specialty:''
@@ -2586,6 +2709,12 @@ function renderProjectScopeOptions(){
   }));
 }
 
+function setAllPermissions(level){
+  PERM_KEYS.forEach(pk=>{
+    const el=document.getElementById('perm_'+pk);
+    if(el && !el.disabled) el.value=level;
+  });
+}
 function userModalHTML(){
   const {record, isNew} = modalState;
   const permRows = PERM_KEYS.map(pk=>{
@@ -2593,16 +2722,17 @@ function userModalHTML(){
     return `<tr>
       <td>${PERM_LABELS[pk]}</td>
       <td><select id="perm_${pk}" ${record.isAdmin?'disabled':''}>
-        <option value="none" ${level==='none'?'selected':''}>لا يوجد</option>
+        <option value="none" ${level==='none'?'selected':''}>لا أحد</option>
         <option value="view" ${level==='view'?'selected':''}>مشاهدة</option>
         <option value="edit" ${level==='edit'?'selected':''}>تعديل</option>
+        <option value="approve" ${level==='approve'?'selected':''}>اعتماد</option>
       </select></td>
     </tr>`;
   }).join('');
 
   return `
   <div class="overlay" onclick="if(event.target===this) closeModal()">
-    <div class="modal" style="max-width:640px;">
+    <div class="modal" style="max-width:720px;">
       <h3>${isNew?'إضافة مستخدم جديد':'تعديل بيانات المستخدم'}</h3>
       <div class="form-grid">
         <div class="field"><label>الاسم الكامل *</label><input id="u_name" value="${escapeHtml(record.name||'')}"></div>
@@ -2629,6 +2759,13 @@ function userModalHTML(){
       </div>
       <div class="field full" style="margin-top:14px;">
         <label>صلاحيات الأقسام</label>
+        <div class="section-note" style="margin-bottom:8px">المستويات: <b>لا أحد</b> · <b>مشاهدة</b> · <b>تعديل</b> · <b>اعتماد</b> (يشمل المشاهدة والتعديل + أزرار الاعتماد)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllPermissions('none')" ${record.isAdmin?'disabled':''}>إلغاء الكل (لا أحد)</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllPermissions('view')" ${record.isAdmin?'disabled':''}>اختيار الكل كمشاهدة</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllPermissions('edit')" ${record.isAdmin?'disabled':''}>اختيار الكل كتعديل</button>
+          <button type="button" class="btn btn-amber btn-sm" onclick="setAllPermissions('approve')" ${record.isAdmin?'disabled':''}>اختيار الكل كاعتماد</button>
+        </div>
         <table class="perm-table">
           <thead><tr><th style="text-align:right;">القسم</th><th>المستوى</th></tr></thead>
           <tbody id="permBody">${permRows}</tbody>
@@ -2771,7 +2908,7 @@ function approvalPolicyModalHTML(){
     <div class="field"><label>تفعيل الاعتماد لهذا القسم</label><select id="ap_enabled"><option value="0" ${!p.enabled?'selected':''}>غير مفعّل</option><option value="1" ${p.enabled?'selected':''}>مفعّل</option></select></div>
     <div class="field"><label>اسم الاعتماد الظاهر</label><input id="ap_label" value="${escapeHtml(p.label||'')}" placeholder="مثال: اعتماد مدير المشروع / المكتب الفني"></div>
     <div class="field full"><label>صلاحية القسم المرتبطة (اختياري — كاحتياطي إن لم تُحدد تخصصات أو مديرون)</label><select id="ap_permission"><option value="">— بدون ربط بصلاحية قسم —</option>${perms}</select></div>
-    <div class="field"><label>الحد الأدنى لصلاحية القسم (إن وُجدت)</label><select id="ap_level"><option value="edit" ${p.requiredLevel!=='view'?'selected':''}>تعديل</option><option value="view" ${p.requiredLevel==='view'?'selected':''}>مشاهدة أو تعديل</option></select></div>
+    <div class="field"><label>الحد الأدنى لصلاحية القسم (إن وُجدت)</label><select id="ap_level"><option value="edit" ${p.requiredLevel==='edit'||!p.requiredLevel?'selected':''}>تعديل أو اعتماد</option><option value="view" ${p.requiredLevel==='view'?'selected':''}>مشاهدة أو أعلى</option><option value="approve" ${p.requiredLevel==='approve'?'selected':''}>اعتماد فقط</option></select></div>
   </div>
   <div class="field full" style="margin-top:14px"><label>التخصصات المؤهّلة للاعتماد (يختارها الأدمن)</label>
     <div style="max-height:180px;overflow:auto;border:1px solid #d3e0ec;padding:10px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">${specChecks||'<div class="section-note">لا توجد تخصصات. أضفها من ملخصات التخصصات.</div>'}</div>
@@ -2855,7 +2992,7 @@ function activityLogHTML(){
 
 /* ===================== Backup / Restore ===================== */
 async function exportBackup(){
-  const allKeys = ['users','specialties', ...Object.keys(MODULES), 'handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','jobTasks'];
+  const allKeys = ['users','specialties','menuVisibility','approvalPolicies', ...Object.keys(MODULES), 'handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','jobTasks'];
   const dump = {};
   for(const k of allKeys){ dump[k] = STATE[k] || []; }
   const blob = new Blob([JSON.stringify(dump, null, 2)], {type:'application/json'});
@@ -3626,7 +3763,20 @@ function render(){
     attachLoginHandlers();
     return;
   }
+  const prevScroll = (typeof window.__epmsSidebarScroll==='number')
+    ? window.__epmsSidebarScroll
+    : (document.getElementById('sidebar') ? document.getElementById('sidebar').scrollTop : 0);
   app.innerHTML = mainLayout();
+  const sb = document.getElementById('sidebar');
+  if(sb && prevScroll>0){
+    sb.scrollTop = prevScroll;
+    window.__epmsSidebarScroll = prevScroll;
+  }
+  // حفظ موضع التمرير أثناء التمرير اليدوي حتى لا يُفقد عند إعادة الرسم لاحقاً
+  if(sb && !sb.__scrollBound){
+    sb.__scrollBound=true;
+    sb.addEventListener('scroll',()=>{ window.__epmsSidebarScroll=sb.scrollTop; }, {passive:true});
+  }
 }
 
 setInterval(()=>{
