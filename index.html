@@ -1278,33 +1278,125 @@ function isDesignatedApprover(moduleKey,user=currentUser){
   if(user && user.isAdmin) return true;
   return userHasApprovalPermission(user,p);
 }
-function recordApprovalStatus(moduleKey,record){
-  if(!approvalRequired(moduleKey)) return '';
-  return record.approvalStatus || 'قيد الاعتماد';
+/** أقسام طلبات الاعتماد / التوجيهات التي تعتمد بطبيعتها حتى بدون تفعيل سياسة منفصلة */
+const NATIVE_APPROVAL_MODULES=[
+  'ownerApprovalRequests','pmApprovalRequests','projectMgrApprovalRequests','adminMgrApprovalRequests',
+  'ownerDirectives','pmDirectives','projectMgrDirectives','adminMgrDirectives',
+  'consultantDirectives','contractorRequests','consultantExtracts',
+  'changeOrders','claims','contracts','extracts','purchases','deliveries',
+  'handoverRequests','siteIncidents','techOffice','documents'
+];
+function isNativeApprovalModule(moduleKey){
+  return NATIVE_APPROVAL_MODULES.includes(moduleKey);
 }
-function canApproveRecord(moduleKey,record){
-  if(!record || !approvalRequired(moduleKey)) return false;
-  const st=recordApprovalStatus(moduleKey,record);
-  if(st==='معتمد') return false;
+function moduleSupportsApproval(moduleKey){
+  // إما سياسة اعتماد مفعّلة، أو قسم طلب اعتماد/توجيهات أصلي، أو لدى المستخدم صلاحية اعتماد على القسم
+  if(approvalRequired(moduleKey)) return true;
+  if(isNativeApprovalModule(moduleKey)) return true;
   const mod=MODULES[moduleKey];
   if(mod && canApprovePerm(mod.permKey)) return true;
-  return isDesignatedApprover(moduleKey);
+  return false;
+}
+function deriveStatusApproval(record){
+  if(!record) return '';
+  if(record.approvalStatus==='معتمد' || record.approvalStatus==='مرفوض') return record.approvalStatus;
+  const st=String(record.status||record.paymentStatus||record.result||'');
+  if(/مرفوض/.test(st)) return 'مرفوض';
+  if(/معتمد/.test(st) && !/قيد/.test(st)) return 'معتمد';
+  if(/مغلق|مصروف كاملاً|مصروف$|منتهي|تم التنفيذ|تم الإغلاق/.test(st)) return 'معتمد';
+  return '';
+}
+function recordApprovalStatus(moduleKey,record){
+  if(!record) return '';
+  if(record.approvalStatus==='معتمد' || record.approvalStatus==='مرفوض') return record.approvalStatus;
+  const derived=deriveStatusApproval(record);
+  if(derived) return derived;
+  // قيد الاعتماد إذا كان القسم يدعم الاعتماد أو السياسة مفعّلة
+  if(approvalRequired(moduleKey) || isNativeApprovalModule(moduleKey)) return record.approvalStatus || 'قيد الاعتماد';
+  return record.approvalStatus || '';
+}
+function isRecordPendingApproval(moduleKey,record){
+  const st=recordApprovalStatus(moduleKey,record);
+  if(!st) return moduleSupportsApproval(moduleKey);
+  return st!=='معتمد' && st!=='مرفوض';
+}
+function canApproveRecord(moduleKey,record){
+  if(!record) return false;
+  const mod=MODULES[moduleKey];
+  if(!mod) return false;
+  if(!isRecordPendingApproval(moduleKey,record)) return false;
+  // 1) صلاحية اعتماد على القسم (الأهم بعد ضبط الصلاحيات)
+  if(canApprovePerm(mod.permKey)) return true;
+  // 2) معتمدون عبر سياسة الاعتماد (تخصص / أسماء) عند تفعيلها
+  if(approvalRequired(moduleKey) && isDesignatedApprover(moduleKey)) return true;
+  // 3) مدير النظام
+  if(currentUser && currentUser.isAdmin) return true;
+  return false;
+}
+function pickApprovedStatusValue(moduleKey, decision){
+  const mod=MODULES[moduleKey];
+  const statusField=(mod&&mod.fields||[]).find(f=>f.name==='status'||f.name==='paymentStatus');
+  if(!statusField || !Array.isArray(statusField.options)) return decision==='اعتماد'?'معتمد':'مرفوض';
+  const opts=statusField.options;
+  if(decision!=='اعتماد'){
+    const rej=opts.find(o=>/مرفوض/.test(o));
+    return rej||'مرفوض';
+  }
+  // فضّل "معتمد" ثم "معتمد مع ..." ثم أول خيار فيه معتمد
+  const exact=opts.find(o=>o==='معتمد');
+  if(exact) return exact;
+  const withNotes=opts.find(o=>/^معتمد/.test(o));
+  if(withNotes) return withNotes;
+  const any=opts.find(o=>/معتمد|مقبول|مصروف|ساري/.test(o));
+  return any||'معتمد';
 }
 async function approveRecord(moduleKey,id,decision='اعتماد'){
   const rec=(STATE[moduleKey]||[]).find(x=>x.id===id); if(!rec)return;
-  if(!canApproveRecord(moduleKey,rec)){alert('لا تملك صلاحية اعتماد هذا البند. يجب أن تكون من التخصصات أو المديرين المحددين من الأدمن، أو لديك صلاحية اعتماد لهذا القسم.');return;}
-  rec.approvalStatus=decision==='اعتماد'?'معتمد':'مرفوض';
+  if(!canApproveRecord(moduleKey,rec)){alert('لا تملك صلاحية اعتماد هذا البند. امنح المستخدم صلاحية «اعتماد» لهذا القسم من المستخدمون والصلاحيات، أو أضفه كمُعتمد في إدارة الاعتمادات.');return;}
+  const approved = decision==='اعتماد';
+  rec.approvalStatus = approved ? 'معتمد' : 'مرفوض';
   rec.approvedBy=currentUser.username;
   rec.approvedByName=currentUser.name;
   rec.approvedAt=new Date().toISOString();
   rec.approvalDecision=decision;
   rec.approverSpecialty=currentUser.specialty||'';
-  pushEditHistory(rec, decision==='اعتماد'?'اعتماد':'رفض');
+  // مزامنة حقل الحالة الظاهر في النماذج (طلبات الاعتماد / التوجيهات / المستخلصات...)
+  const mod=MODULES[moduleKey];
+  if(mod && Array.isArray(mod.fields)){
+    if(mod.fields.some(f=>f.name==='status')){
+      rec.status = pickApprovedStatusValue(moduleKey, decision);
+    }
+    if(mod.fields.some(f=>f.name==='paymentStatus') && approved){
+      const opts=(mod.fields.find(f=>f.name==='paymentStatus').options)||[];
+      const hit=opts.find(o=>/معتمد/.test(o));
+      if(hit) rec.paymentStatus=hit;
+    }
+    // حقول قرار الاعتماد النصية إن وُجدت
+    if(approved){
+      if('ownerDecision' in rec || (mod.fields.some(f=>f.name==='ownerDecision'))){
+        if(!rec.ownerDecision) rec.ownerDecision='تم الاعتماد من النظام بواسطة '+currentUser.name;
+      }
+      if(mod.fields.some(f=>f.name==='pmDecision') && !rec.pmDecision) rec.pmDecision='تم الاعتماد بواسطة '+currentUser.name;
+      if(mod.fields.some(f=>f.name==='projectManagerDecision') && !rec.projectManagerDecision) rec.projectManagerDecision='تم الاعتماد بواسطة '+currentUser.name;
+      if(mod.fields.some(f=>f.name==='adminMgrDecision') && !rec.adminMgrDecision) rec.adminMgrDecision='تم الاعتماد بواسطة '+currentUser.name;
+      if(mod.fields.some(f=>f.name==='consultantDecision') && !rec.consultantDecision) rec.consultantDecision='تم الاعتماد بواسطة '+currentUser.name;
+      if(mod.fields.some(f=>f.name==='decisionDate')) rec.decisionDate=todayISO();
+    }
+  }
+  pushEditHistory(rec, approved?'اعتماد':'رفض');
   await dbSet(moduleKey,STATE[moduleKey]);
   render();
 }
 /** الوحدات التي يُفضّل تفعيل الاعتماد لها افتراضياً (يمكن للأدمن تعديلها) */
-const DEFAULT_APPROVAL_MODULES=['purchases','deliveries','warehouseItems','warehouseTx','warehousesLoc','siteExecution','siteIncidents','contracts','extracts','changeOrders','claims','handoverRequests','contractorRequests','ownerApprovalRequests','pmApprovalRequests','adminMgrApprovalRequests'];
+const DEFAULT_APPROVAL_MODULES=[
+  'purchases','deliveries','warehouseItems','warehouseTx','warehousesLoc','siteExecution','siteIncidents',
+  'contracts','extracts','changeOrders','claims','handoverRequests',
+  'contractorRequests','consultantDirectives','consultantExtracts',
+  'ownerApprovalRequests','ownerDirectives',
+  'pmApprovalRequests','pmDirectives',
+  'projectMgrApprovalRequests','projectMgrDirectives',
+  'adminMgrApprovalRequests','adminMgrDirectives'
+];
 function ensureDefaultApprovalPolicies(){
   if(!Array.isArray(STATE.approvalPolicies)) STATE.approvalPolicies=[];
   // لا نفرض التفعيل تلقائياً؛ فقط نضمن أن الحقول الجديدة موجودة في السياسات المحفوظة
@@ -1324,10 +1416,10 @@ function collectApprovalItems(statusFilter){
   // statusFilter: 'pending' | 'decided' | 'approved' | 'rejected'
   const out=[];
   for(const key of Object.keys(MODULES)){
-    if(!approvalRequired(key)) continue;
+    if(!moduleSupportsApproval(key)) continue;
     const mod=MODULES[key];
     if(!canView(mod.permKey) && !(currentUser&&currentUser.isAdmin)) continue;
-    const list=scopeRecords(STATE[key]||[]);
+    const list=scopeRecords(STATE[key]||[], currentUser, key);
     for(const r of list){
       const st=recordApprovalStatus(key,r);
       if(!st) continue;
@@ -1452,20 +1544,50 @@ async function approveIncidentSection(id,section,decision='اعتماد'){
 function projectScope(user=currentUser){
   if(!user || user.isAdmin) return {mode:'all', ids:[]};
   const s=user.projectScope||{mode:'all',ids:[]};
-  return {mode:s.mode||'all', ids:Array.isArray(s.ids)?s.ids:[]};
+  const mode=s.mode||'all';
+  // selected / count = مشاريع محددة فقط؛ all = كل المشاريع
+  const ids=Array.isArray(s.ids)?s.ids.map(String):[];
+  return {mode, ids};
 }
 function canAccessProject(projectId, user=currentUser){
-  if(!projectId || !user || user.isAdmin) return true;
+  if(!user) return false;
+  if(user.isAdmin) return true;
   const s=projectScope(user);
   if(s.mode==='all') return true;
-  return s.ids.includes(projectId);
+  // مستخدم مقيّد: بدون projectId يُسمح للسجلات العامة فقط (ليس كمشروع)
+  if(!projectId) return true;
+  return s.ids.includes(String(projectId));
 }
-function visibleProjects(user=currentUser){ return (STATE.projects||[]).filter(p=>canAccessProject(p.id,user)); }
-function scopeProjectIds(user=currentUser){ return new Set(visibleProjects(user).map(p=>p.id)); }
-function scopeRecords(list,user=currentUser){
+function visibleProjects(user=currentUser){
+  const all=STATE.projects||[];
+  if(!user) return [];
+  if(user.isAdmin) return all.slice();
+  const s=projectScope(user);
+  if(s.mode==='all') return all.slice();
+  const ids=new Set(s.ids||[]);
+  return all.filter(p=>ids.has(String(p.id)));
+}
+function scopeProjectIds(user=currentUser){ return new Set(visibleProjects(user).map(p=>String(p.id))); }
+function scopeRecords(list,user=currentUser, moduleKey){
   if(!Array.isArray(list)) return [];
-  const s=projectScope(user); if(user?.isAdmin || s.mode==='all') return list;
-  const ids=new Set(s.ids||[]); return list.filter(r=>!r.projectId || ids.has(r.projectId));
+  if(!user) return [];
+  const s=projectScope(user);
+  if(user.isAdmin || s.mode==='all') return list;
+  const ids=new Set(s.ids||[]);
+  // قائمة المشاريع نفسها تُصفّى حسب المعرّف
+  if(moduleKey==='projects'){
+    return list.filter(r=>ids.has(String(r.id)));
+  }
+  // باقي الأقسام: إخفاء سجلات المشاريع غير المصرّح بها
+  return list.filter(r=>{
+    if(!r.projectId) return true;
+    return ids.has(String(r.projectId));
+  });
+}
+function projectOptionsHTML(selectedId, includeEmptyLabel){
+  const projs=visibleProjects();
+  const empty=includeEmptyLabel!==false ? `<option value="">${includeEmptyLabel||'— اختر مشروع —'}</option>` : '';
+  return empty + projs.map(p=>`<option value="${p.id}" ${String(selectedId||'')===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
 }
 
 
@@ -1853,20 +1975,22 @@ function dashboardHTML(executive=false){
   const can=(perm)=>currentUser && (currentUser.isAdmin || canView(perm));
   const edit=(perm)=>currentUser && (currentUser.isAdmin || canEdit(perm));
   const cards=[];
+  const vpDash=visibleProjects();
   if(can('projects')){
-    const total=STATE.projects.length;
-    const active=STATE.projects.filter(p=>p.status==='قيد التنفيذ').length;
-    const done=STATE.projects.filter(p=>p.status==='منتهي').length;
-    const avg=total?Math.round(STATE.projects.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/total):0;
+    const total=vpDash.length;
+    const active=vpDash.filter(p=>p.status==='قيد التنفيذ').length;
+    const done=vpDash.filter(p=>p.status==='منتهي').length;
+    const avg=total?Math.round(vpDash.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/total):0;
     cards.push(['▤',total,'إجمالي المشاريع'],['▶',active,'قيد التنفيذ'],['✓',done,'مشاريع منتهية'],['◉',avg+'%','متوسط الإنجاز']);
   }
-  if(can('extracts')) cards.push(['▣',STATE.extracts.filter(e=>e.status!=='مصروف').length,'مستخلصات معلقة']);
+  if(can('extracts')) cards.push(['▣',scopeRecords(STATE.extracts,currentUser,'extracts').filter(e=>e.status!=='مصروف').length,'مستخلصات معلقة']);
   if(can('warehouse')) cards.push(['▦',STATE.warehouseItems.filter(i=>Number(i.qty||0)<=Number(i.minQty||0)).length,'أصناف عند حد الطلب']);
-  if(can('handoverRequests')) cards.push(['⇄',STATE.handoverRequests.filter(r=>!['مغلق','مقبول'].includes(r.status)).length,'طلبات استلام وتسليم مفتوحة']);
-  if(can('documents')) cards.push(['▤',STATE.documents.length,'المستندات والرسومات']);
+  if(can('handoverRequests')) cards.push(['⇄',scopeRecords(STATE.handoverRequests,currentUser,'handoverRequests').filter(r=>!['مغلق','مقبول'].includes(r.status)).length,'طلبات استلام وتسليم مفتوحة']);
+  if(can('documents')) cards.push(['▤',scopeRecords(STATE.documents,currentUser,'documents').length,'المستندات والرسومات']);
   if(can('finance')){
-    const income=STATE.finance.filter(f=>f.type==='إيراد').reduce((a,f)=>a+Number(f.amount||0),0);
-    const expense=STATE.finance.filter(f=>f.type==='مصروف').reduce((a,f)=>a+Number(f.amount||0),0);
+    const fin=scopeRecords(STATE.finance,currentUser,'finance');
+    const income=fin.filter(f=>f.type==='إيراد').reduce((a,f)=>a+Number(f.amount||0),0);
+    const expense=fin.filter(f=>f.type==='مصروف').reduce((a,f)=>a+Number(f.amount||0),0);
     cards.push(['¤',(income-expense).toLocaleString('ar-EG'),'صافي الرصيد']);
   }
 
@@ -1927,7 +2051,7 @@ function dashboardHTML(executive=false){
     ${sectionLinks.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚙</span>الأقسام المتاحة لهذا المستخدم</span></div><div class="quick-grid">${sectionLinks.join('')}</div></div>`:''}
     <div class="dashboard-sections">
       ${quick.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">＋</span>إجراءات سريعة</span></div><div class="quick-grid">${quick.join('')}</div></div>`:''}
-      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◷</span>آخر المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><table class="dashboard-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>الإنجاز</th></tr></thead><tbody>${STATE.projects.slice(-5).reverse().map(p=>`<tr><td>${escapeHtml(p.name||'—')}</td><td>${formatCell(MODULES.projects,'status',p.status)}</td><td>${Number(p.percentComplete||p.percent||0)}%</td></tr>`).join('')||'<tr><td colspan="3">لا توجد مشاريع.</td></tr>'}</tbody></table></div>`:''}
+      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◷</span>آخر المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><table class="dashboard-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>الإنجاز</th></tr></thead><tbody>${visibleProjects().slice(-5).reverse().map(p=>`<tr><td>${escapeHtml(p.name||'—')}</td><td>${formatCell(MODULES.projects,'status',p.status)}</td><td>${Number(p.percentComplete||p.percent||0)}%</td></tr>`).join('')||'<tr><td colspan="3">لا توجد مشاريع ضمن صلاحيتك.</td></tr>'}</tbody></table></div>`:''}
       ${can('documents')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▤</span>آخر المستندات</span><span class="more" onclick="goRoute('documents')">عرض الكل</span></div>${STATE.documents.slice(-5).reverse().map(d=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:11px;"><span>${escapeHtml(d.title||'مستند')}</span><span class="badge">${escapeHtml(d.category||'مستند')}</span></div>`).join('')||'<div class="section-note">لا توجد مستندات.</div>'}</div>`:''}
     </div>
     ${alertItems.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚠</span>التنبيهات التشغيلية حسب الصلاحيات</span></div><div style="display:grid;gap:8px;font-size:11.5px;">${alertItems.map(x=>`<div class="section-note" style="margin:0;">${x}</div>`).join('')}</div></div>`:''}
@@ -2185,7 +2309,7 @@ function projectSummariesHTML(){
   const selected=window.epmsSummarySpec||specs[0]||'عام';
   const pid=window.epmsSummaryProject||'';
   const type=window.epmsSummaryType||'overall';
-  const chosen=pid?STATE.projects.filter(p=>p.id===pid):STATE.projects;
+  const chosen=pid?visibleProjects().filter(p=>String(p.id)===String(pid)):visibleProjects();
   const scopeIds=new Set(chosen.map(p=>p.id));
   const scoped=arr=>arr.filter(r=>!r.projectId||scopeIds.has(r.projectId));
   const pct=p=>Math.max(0,Math.min(100,Number(p.percentComplete??p.percent??0)||0));
@@ -2222,7 +2346,7 @@ function projectSummariesHTML(){
   return `<div class="hero reference-hero"><h1>الملخص الشامل والتفصيلي للتخصصات</h1><p>عرض شامل لكل التخصصات أو فتح تخصص واحد بالتفصيل، مع تصفية حسب المشروع، وبناء الملخص من الوحدات التي يملك المستخدم صلاحية مشاهدتها.</p></div>
   <div class="panel no-print"><div class="panel-title"><span>إعدادات الملخص</span><small>الصلاحيات الحالية تتحكم في البيانات المعروضة</small></div><div class="form-grid">
     <div class="field"><label>نوع الملخص</label><select onchange="window.epmsSummaryType=this.value;render()"><option value="overall" ${type==='overall'?'selected':''}>ملخص شامل لكل التخصصات</option><option value="specialty" ${type==='specialty'?'selected':''}>ملخص تفصيلي لتخصص واحد</option></select></div>
-    <div class="field"><label>المشروع / المشاريع</label>${can('projects')?`<select onchange="window.epmsSummaryProject=this.value;render()"><option value="">كل المشاريع</option>${STATE.projects.map(p=>`<option value="${p.id}" ${pid===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select>`:'<div class="section-note" style="margin:0">لا توجد صلاحية لعرض أسماء المشاريع.</div>'}</div>
+    <div class="field"><label>المشروع / المشاريع</label>${can('projects')?`<select onchange="window.epmsSummaryProject=this.value;render()"><option value="">كل المشاريع المسموح بها</option>${visibleProjects().map(p=>`<option value="${p.id}" ${String(pid)===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select>`:'<div class="section-note" style="margin:0">لا توجد صلاحية لعرض أسماء المشاريع.</div>'}</div>
     <div class="field"><label>التخصص</label><select onchange="window.epmsSummarySpec=this.value;render()" ${type==='overall'?'disabled':''}>${specs.map(x=>`<option value="${escapeHtml(x)}" ${selected===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></div>
     <div class="field"><label>إجراءات</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button><button class="btn btn-ghost" onclick="window.epmsSummaryProject='';window.epmsSummaryType='overall';render()">إعادة ضبط</button></div></div>
   </div></div>
@@ -2349,8 +2473,9 @@ function handoverCenterHTML(){
 
 /* ---------- Generic module list ---------- */
 function moduleHTML(key, mod){
-  const list = scopeRecords(STATE[key] || []);
+  const list = scopeRecords(STATE[key] || [], currentUser, key);
   const editable = canEdit(mod.permKey);
+  const allowedProjects = visibleProjects();
 
   let filterBar = '';
   let filtered = list.slice();
@@ -2359,14 +2484,18 @@ function moduleHTML(key, mod){
   const dateFields = mod.fields.filter(f=>f.type==='date').map(f=>[f.name,f.label]);
   if(mod.hasProject){
     const pid = projectFilter[key] || '';
+    // إن كان الفلتر يشير لمشروع غير مسموح أعد ضبطه
+    const pidOk = !pid || allowedProjects.some(p=>String(p.id)===String(pid));
+    const effectivePid = pidOk ? pid : '';
+    if(!pidOk) projectFilter[key] = '';
     filterBar = `
       <select onchange="setProjectFilter('${key}', this.value)">
-        <option value="">كل المشاريع</option>
-        ${STATE.projects.map(p=>`<option value="${p.id}" ${pid===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+        <option value="">كل المشاريع المسموح بها</option>
+        ${allowedProjects.map(p=>`<option value="${p.id}" ${String(effectivePid)===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
       </select>`;
-    if(pid){
-      if(key==='surveillanceCameras') filtered = list.filter(r=>r.projectId===pid || r.scopeMode==='كل المشاريع' || !r.projectId);
-      else filtered = list.filter(r=>r.projectId===pid);
+    if(effectivePid){
+      if(key==='surveillanceCameras') filtered = list.filter(r=>r.projectId===effectivePid || r.scopeMode==='كل المشاريع' || !r.projectId);
+      else filtered = list.filter(r=>String(r.projectId)===String(effectivePid));
     }
   }
   if(sortField){ filtered.sort((a,b)=>{ const av=a[sortField]||'', bv=b[sortField]||''; return (String(av).localeCompare(String(bv)))*(sortDir==='asc'?1:-1); }); }
@@ -2422,7 +2551,7 @@ function moduleHTML(key, mod){
     </div>
     <h3 class="print-only" style="margin:0 0 12px;">${mod.title}</h3>
     <table>
-      <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>الترتيب</th>${projHead}${headCols}<th>أُضيف بواسطة</th><th>المرفقات / المستندات</th>${(key==='siteIncidents'||approvalRequired(key))?'<th>حالة الاعتماد</th>':''}<th class="no-print"></th></tr></thead>
+      <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>الترتيب</th>${projHead}${headCols}<th>أُضيف بواسطة</th><th>المرفقات / المستندات</th>${(key==='siteIncidents'||moduleSupportsApproval(key))?'<th>حالة الاعتماد</th>':''}<th class="no-print"></th></tr></thead>
       <tbody>
         ${rows || `<tr class="empty-row"><td colspan="13">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
       </tbody>
@@ -2503,7 +2632,10 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<
 /* ---------- Modal (create/edit record) ---------- */
 function openNew(key){ modalState = {moduleKey:key, record:{}, isNew:true}; render(); }
 function openEdit(key, id){
-  const rec = STATE[key].find(r=>r.id===id);
+  const rec = (STATE[key]||[]).find(r=>r.id===id);
+  if(!rec){ alert('السجل غير موجود'); return; }
+  if(key==='projects' && !canAccessProject(rec.id)){ alert('هذا المشروع غير ضمن صلاحياتك.'); return; }
+  if(rec.projectId && !canAccessProject(rec.projectId)){ alert('هذا المشروع غير ضمن صلاحياتك.'); return; }
   modalState = {moduleKey:key, record:{...rec}, isNew:false};
   render();
 }
@@ -2522,7 +2654,7 @@ function modalHTML(){
       <label>المشروع *</label>
       <select id="f_projectId" ${!editable?'disabled':''}>
         <option value="">— اختر مشروع —</option>
-        ${STATE.projects.map(p=>`<option value="${p.id}" ${record.projectId===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+        ${visibleProjects().map(p=>`<option value="${p.id}" ${String(record.projectId||'')===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
       </select>
     </div>`;
   }
@@ -2596,6 +2728,7 @@ async function saveRecord(){
       record.projectId = '';
     }else{
       if(!pid){ alert('من فضلك اختر المشروع'); return; }
+      if(!canAccessProject(pid)){ alert('المشروع المختار غير ضمن صلاحياتك.'); return; }
       record.projectId = pid;
     }
   }
@@ -2611,11 +2744,9 @@ async function saveRecord(){
     const anyRejected=vals.some(sec=>record.incidentApprovals[sec]&&record.incidentApprovals[sec].status==='مرفوض');
     record.approvalStatus=vals.length?(allApproved?'معتمد':anyRejected?'مرفوض':'قيد الاعتماد'):'بدون اعتماد';
   }
-  if(approvalRequired(moduleKey)){
-    // أي سجل جديد أو معدّل (غير معتمد بعد / أو أُعيد تعديله) يعود لقيد الاعتماد
-    // إلا إذا كان المعتمد الحالي يعتمده مباشرة من شاشة القائمة
+  if(moduleSupportsApproval(moduleKey)){
+    // أي سجل جديد أو معدّل بعد اعتماد سابق يعود لقيد الاعتماد
     if(isNew || record.approvalStatus==='معتمد' || record.approvalStatus==='مرفوض' || !record.approvalStatus){
-      // إعادة التعديل بعد الاعتماد تعيد الطلب إلى دورة الاعتماد
       if(!isNew && (record.approvalStatus==='معتمد' || record.approvalStatus==='مرفوض')){
         record.previousApprovalStatus=record.approvalStatus;
         record.previousApprovedBy=record.approvedByName||record.approvedBy||'';
@@ -3373,8 +3504,8 @@ function jobTasksHTML(){
   const canView_tasks = currentUser && (currentUser.isAdmin || canView('jobTasks'));
   if(!canView_tasks) return noAccessHTML();
 
-  const tasks = STATE.jobTasks || [];
-  const projects = STATE.projects || [];
+  const tasks = scopeRecords(STATE.jobTasks || [], currentUser, 'jobTasks');
+  const projects = visibleProjects();
 
   const selRole = window.jtFilterRole || '';
   const selProject = window.jtFilterProject || '';
@@ -3578,7 +3709,7 @@ function jobTaskModalHTML(){
   const {record, isNew} = modalState;
   const editable = currentUser && (currentUser.isAdmin || canEdit('jobTasks'));
   const roleOptions = JOB_ROLES.map(r=>`<option value="${r.key}" ${record.roleKey===r.key?'selected':''}>${r.icon} ${r.label}</option>`).join('');
-  const projectOptions = (STATE.projects||[]).map(p=>`<option value="${p.id}" ${record.projectId===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
+  const projectOptions = visibleProjects().map(p=>`<option value="${p.id}" ${String(record.projectId||'')===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
   const statusOptions = DEFAULT_JOB_TASK_STATES.map(s=>`<option value="${s}" ${record.status===s?'selected':''}>${s}</option>`).join('');
   const prioOptions = DEFAULT_JOB_TASK_PRIORITIES.map(p=>`<option value="${p}" ${record.priority===p?'selected':''}>${p}</option>`).join('');
   return `<div class="overlay" onclick="if(event.target===this) closeModal()">
@@ -3660,7 +3791,7 @@ async function saveJobTask(){
 
 function defaultTasksModalHTML(){
   if(!modalState || !modalState.isDefaultTasksModal) return '';
-  const projectOptions = (STATE.projects||[]).map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  const projectOptions = visibleProjects().map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   const selRole = modalState.selectedRole || JOB_ROLES[0].key;
   const roleTabs = JOB_ROLES.map(r=>`<button type="button" class="btn ${selRole===r.key?'btn-amber':'btn-ghost'} btn-sm" style="margin:2px" onclick="modalState.selectedRole='${r.key}';render()">${r.icon} ${r.label}</button>`).join('');
   const role = getJobRole(selRole) || JOB_ROLES[0];
