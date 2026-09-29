@@ -5101,7 +5101,9 @@ function jobTasksHTML(){
       <td>${t.dueDate?escapeHtml(t.dueDate):'—'}</td>
       <td><span class="badge ${stBadge}">${escapeHtml(t.status||'—')}</span></td>
       <td><div class="row-actions">
-        ${canManage?`<button class="link-btn" onclick="openJobTaskEdit('${t.id}')">تعديل</button><button class="link-btn danger" onclick="deleteJobTask('${t.id}')">حذف</button>`:'<button class="link-btn" onclick="openJobTaskEdit(\''+t.id+'\')">عرض</button>'}
+        ${canManage
+          ? `<button class="link-btn" onclick="readJobTaskFull('${t.id}')">📖 قراءة</button><button class="link-btn" onclick="openJobTaskEdit('${t.id}')">تعديل</button><button class="link-btn danger" onclick="deleteJobTask('${t.id}')">حذف</button>`
+          : `<button class="link-btn" onclick="readJobTaskFull('${t.id}')">📖 قراءة كاملة</button>`}
       </div></td>
     </tr>`;
   }).join('');
@@ -5109,7 +5111,15 @@ function jobTasksHTML(){
   return `
   <div class="hero" style="background:linear-gradient(135deg,#0b3d6e,#1565a0)">
     <h1>📋 المهام الوظيفية</h1>
-    <p>إدارة وتتبع مهام مدير المشروعات ومدير المشروع وجميع التخصصات الهندسية والإدارية — مع مهام افتراضية قابلة للاختيار والإضافة لكل قسم</p>
+    <p>إدارة وتتبع مهام مدير المشروعات ومدير المشروع وجميع التخصصات — القراءة متاحة للمشاهد ولجميع المستخدمين، والتعديل لمن لديه صلاحية</p>
+  </div>
+  <div class="section-note" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <span>👁 <b>وضع القراءة:</b> يمكن للمشاهد ولأي مستخدم مسجّل الاطلاع على المهام وطباعتها. الإضافة والتعديل والحذف للمصرّح لهم فقط.</span>
+    <span style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-amber btn-sm" onclick="printJobTasks('all')">📖 قراءة كاملة لكل المهام</button>
+      <button class="btn btn-ghost btn-sm" onclick="printJobTasks('filtered')">📖 قراءة كاملة للمعروض</button>
+      <button class="btn btn-ghost btn-sm" onclick="printJobTasks('byRole')">📖 قراءة كاملة حسب التخصص</button>
+    </span>
   </div>
 
   <div class="cards-row">${rolesGrid}</div>
@@ -5137,9 +5147,9 @@ function jobTasksHTML(){
       <div class="field" style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">
         ${canManage?`<button class="btn btn-amber" onclick="openJobTaskNew()">+ إضافة مهمة</button>
         <button class="btn btn-ghost" onclick="openAddDefaultTasks()">⚡ استيراد مهام قسم</button>`:''}
-        <button class="btn btn-ghost" onclick="printJobTasks('filtered')">🖨️ طباعة المعروض</button>
-        <button class="btn btn-ghost" onclick="printJobTasks('all')">🖨️ طباعة الكل</button>
-        <button class="btn btn-ghost" onclick="printJobTasks('byRole')">🖨️ طباعة حسب التخصص</button>
+        <button class="btn btn-ghost" onclick="printJobTasks('filtered')">📖 قراءة كاملة للمعروض</button>
+        <button class="btn btn-ghost" onclick="printJobTasks('all')">📖 قراءة كاملة للكل</button>
+        <button class="btn btn-ghost" onclick="printJobTasks('byRole')">📖 قراءة كاملة حسب التخصص</button>
       </div>
     </div>
   </div>
@@ -5257,9 +5267,11 @@ function jobTaskModalHTML(){
   const projectOptions = visibleProjects().map(p=>`<option value="${p.id}" ${String(record.projectId||'')===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('');
   const statusOptions = DEFAULT_JOB_TASK_STATES.map(s=>`<option value="${s}" ${record.status===s?'selected':''}>${s}</option>`).join('');
   const prioOptions = DEFAULT_JOB_TASK_PRIORITIES.map(p=>`<option value="${p}" ${record.priority===p?'selected':''}>${p}</option>`).join('');
+  const modalTitle = isNew ? 'إضافة مهمة جديدة' : (editable ? 'تعديل المهمة' : '📖 قراءة المهمة (عرض فقط)');
   return `<div class="overlay" onclick="if(event.target===this) closeModal()">
     <div class="modal" style="max-width:720px">
-      <h3>${isNew?'إضافة مهمة جديدة':'تعديل / عرض المهمة'}</h3>
+      <h3>${modalTitle}</h3>
+      ${!editable && !isNew ? '<div class="section-note">أنت في وضع القراءة فقط — لا يمكن التعديل بدون صلاحية «المهام الوظيفية».</div>' : ''}
       <div class="form-grid">
         <div class="field"><label>الوظيفة / القسم / التخصص *</label>
           <select id="jt_role" ${!editable?'disabled':''} onchange="refreshDefaultTaskPicker()">${roleOptions}</select>
@@ -5388,10 +5400,94 @@ async function importDefaultTasks(){
   alert(`✅ تم إضافة ${tasks.length} مهمة لقسم ${roleLabel} بنجاح!`);
 }
 
+function jobTaskFullCardHTML(t, index, total){
+  const role = getJobRole(t.roleKey);
+  const roleLabel = role ? (role.icon + ' ' + role.label) : (t.roleKey || '—');
+  const proj = projectName(t.projectId) || '— عام / بدون مشروع —';
+  const desc = (t.description || '').trim() || '— لا يوجد وصف —';
+  const notes = (t.notes || '').trim() || '— لا توجد ملاحظات —';
+  const created = t.createdAt ? String(t.createdAt).replace('T',' ').slice(0,19) : '—';
+  const updated = t.updatedAt ? String(t.updatedAt).replace('T',' ').slice(0,19) : '—';
+  const company = (typeof brandName === 'function' ? brandName() : (getBranding().nameAr || ''));
+  return `<section class="print-document ${index < total-1 ? 'page-break' : ''}">
+    <div class="doc-head">
+      <div class="co">${escapeHtml(company)}</div>
+      <h1>بطاقة قراءة مهمة وظيفية</h1>
+      <p class="sub">صفحة كاملة للطباعة والقراءة — المهمة ${index+1} من ${total}</p>
+    </div>
+    <table class="meta-table">
+      <tr><th>رقم / تسلسل</th><td>${index+1}</td><th>الحالة</th><td><b>${escapeHtml(t.status||'—')}</b></td></tr>
+      <tr><th>الوظيفة / التخصص</th><td colspan="3">${escapeHtml(roleLabel)}</td></tr>
+      <tr><th>عنوان المهمة</th><td colspan="3"><b style="font-size:15px">${escapeHtml(t.title||'—')}</b></td></tr>
+      <tr><th>المشروع</th><td>${escapeHtml(proj)}</td><th>المسؤول عن التنفيذ</th><td>${escapeHtml(t.assignedTo||'—')}</td></tr>
+      <tr><th>الأولوية</th><td>${escapeHtml(t.priority||'—')}</td><th>الموعد النهائي</th><td>${escapeHtml(t.dueDate||'—')}</td></tr>
+      <tr><th>أُنشئت بواسطة</th><td>${escapeHtml(t.createdByName||t.createdBy||'—')}</td><th>تاريخ الإنشاء</th><td>${escapeHtml(created)}</td></tr>
+      <tr><th>آخر تعديل بواسطة</th><td>${escapeHtml(t.updatedByName||t.updatedBy||'—')}</td><th>تاريخ آخر تعديل</th><td>${escapeHtml(updated)}</td></tr>
+    </table>
+    <h2>تفاصيل / وصف المهمة (كامل)</h2>
+    <div class="full-box">${escapeHtml(desc).replace(/\n/g,'<br>')}</div>
+    <h2>ملاحظات / متابعة (كامل)</h2>
+    <div class="full-box">${escapeHtml(notes).replace(/\n/g,'<br>')}</div>
+    <div class="signatures">
+      <div>اطّلع / قرأ<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div>
+      <div>المسؤول عن التنفيذ<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div>
+    </div>
+  </section>`;
+}
+
+function jobTasksPrintStyles(){
+  return `body{background:#eee;font-family:Arial,Tahoma,sans-serif;margin:0;color:#111}
+  .print-document{background:#fff;color:#111;max-width:920px;margin:16px auto;padding:28px 32px;line-height:1.85;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .doc-head{text-align:center;border-bottom:2px solid #0b5cae;padding-bottom:12px;margin-bottom:16px}
+  .doc-head .co{font-size:13px;color:#0b5cae;font-weight:700;margin-bottom:4px}
+  .doc-head h1{margin:6px 0;font-size:22px;color:#0a3a69}
+  .doc-head .sub{margin:0;color:#555;font-size:13px}
+  .meta-table{width:100%;border-collapse:collapse;margin:12px 0 18px}
+  .meta-table th,.meta-table td{border:1px solid #8aa7c2;padding:9px 11px;text-align:right;font-size:13.5px;vertical-align:top}
+  .meta-table th{background:#e8f2fb;color:#0a3a69;width:18%;font-weight:700;white-space:nowrap}
+  .meta-table td{background:#fff}
+  h2{font-size:15px;color:#0a3a69;margin:18px 0 8px;border-right:4px solid #0b5cae;padding-right:10px}
+  .full-box{border:1px solid #b8cfe4;border-radius:8px;padding:14px 16px;background:#f7fbff;min-height:90px;font-size:14px;white-space:pre-wrap;word-wrap:break-word}
+  .signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:48px;text-align:center;font-size:13px}
+  .page-break{page-break-after:always}
+  .toolbar-print{position:sticky;top:0;z-index:5;background:#0b1f3a;color:#fff;padding:10px 16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .toolbar-print button{font-family:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:0;cursor:pointer;background:#0b70e6;color:#fff}
+  .toolbar-print button.secondary{background:#fff;color:#0b1f3a}
+  @media print{
+    body{background:#fff}
+    .print-document{margin:0;max-width:none;box-shadow:none;padding:12px}
+    .toolbar-print{display:none!important}
+    .page-break{page-break-after:always}
+  }`;
+}
+
+function openPrintWindow(title, bodyHtml){
+  const w = window.open('', '_blank');
+  if(!w){ alert('اسمح بالنوافذ المنبثقة لفتح صفحة القراءة والطباعة'); return; }
+  w.document.write(`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+  <style>${jobTasksPrintStyles()}</style></head><body>
+  <div class="toolbar-print no-print">
+    <button onclick="window.print()">🖨️ طباعة الصفحة الكاملة</button>
+    <button class="secondary" onclick="window.close()">إغلاق</button>
+  </div>
+  ${bodyHtml}
+  </body></html>`);
+  w.document.close();
+}
+
+/** قراءة مهمة واحدة — صفحة كاملة بكل التفاصيل للطباعة */
+function readJobTaskFull(id){
+  const t = (STATE.jobTasks||[]).find(x=>x.id===id);
+  if(!t){ alert('المهمة غير موجودة'); return; }
+  const body = jobTaskFullCardHTML(t, 0, 1);
+  openPrintWindow('قراءة مهمة: ' + (t.title||''), body);
+}
+
+/** طباعة / قراءة قائمة مهام — كل مهمة في صفحة كاملة بكل محتواها */
 function printJobTasks(mode){
   const all = STATE.jobTasks || [];
   let list = all.slice();
-  let title = 'قائمة المهام الوظيفية — الكل';
+  let title = 'قراءة المهام الوظيفية — الكل (تفاصيل كاملة)';
   if(mode==='filtered'){
     const selRole = window.jtFilterRole || '';
     const selProject = window.jtFilterProject || '';
@@ -5406,94 +5502,31 @@ function printJobTasks(mode){
     if(selRole){ const r=getJobRole(selRole); parts.push(r?r.label:selRole); }
     if(selProject) parts.push(projectName(selProject));
     if(selStatus) parts.push(selStatus);
-    title = 'قائمة المهام الوظيفية — ' + (parts.length?parts.join(' / '):'المعروض حالياً');
+    title = 'قراءة المهام — ' + (parts.length?parts.join(' / '):'المعروض حالياً') + ' (تفاصيل كاملة)';
   } else if(mode==='byRole'){
-    // group by role for print
     const groups = {};
     for(const t of all){
       const k = t.roleKey || 'other';
       if(!groups[k]) groups[k]=[];
       groups[k].push(t);
     }
-    const blocks = JOB_ROLES.map(role=>{
+    const ordered = [];
+    for(const role of JOB_ROLES){
       const items = groups[role.key] || [];
-      if(!items.length) return '';
-      const rows = items.map((t,i)=>`<tr>
-        <td>${i+1}</td>
-        <td>${escapeHtml(t.title||'')}</td>
-        <td>${escapeHtml(projectName(t.projectId)||'—')}</td>
-        <td>${escapeHtml(t.assignedTo||'—')}</td>
-        <td>${escapeHtml(t.priority||'—')}</td>
-        <td>${escapeHtml(t.dueDate||'—')}</td>
-        <td>${escapeHtml(t.status||'—')}</td>
-      </tr>`).join('');
-      return `<section class="print-document page-break">
-        <h1>المهام الوظيفية — ${escapeHtml(role.label)}</h1>
-        <p style="text-align:center;color:#555">${role.icon} عدد المهام: ${items.length}</p>
-        <table><thead><tr><th>#</th><th>المهمة</th><th>المشروع</th><th>المسؤول</th><th>الأولوية</th><th>الموعد</th><th>الحالة</th></tr></thead>
-        <tbody>${rows}</tbody></table>
-        <div class="signatures"><div>المعتمد<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div>
-        <div>المسؤول<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div>
-      </section>`;
-    }).filter(Boolean).join('');
-    // orphan roles
+      for(const t of items) ordered.push(t);
+    }
     const known = new Set(JOB_ROLES.map(r=>r.key));
-    const orphans = Object.keys(groups).filter(k=>!known.has(k));
-    const orphanBlocks = orphans.map(k=>{
-      const items = groups[k];
-      const rows = items.map((t,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(t.title||'')}</td><td>${escapeHtml(projectName(t.projectId)||'—')}</td><td>${escapeHtml(t.assignedTo||'—')}</td><td>${escapeHtml(t.priority||'—')}</td><td>${escapeHtml(t.dueDate||'—')}</td><td>${escapeHtml(t.status||'—')}</td></tr>`).join('');
-      return `<section class="print-document page-break"><h1>المهام — ${escapeHtml(k)}</h1>
-        <table><thead><tr><th>#</th><th>المهمة</th><th>المشروع</th><th>المسؤول</th><th>الأولوية</th><th>الموعد</th><th>الحالة</th></tr></thead><tbody>${rows}</tbody></table></section>`;
-    }).join('');
-    const html = (blocks || orphanBlocks) || '<div class="print-document"><h1>لا توجد مهام للطباعة</h1></div>';
-    const w=window.open('','_blank'); if(!w)return;
-    w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>طباعة المهام حسب التخصص</title>
-    <style>body{background:#eee;font-family:Arial,Tahoma,sans-serif;margin:0}
-    .print-document{background:#fff;color:#111;max-width:960px;margin:16px auto;padding:28px;line-height:1.75}
-    .print-document table{width:100%;border-collapse:collapse;margin-top:12px}
-    .print-document th,.print-document td{border:1px solid #999;padding:7px;text-align:right;font-size:13px}
-    .print-document th{background:#edf5fc}
-    .signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;text-align:center}
-    .page-break{page-break-after:always}
-    @media print{body{background:#fff}.print-document{margin:0;max-width:none}.page-break{page-break-after:always}}</style>
-    </head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
-    w.document.close();
-    return;
+    for(const k of Object.keys(groups)){
+      if(!known.has(k)) for(const t of groups[k]) ordered.push(t);
+    }
+    list = ordered;
+    title = 'قراءة المهام حسب التخصص (تفاصيل كاملة لكل مهمة)';
   }
 
-  if(!list.length){ alert('لا توجد مهام للطباعة'); return; }
-  const rows = list.map((t,i)=>{
-    const role = getJobRole(t.roleKey);
-    return `<tr>
-      <td>${i+1}</td>
-      <td>${escapeHtml(role?role.label:t.roleKey||'—')}</td>
-      <td>${escapeHtml(t.title||'')}</td>
-      <td>${escapeHtml(projectName(t.projectId)||'—')}</td>
-      <td>${escapeHtml(t.assignedTo||'—')}</td>
-      <td>${escapeHtml(t.priority||'—')}</td>
-      <td>${escapeHtml(t.dueDate||'—')}</td>
-      <td>${escapeHtml(t.status||'—')}</td>
-    </tr>`;
-  }).join('');
-  const html = `<div class="print-document">
-    <h1>${escapeHtml(title)}</h1>
-    <p style="text-align:center;color:#555">عدد المهام: ${list.length} — تاريخ الطباعة: ${todayISO()}</p>
-    <table><thead><tr><th>#</th><th>التخصص</th><th>المهمة</th><th>المشروع</th><th>المسؤول</th><th>الأولوية</th><th>الموعد</th><th>الحالة</th></tr></thead>
-    <tbody>${rows}</tbody></table>
-    <div class="signatures"><div>المعتمد<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div>
-    <div>المسؤول<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div>
-  </div>`;
-  const w=window.open('','_blank'); if(!w)return;
-  w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
-  <style>body{background:#eee;font-family:Arial,Tahoma,sans-serif;margin:0}
-  .print-document{background:#fff;color:#111;max-width:960px;margin:16px auto;padding:28px;line-height:1.75}
-  .print-document table{width:100%;border-collapse:collapse;margin-top:12px}
-  .print-document th,.print-document td{border:1px solid #999;padding:7px;text-align:right;font-size:13px}
-  .print-document th{background:#edf5fc}
-  .signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;text-align:center}
-  @media print{body{background:#fff}.print-document{margin:0;max-width:none}}</style>
-  </head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
-  w.document.close();
+  if(!list.length){ alert('لا توجد مهام للقراءة'); return; }
+  const total = list.length;
+  const body = list.map((t,i)=> jobTaskFullCardHTML(t, i, total)).join('');
+  openPrintWindow(title, body);
 }
 
 /* ===================== Render root ===================== */
