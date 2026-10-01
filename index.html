@@ -3931,7 +3931,14 @@ function printSelectedRecords(key){
   printRecordsBatch(key,records);
 }
 function printAnyRecord(key,id){
-  if(key==='contracts' || key==='extracts'){ printDocument(key,id); return; }
+  if(key==='contracts'){ openFillableContract(id); return; }
+  if(key==='extracts'){ openFillableExtract(id); return; }
+  if(key==='boq'){
+    const r=(STATE.boq||[]).find(x=>String(x.id)===String(id));
+    const pid = r ? r.projectId : (projectFilter&&projectFilter['boq']);
+    openFillableBoq(pid);
+    return;
+  }
   const r=(STATE[key]||[]).find(x=>x.id===id); if(!r)return;
   printRecordsBatch(key,[r]);
 }
@@ -3951,6 +3958,8 @@ function setProjectFilter(key, val){ projectFilter[key] = val; render(); }
 function setSort(key,val){ projectFilter[key+'_sortField']=val; render(); }
 function setSortDir(key,val){ projectFilter[key+'_sortDir']=val; render(); }
 function printDocument(key,id){
+  if(key==='contracts'){ openFillableContract(id); return; }
+  if(key==='extracts'){ openFillableExtract(id); return; }
   const r=(STATE[key]||[]).find(x=>x.id===id); if(!r)return;
   const title=key==='contracts'?'عقد مقاولة بين المالك والمقاول':'مستخلص أعمال بين المالك والمقاول';
   const p=projectName(r.projectId);
@@ -5618,13 +5627,21 @@ function useContractTemplate(tid){
     alert('لا تملك صلاحية إضافة عقود');
     return;
   }
-  // Pre-fill new record via existing form flow if possible
   const today = (typeof todayISO==='function') ? todayISO() : new Date().toISOString().slice(0,10);
+  // نص مختصر للإشارة — النص الكامل يظهر عبر «تعبئة وطباعة» من القالب المدمج
+  const body = (typeof CONTRACT_FULL_BODIES!=='undefined' && CONTRACT_FULL_BODIES[tid]) ? CONTRACT_FULL_BODIES[tid] : null;
+  let clausesSummary = 'القالب الكامل: '+t.name+' ('+((body && body.arts)?body.arts.length:0)+' مادة). استخدم زر «تعبئة العقد» أو «طباعة» لفتح النص الكامل.';
+  if(body && body.arts && body.arts.length){
+    clausesSummary = body.arts.slice(0,3).map(function(a){
+      return 'المادة ('+a.n+'): '+(a.t||'')+' — '+String(a.b||'').slice(0,160);
+    }).join(' | ') + ' … ('+body.arts.length+' مادة — افتح تعبئة العقد للنص الكامل)';
+  }
   const draft = {
     id: (typeof genId==='function') ? genId() : ('c_'+Date.now()),
     projectId: (projectFilter && projectFilter['contracts']) || (visibleProjects()[0] && visibleProjects()[0].id) || '',
     contractNumber: '',
     templateType: t.name,
+    templateId: tid,
     owner: '',
     contractor: '',
     scope: t.desc,
@@ -5633,15 +5650,15 @@ function useContractTemplate(tid){
     startDate: today,
     endDate: '',
     duration: '',
-    advance: '',
+    advance: '10%',
     retention: '5',
     delayPenalty: 0.1,
     penaltyCap: 10,
-    paymentTerms: '',
-    clauses: 'تم إنشاء هذا السجل من القالب: '+t.name+' — يُرجى مراجعة البنود من ملف Word/PDF المرفق في الحزمة.',
+    paymentTerms: 'دفعة مقدمة ودفعات مرحلية حسب الإنجاز ودفعة ختامية بعد الاستلام.',
+    clauses: clausesSummary,
     placeOfContract: '',
     status: 'مسودة',
-    notes: 'مصدر القالب: '+t.file,
+    notes: 'مصدر القالب: '+t.file+' | templateId='+tid,
     createdBy: currentUser.username,
     createdByName: currentUser.name,
     createdAt: new Date().toISOString()
@@ -5652,10 +5669,10 @@ function useContractTemplate(tid){
   STATE.contracts = STATE.contracts || [];
   STATE.contracts.push(draft);
   if(typeof dbSet==='function') dbSet('contracts', STATE.contracts);
-  alert('✅ تم إنشاء سجل عقد جديد من القالب «'+t.name+'»\nالحالة: مسودة\nافتح السجل لتعبئة البيانات، أو نزّل ملف Word/PDF من الحزمة.');
-  // stay on contracts and refresh
+  const openNow = confirm('✅ تم إنشاء سجل عقد من القالب «'+t.name+'»\n\nهل تريد فتح النص الكامل للتعبئة والطباعة الآن؟');
   if(currentRoute !== 'contracts') goRoute('contracts');
   else render();
+  if(openNow) setTimeout(function(){ openFillableContract(draft.id); }, 250);
 }
 
 function previewContractTemplate(tid){
@@ -5882,7 +5899,10 @@ function boqTemplatesPanelHTML(){
   }).join('');
   return `
   <div class="panel" style="margin-bottom:14px;padding:14px">
-    <div class="panel-title" style="margin:0 0 10px">📐 قوالب المقايسات النموذجية (BOQ)</div>
+    <div class="panel-title" style="margin:0 0 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
+      <span>📐 قوالب المقايسات النموذجية (BOQ)</span>
+      <button type="button" class="btn btn-amber btn-sm" onclick="openFillableBoq()">🖨 طباعة مقايسة المشروع</button>
+    </div>
     <div class="section-note" style="margin:0 0 12px">
       اختر تخصصاً لتحميل بنود نموذجية جاهزة (كود + وصف + وحدة + كمية تقديرية + سعر استرشادي).
       <b>إضافة للمشروع</b>: تلحق البنود بالمقايسة الحالية.
@@ -5963,9 +5983,17 @@ function loadBoqTemplate(tid, mode){
     added++;
   }
   if(typeof dbSet==='function') dbSet('boq', STATE.boq);
-  alert('✅ تم تحميل قالب «'+t.name+'»\\nبنود مضافة: '+added+'\\nالمشروع: '+(projectName(pid)||pid));
+  // ربط القالب بالمشروع في التخزين المحلي
+  try{
+    const map = JSON.parse(localStorage.getItem('epms_boq_template_links')||'{}');
+    map[String(pid)] = map[String(pid)] || [];
+    if(!map[String(pid)].includes(tid)) map[String(pid)].push(tid);
+    localStorage.setItem('epms_boq_template_links', JSON.stringify(map));
+  }catch(e){}
+  const openPrint = confirm('✅ تم تحميل قالب «'+t.name+'»\nبنود مضافة: '+added+'\nالمشروع: '+(projectName(pid)||pid)+'\n\nهل تريد فتح المقايسة للطباعة الآن؟');
   if(currentRoute !== 'boq') goRoute('boq');
   else render();
+  if(openPrint) setTimeout(function(){ openFillableBoq(pid); }, 250);
 }
 
 function previewBoqTemplate(tid){
@@ -6026,6 +6054,7 @@ function createExtractFromTemplate(tid){
     status: t.defaults.status || 'قيد الإعداد',
     notes: t.defaults.notes || '',
     extractTemplate: t.name,
+    extractTemplateId: tid,
     createdBy: currentUser.username,
     createdByName: currentUser.name,
     createdAt: new Date().toISOString()
@@ -6036,9 +6065,10 @@ function createExtractFromTemplate(tid){
   STATE.extracts = STATE.extracts || [];
   STATE.extracts.push(rec);
   if(typeof dbSet==='function') dbSet('extracts', STATE.extracts);
-  alert('✅ تم إنشاء «'+t.name+'»\\nافتح السجل لتعبئة المبالغ ورقم المستخلص.');
+  const openNow = confirm('✅ تم إنشاء «'+t.name+'»\n\nهل تريد فتح صفحة تعبئة وطباعة المستخلص الآن؟');
   if(currentRoute !== 'extracts') goRoute('extracts');
   else render();
+  if(openNow) setTimeout(function(){ openFillableExtract(rec.id); }, 250);
 }
 
 function generateExtractFromBoq(tid){
@@ -6102,12 +6132,15 @@ function generateExtractFromBoq(tid){
   if(typeof moduleSupportsApproval==='function' && moduleSupportsApproval('extracts')){
     rec.approvalStatus = 'قيد الاعتماد';
   }
+  rec.extractTemplateId = tid || 'interim';
+  if(EXTRACT_TEMPLATES[tid]) rec.extractTemplate = EXTRACT_TEMPLATES[tid].name + ' (مولَّد من BOQ)';
   STATE.extracts = STATE.extracts || [];
   STATE.extracts.push(rec);
   if(typeof dbSet==='function') dbSet('extracts', STATE.extracts);
-  alert('✅ تم توليد مستخلص من المقايسة\\nأعمال حالية تقديرية: '+Math.round(currTotal).toLocaleString('ar-EG')+'\\nاستقطاعات: '+deductions.toLocaleString('ar-EG')+'\\nصافي: '+net.toLocaleString('ar-EG')+'\\nراجع النسب في BOQ ثم عدّل المستخلص.');
+  const openNow = confirm('✅ تم توليد مستخلص من المقايسة\nأعمال حالية: '+Math.round(currTotal).toLocaleString('ar-EG')+'\nاستقطاعات: '+deductions.toLocaleString('ar-EG')+'\nصافي: '+net.toLocaleString('ar-EG')+'\n\nفتح تعبئة وطباعة المستخلص الآن؟');
   if(currentRoute !== 'extracts') goRoute('extracts');
   else render();
+  if(openNow) setTimeout(function(){ openFillableExtract(rec.id); }, 250);
 }
 
 
@@ -6170,6 +6203,7 @@ const CONTRACT_FULL_BODIES = {
 
 function resolveContractTemplateId(rec){
   if(!rec) return '01';
+  if(rec.templateId && typeof CONTRACT_FULL_BODIES!=='undefined' && CONTRACT_FULL_BODIES[rec.templateId]) return rec.templateId;
   const map = {
     'عقد مقاولة':'01','عقد مقاولة من الباطن':'02','عقد خدمات استشارية هندسية':'03',
     'عقد توريد':'04','عقد إيجار':'05','عقد عمل':'06','عقد شراكة':'07',
@@ -6722,6 +6756,133 @@ function saveExtractBack(id){
 
 function openFillableExtractFromTemplate(tid){
   openFillableExtract(null, tid);
+}
+
+
+/* ===================== طباعة وتعبئة مقايسة BOQ للمشروع ===================== */
+function openFillableBoq(projectId){
+  const pid = projectId || (projectFilter && projectFilter['boq']) || '';
+  if(!pid){
+    alert('اختر مشروعاً من فلتر المشاريع أولاً');
+    return;
+  }
+  const items = (STATE.boq||[]).filter(r=>String(r.projectId)===String(pid));
+  if(!items.length){
+    alert('لا توجد بنود مقايسة لهذا المشروع. حمّل قالباً من لوحة قوالب BOQ أولاً.');
+    return;
+  }
+  const brand = (typeof getBranding==='function') ? getBranding() : {};
+  const company = brand.nameAr || 'شركة بناة مصر (الحج مجدي) للمقاولات متعددة المهام';
+  const proj = projectName(pid) || pid;
+  // group by discipline
+  const groups = {};
+  items.forEach(it=>{
+    const d = it.discipline || 'أخرى';
+    if(!groups[d]) groups[d] = [];
+    groups[d].push(it);
+  });
+  let grand = 0, grandDone = 0;
+  const sections = Object.keys(groups).map(disc=>{
+    let sub = 0, subDone = 0;
+    const rows = groups[disc].map((it,i)=>{
+      const q=Number(it.quantity)||0, p=Number(it.unitPrice)||0;
+      const pct=Math.min(100,Math.max(0,Number(it.pctDone)||0));
+      const line=q*p, done=line*(pct/100);
+      sub+=line; subDone+=done; grand+=line; grandDone+=done;
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${escapeHtml(it.itemCode||'')}</td>
+        <td style="text-align:right">${escapeHtml(it.itemName||'')}</td>
+        <td>${escapeHtml(it.unit||'')}</td>
+        <td class="num" contenteditable="true" data-id="${it.id}" data-f="quantity">${q}</td>
+        <td class="num" contenteditable="true" data-id="${it.id}" data-f="unitPrice">${p?p.toLocaleString('ar-EG'):''}</td>
+        <td class="num" contenteditable="true" data-id="${it.id}" data-f="pctDone">${pct}</td>
+        <td>${line?Math.round(line).toLocaleString('ar-EG'):'0'}</td>
+        <td>${done?Math.round(done).toLocaleString('ar-EG'):'0'}</td>
+      </tr>`;
+    }).join('');
+    return `<h2>${escapeHtml(disc)}</h2>
+    <table class="boq">
+      <thead><tr><th>م</th><th>كود</th><th>البند</th><th>وحدة</th><th>كمية</th><th>سعر الوحدة</th><th>إنجاز%</th><th>الإجمالي</th><th>المنجز</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><th colspan="7">مجموع ${escapeHtml(disc)}</th><th>${Math.round(sub).toLocaleString('ar-EG')}</th><th>${Math.round(subDone).toLocaleString('ar-EG')}</th></tr></tfoot>
+    </table>`;
+  }).join('');
+
+  // linked templates info
+  let linkedTpl = '';
+  try{
+    const map = JSON.parse(localStorage.getItem('epms_boq_template_links')||'{}');
+    const ids = map[String(pid)]||[];
+    if(ids.length && typeof BOQ_TEMPLATES!=='undefined'){
+      linkedTpl = ids.map(id=>BOQ_TEMPLATES[id]?BOQ_TEMPLATES[id].name:id).join(' · ');
+    }
+  }catch(e){}
+
+  const html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>مقايسة — ${escapeHtml(proj)}</title>
+<style>
+  @page{size:A4;margin:14mm}
+  body{font-family:Tahoma,Arial,sans-serif;margin:0;background:#eef2f6;color:#1a2b3c;line-height:1.6}
+  .bar{background:#0b3d5c;color:#fff;padding:12px 16px;position:sticky;top:0;z-index:5}
+  .bar button{border:0;border-radius:8px;padding:8px 14px;margin-left:8px;cursor:pointer;font-weight:600;background:#fff;color:#0b3d5c}
+  .bar button.primary{background:#f0b429;color:#1a2b3c}
+  .sheet{max-width:1000px;margin:14px auto;background:#fff;padding:24px 28px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  h1{text-align:center;font-size:20px;margin:0 0 4px;color:#0b3d5c}
+  .sub{text-align:center;color:#5a6a7a;font-size:12px;margin-bottom:12px}
+  h2{font-size:14px;color:#0b3d5c;margin:16px 0 6px;border-right:3px solid #0d6efd;padding-right:8px}
+  .boq{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}
+  .boq th,.boq td{border:1px solid #c5d0dc;padding:5px 6px}
+  .boq th{background:#e8f0fe}
+  .boq .num{text-align:center;min-width:50px}
+  .boq td[contenteditable]:focus{outline:1px solid #0d6efd;background:#f8fbff}
+  .tot{font-size:15px;font-weight:700;margin-top:12px;padding:10px;background:#f0f4f8;border-radius:8px}
+  @media print{body{background:#fff}.no-print{display:none!important}.sheet{box-shadow:none;margin:0;max-width:none;padding:0}
+    td[contenteditable]{outline:none!important;background:transparent!important}}
+</style>
+</head>
+<body>
+<div class="bar no-print">
+  <strong>مقايسة المشروع</strong>
+  <button type="button" class="primary" onclick="window.print()">🖨 طباعة / PDF</button>
+  <button type="button" onclick="saveBoqEdits()">💾 حفظ التعديلات على النسب/الكميات</button>
+  <button type="button" onclick="if(window.opener) window.opener.generateExtractFromBoq('interim')">📊 توليد مستخلص من هذه المقايسة</button>
+</div>
+<div class="sheet">
+  <div class="sub">${escapeHtml(company)}</div>
+  <h1>جدول كميات وأسعار (BOQ)</h1>
+  <div class="sub">المشروع: <b>${escapeHtml(proj)}</b>${linkedTpl?' · قوالب: '+escapeHtml(linkedTpl):''}</div>
+  ${sections}
+  <div class="tot">الإجمالي الكلي: ${Math.round(grand).toLocaleString('ar-EG')} ج.م &nbsp;|&nbsp; المنجز التقديري: ${Math.round(grandDone).toLocaleString('ar-EG')} ج.م &nbsp;|&nbsp; الإنجاز: ${grand?Math.round(100*grandDone/grand):0}%</div>
+</div>
+<script>
+function saveBoqEdits(){
+  try{
+    if(!window.opener || !window.opener.STATE){ alert('أعد الفتح من داخل النظام'); return; }
+    const cells = document.querySelectorAll('td[data-id][data-f]');
+    let n=0;
+    cells.forEach(function(td){
+      const id = td.getAttribute('data-id');
+      const f = td.getAttribute('data-f');
+      const raw = String(td.textContent||'').replace(/,/g,'').trim();
+      const val = parseFloat(raw);
+      const r = (window.opener.STATE.boq||[]).find(function(x){ return String(x.id)===String(id); });
+      if(r && f && !isNaN(val)){ r[f]=val; n++; }
+    });
+    if(typeof window.opener.dbSet==='function') window.opener.dbSet('boq', window.opener.STATE.boq);
+    if(typeof window.opener.render==='function') window.opener.render();
+    alert('✅ تم حفظ '+n+' قيمة. أعد فتح المقايسة لرؤية الإجماليات المحدّثة.');
+  }catch(e){ alert('تعذر الحفظ: '+e.message); }
+}
+<\/script>
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  if(!w){ alert('اسمح بالنوافذ المنبثقة'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
 }
 
 function scheduleAdvancedHTML(){
