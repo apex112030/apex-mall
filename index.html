@@ -4011,6 +4011,77 @@ function openEdit(key, id){
 }
 function closeModal(){ modalState = null; render(); }
 
+
+function contractTemplatePreviewHTML(record){
+  if(typeof CONTRACT_FULL_BODIES==='undefined') return '';
+  const tid = (typeof resolveContractTemplateId==='function') ? resolveContractTemplateId(record) : (record.templateId||'01');
+  const body = CONTRACT_FULL_BODIES[tid];
+  if(!body) return `<div class="section-note">لا يوجد نص كامل مرتبط بنوع القالب الحالي.</div>`;
+  const arts = (body.arts||[]).map(a=>`<div class="tpl-art"><b>المادة (${a.n}): ${escapeHtml(a.t||'')}</b><p>${escapeHtml(String(a.b||'')).replace(/\n/g,'<br>')}</p></div>`).join('');
+  const pre = (body.pre||[]).map(p=>`<p class="tpl-pre">${escapeHtml(p)}</p>`).join('');
+  return `
+  <div class="field full template-preview-box" style="margin-top:12px;border:1px solid #c5d0dc;border-radius:10px;padding:12px;background:#f8fafc;max-height:360px;overflow:auto">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <strong style="color:#0b3d5c">📄 النص الكامل للقالب: ${escapeHtml(body.title||'')}</strong>
+      <span style="display:flex;gap:6px;flex-wrap:wrap">
+        <button type="button" class="btn btn-amber btn-sm" onclick="event.preventDefault();openFillableContract('${record.id||''}')">📝 تعبئة وطباعة كاملة</button>
+      </span>
+    </div>
+    <div style="font-size:12.5px;line-height:1.75;color:#1a2b3c">
+      ${pre}
+      ${arts}
+    </div>
+    <p style="font-size:11px;color:#6c7d91;margin:8px 0 0">يُعبَّأ تلقائياً من بيانات السجل عند فتح «تعبئة وطباعة». يمكنك تعديل الحقول أعلاه ثم الحفظ ثم فتح النص الكامل.</p>
+  </div>`;
+}
+
+function extractTemplatePreviewHTML(record){
+  const name = record.extractTemplate || (record.extractTemplateId && EXTRACT_TEMPLATES[record.extractTemplateId] && EXTRACT_TEMPLATES[record.extractTemplateId].name) || 'مستخلص أعمال';
+  const prev = Number(record.previousAmount)||0;
+  const curr = Number(record.currentAmount)||0;
+  const amount = Number(record.amount)|| (prev+curr);
+  const ded = Number(record.deductions)||0;
+  const net = Number(record.netAmount)|| (amount-ded);
+  const fmt = n => Number(n).toLocaleString('ar-EG');
+  return `
+  <div class="field full template-preview-box" style="margin-top:12px;border:1px solid #c5d0dc;border-radius:10px;padding:12px;background:#f8fafc">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <strong style="color:#0b3d5c">🧾 معاينة المستخلص: ${escapeHtml(name)}</strong>
+      <button type="button" class="btn btn-amber btn-sm" onclick="event.preventDefault();openFillableExtract('${record.id||''}')">📝 تعبئة وطباعة كاملة</button>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+      <tr><td style="padding:4px;border:1px solid #e5eef6">رقم المستخلص</td><td style="padding:4px;border:1px solid #e5eef6">${escapeHtml(record.number||'—')}</td>
+          <td style="padding:4px;border:1px solid #e5eef6">التاريخ</td><td style="padding:4px;border:1px solid #e5eef6">${escapeHtml(record.date||'—')}</td></tr>
+      <tr><td style="padding:4px;border:1px solid #e5eef6">المالك</td><td style="padding:4px;border:1px solid #e5eef6">${escapeHtml(record.owner||'—')}</td>
+          <td style="padding:4px;border:1px solid #e5eef6">المقاول</td><td style="padding:4px;border:1px solid #e5eef6">${escapeHtml(record.contractor||'—')}</td></tr>
+      <tr><td style="padding:4px;border:1px solid #e5eef6">أعمال سابقة</td><td style="padding:4px;border:1px solid #e5eef6">${fmt(prev)}</td>
+          <td style="padding:4px;border:1px solid #e5eef6">أعمال حالية</td><td style="padding:4px;border:1px solid #e5eef6">${fmt(curr)}</td></tr>
+      <tr><td style="padding:4px;border:1px solid #e5eef6">الإجمالي</td><td style="padding:4px;border:1px solid #e5eef6">${fmt(amount)}</td>
+          <td style="padding:4px;border:1px solid #e5eef6">استقطاعات / صافي</td><td style="padding:4px;border:1px solid #e5eef6"><b>${fmt(ded)} / ${fmt(net)}</b></td></tr>
+    </table>
+    <div style="margin-top:8px;font-size:12px;white-space:pre-wrap;background:#fff;border:1px solid #e5eef6;padding:8px;border-radius:6px">${escapeHtml(record.workDescription||'—')}</div>
+  </div>`;
+}
+
+function boqRecordPreviewHTML(record){
+  const pid = record.projectId;
+  const siblings = (STATE.boq||[]).filter(r=>String(r.projectId)===String(pid));
+  const total = siblings.reduce((s,r)=>s+(Number(r.quantity)||0)*(Number(r.unitPrice)||0),0);
+  const done = siblings.reduce((s,r)=>{
+    const line=(Number(r.quantity)||0)*(Number(r.unitPrice)||0);
+    return s+line*(Math.min(100,Math.max(0,Number(r.pctDone)||0))/100);
+  },0);
+  return `
+  <div class="field full template-preview-box" style="margin-top:12px;border:1px solid #c5d0dc;border-radius:10px;padding:12px;background:#f8fafc">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <strong style="color:#0b3d5c">📐 مقايسة المشروع — ${siblings.length} بند · إجمالي ${total.toLocaleString('ar-EG')} · منجز ${Math.round(done).toLocaleString('ar-EG')}</strong>
+      <button type="button" class="btn btn-amber btn-sm" onclick="event.preventDefault();openFillableBoq('${pid||''}')">🖨 طباعة المقايسة الكاملة</button>
+    </div>
+    <p style="font-size:12px;margin:0;color:#5a6a7a">البند الحالي: <b>${escapeHtml(record.itemCode||'')}</b> ${escapeHtml(record.itemName||'')} — ${escapeHtml(record.discipline||'')}</p>
+  </div>`;
+}
+
+
 function modalHTML(){
   const {moduleKey, record, isNew} = modalState;
   const mod = MODULES[moduleKey];
@@ -4065,8 +4136,14 @@ function modalHTML(){
           ${renderAttachmentList(moduleKey, record)}
         </div>
       </div>
+      ${moduleKey==='contracts' ? contractTemplatePreviewHTML(record) : ''}
+      ${moduleKey==='extracts' ? extractTemplatePreviewHTML(record) : ''}
+      ${moduleKey==='boq' ? boqRecordPreviewHTML(record) : ''}
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal()">${t('إغلاق','Close','Fermer')}</button>
+        ${moduleKey==='contracts' && record.id ? `<button class="btn btn-amber" onclick="openFillableContract('${record.id}')">📝 العقد الكامل</button>` : ''}
+        ${moduleKey==='extracts' && record.id ? `<button class="btn btn-amber" onclick="openFillableExtract('${record.id}')">📝 المستخلص الكامل</button>` : ''}
+        ${moduleKey==='boq' && record.projectId ? `<button class="btn btn-amber" onclick="openFillableBoq('${record.projectId}')">🖨 مقايسة المشروع</button>` : ''}
         ${canApproveHere?`<button class="btn btn-primary" onclick="approveRecord('${moduleKey}','${record.id}','اعتماد');closeModal();">✓ ${t('اعتماد','Approve','Approuver')}</button><button class="btn btn-danger" onclick="approveRecord('${moduleKey}','${record.id}','رفض');closeModal();">✗ ${t('رفض','Reject','Rejeter')}</button>`:''}
         ${editable ? `<button class="btn btn-primary" onclick="saveRecord()">${t('حفظ','Save','Enregistrer')}</button>` : ''}
       </div>
