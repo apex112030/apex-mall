@@ -341,23 +341,58 @@ if(SUPABASE_CONFIGURED){
 }
 
 /* ===================== Storage layer ===================== */
+/* ===== فصل بيانات الإصدارات =====
+   كل إصدار من البرنامج يكتب فقط داخل "مساحته" الخاصة (بادئة APP_DATA_VERSION).
+   - الإصدار الجديد لا يكتب أبداً على بيانات الإصدار القديم (مفاتيح بدون بادئة).
+   - الإصدار القديم لا يستطيع الكتابة على بيانات هذا الإصدار.
+   - أول مرة يُقرأ فيها مفتاح لم يُنسخ بعد: يتم نسخه (قراءة فقط من القديم) إلى مساحة هذا الإصدار.
+   عند إصدار نسخة جديدة مستقبلاً: غيّر APP_DATA_VERSION (مثلاً v3) و DB_MIGRATE_FROM_PREFIX إلى بادئة الإصدار السابق. */
+const APP_DATA_VERSION = 'v2';
+const DB_MIGRATE_FROM_PREFIX = '';            // '' = بيانات الإصدار القديم بدون بادئة
+const DB_NS = APP_DATA_VERSION + '__';
+function nsKey(k){ return DB_NS + k; }
+const DB_LOAD_FAILED = new Set();   // مفاتيح فشلت قراءتها (يُمنع الكتابة عليها حتى لا تُمسح بيانات حقيقية)
+const DB_LOADED = new Set();
+const DB_GUARDED = new Set();
+let DB_LOADING = false;
+
 async function dbGet(key, fallback){
   if(!supabaseClient) return fallback;
   try{
-    const { data, error } = await supabaseClient
-      .from('erp_data').select('value').eq('key', key).maybeSingle();
-    if(error || !data) return fallback;
-    return data.value;
-  }catch(e){ console.error('load error', e); return fallback; }
+    const nk = nsKey(key);
+    const cur = await supabaseClient.from('erp_data').select('value').eq('key', nk).maybeSingle();
+    if(cur.error) throw cur.error;
+    if(cur.data){ DB_LOAD_FAILED.delete(key); return cur.data.value; }
+    // غير موجود في مساحة هذا الإصدار: نسخة لمرة واحدة من الإصدار السابق (قراءة فقط منه)
+    const oldKey = DB_MIGRATE_FROM_PREFIX + key;
+    if(oldKey !== nk){
+      const leg = await supabaseClient.from('erp_data').select('value').eq('key', oldKey).maybeSingle();
+      if(leg.error) throw leg.error;
+      if(leg.data && leg.data.value !== undefined && leg.data.value !== null){
+        const up = await supabaseClient.from('erp_data').upsert({ key: nk, value: leg.data.value, updated_at: new Date().toISOString() });
+        if(up.error) throw up.error;
+        DB_LOAD_FAILED.delete(key);
+        return leg.data.value;
+      }
+    }
+    DB_LOAD_FAILED.delete(key);
+    return fallback;
+  }catch(e){ console.error('load error', key, e); DB_LOAD_FAILED.add(key); return fallback; }
 }
 async function dbSet(key, value){
   if(!supabaseClient){ alert('قاعدة البيانات غير متصلة بعد.'); return; }
+  // حماية: لا نكتب على مفتاح فشلت قراءته أو لم يكتمل تحميله (لتجنب مسح بيانات حقيقية بقيمة فارغة)
+  if(DB_GUARDED.has(key) && (DB_LOAD_FAILED.has(key) || (DB_LOADING && !DB_LOADED.has(key)))){
+    alert('لم يتم الحفظ حفاظاً على البيانات: بيانات هذا القسم لم تُحمَّل بالكامل بعد. انتظر لحظات أو أعد تحميل الصفحة ثم أعد المحاولة.');
+    return false;
+  }
   try{
     const { error } = await supabaseClient
       .from('erp_data')
-      .upsert({ key, value, updated_at: new Date().toISOString() });
-    if(error){ console.error('save error', error); alert('تعذر حفظ البيانات: ' + error.message); }
-  }catch(e){ console.error('save error', e); alert('تعذر حفظ البيانات: ' + (e && e.message ? e.message : e)); }
+      .upsert({ key: nsKey(key), value, updated_at: new Date().toISOString() });
+    if(error){ console.error('save error', error); alert('تعذر حفظ البيانات: ' + error.message); return false; }
+    return true;
+  }catch(e){ console.error('save error', e); alert('تعذر حفظ البيانات: ' + (e && e.message ? e.message : e)); return false; }
 }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
@@ -3002,13 +3037,21 @@ async function boot(){
 }
 
 async function loadAllData(){
-  const load=(key)=>dbGet(key,[]).catch(e=>{console.warn('load '+key,e);return STATE[key]||[];});
+  const load=async(key)=>{
+    const v=await dbGet(key,[]);
+    if(DB_LOAD_FAILED.has(key)) return STATE[key]||[];   // فشلت القراءة: نُبقي ما هو موجود ولا نكتب فوقه
+    DB_LOADED.add(key); return v;
+  };
   const keys=['approvalPolicies','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
+  keys.forEach(k=>DB_GUARDED.add(k));
+  DB_LOADING=true;
+  try{
   // Small batches reduce connection pressure and make the first dashboard paint fast.
   for(let i=0;i<keys.length;i+=5){
     await Promise.all(keys.slice(i,i+5).map(async k=>{STATE[k]=await load(k);}));
     if(i===0) render();
   }
+  } finally { DB_LOADING=false; }
   ensureDefaultApprovalPolicies();
   if(!STATE.menuVisibility || typeof STATE.menuVisibility!=='object') STATE.menuVisibility={sections:{},items:{}};
   if(!STATE.branding || typeof STATE.branding!=='object') STATE.branding=Object.assign({}, DEFAULT_BRANDING);
@@ -4606,7 +4649,7 @@ function buildBackupDump(){
   const allKeys = ['users','specialties','menuVisibility','branding','approvalPolicies', ...Object.keys(MODULES), 'handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','jobTasks'];
   const dump = {};
   for(const k of allKeys){ dump[k] = STATE[k] || []; }
-  dump.__meta = { savedAt: new Date().toISOString(), note:'latest-only backup' };
+  dump.__meta = { savedAt: new Date().toISOString(), dataVersion: APP_DATA_VERSION, note:'latest-only backup' };
   return dump;
 }
 async function exportBackup(forcePick){
@@ -4655,6 +4698,7 @@ async function importBackupFile(input){
     const dump = JSON.parse(text);
     for(const key of Object.keys(dump)){
       if(key==='__meta') continue;
+      DB_LOAD_FAILED.delete(key); DB_LOADED.add(key);
       STATE[key] = dump[key];
       await dbSet(key, dump[key]);
     }
@@ -4849,7 +4893,7 @@ async function resetBrandingDefaults(){
 function backupHTML(){
   return `
     <div class="section-note">
-      النسخة الاحتياطية ملف واحد ثابت يتم استبداله بآخر نسخة في كل مرة (بدون تراكم نسخ قديمة). يمكنك أيضاً استرجاع النسخة من الملف.
+      إصدار البيانات الحالي: ${APP_DATA_VERSION} (معزول عن الإصدارات القديمة — لا يكتب عليها ولا تكتب عليه). النسخة الاحتياطية ملف واحد ثابت يتم استبداله بآخر نسخة في كل مرة (بدون تراكم نسخ قديمة). يمكنك أيضاً استرجاع النسخة من الملف.
     </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
       <div class="stat-card" style="flex:1;min-width:240px;">
