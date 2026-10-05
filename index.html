@@ -1722,6 +1722,11 @@ function optionLabel(ar){
 }
 
 
+/* ---------- Supplier / Contractor types (grouped specialties) ---------- */
+const SUPPLIER_TYPE_GROUPS = [["تصنيف عام", ["مورد مواد", "مقاول باطن", "مقاول متخصص"]], ["أعمال الموقع والحفر والأساسات", ["أعمال مساحة ورفع مساحي وتوقيع", "تسوية وتجهيز الموقع وسور مؤقت", "هدم وإزالة", "أعمال حفر وردم ونقل ناتج الحفر", "نزح مياه جوفية (Dewatering)", "سند جوانب الحفر (Shoring)", "خوازيق سند (Secant / Contiguous Piles)", "حوائط دايافرام (Diaphragm Wall)", "خوازيق حفر (Bored Piles)", "خوازيق مدقوقة (Driven Piles / Sheet Piles)", "اختبارات الخوازيق (Pile Load / Integrity Test)", "مرابط ومسامير تثبيت التربة (Anchors / Soil Nails)", "تحسين وتدعيم التربة وحقن", "جسات وتقارير تربة وأبحاث موقع", "خرسانة عادية ونظافة وفرشة أساسات", "عزل الأساسات والأقبية"]], ["الأعمال الإنشائية (خرسانة وحديد)", ["خرسانة جاهزة", "توريد وتشكيل حديد تسليح", "نجارة مسلحة وشدات وقوالب", "خرسانة مسلحة (أساسات / أعمدة / أسقف / كمرات)", "سقالات وشدات معدنية", "خرسانة سابقة الصب (Precast)", "خرسانة سابقة الإجهاد (Post-Tension)", "أرضيات صناعية (Industrial Flooring)", "إضافات خرسانة ومواد معالجة", "فواصل تمدد (Expansion Joints)", "ترميم وتقوية إنشائية وحقن خرسانة", "أعمال اختبارات خرسانة ومعامل"]], ["الهياكل المعدنية", ["هياكل معدنية (Steel Structure)", "أسقف وأسطح معدنية (Metal Deck / Sandwich Panel)", "تغطية وأسقف مظلات (Canopies)", "حدادة إنشائية ومشغولات معدنية", "بلاطات Metal Deck وموصلات القص", "دهان وحماية الصلب من الحريق"]], ["الأعمال المعمارية والتشطيبات", ["مباني طوب وبلوك", "لياسة (محارة) وبياض", "دهانات داخلية وخارجية", "أرضيات رخام وجرانيت", "أرضيات سيراميك وبورسلين", "أرضيات إيبوكسي وبولي يوريثان", "أرضيات خشب وباركيه ومواد مرنة", "أسقف معلقة (جبس بورد / معدنية / خشبية)", "حوائط وقواطيع جبس بورد وخفيفة", "واجهات زجاجية (Curtain Wall)", "واجهات ألوميتال وكلادينج (ACP / HPL / حجر)", "نجارة ألوميونيوم وزجاج", "نجارة خشب (أبواب / شبابيك / مطابخ)", "أبواب ومخارج مقاومة للحريق", "أبواب أتوماتيك وبوابات", "حدادة وأعمال معدنية تشطيبية", "عزل مائي (حمامات / أسطح / خزانات)", "عزل حراري وصوتي", "أعمال حجر ورخام للواجهات", "ديكور وجبس زخرفي وفرش", "سقف زجاجي وإضاءة طبيعية (Skylight)", "لافتات وعلامات إرشادية (Signage)", "تجهيز المحلات والفيرنشينج (Fit-out)", "دورات مياه وأطقم صحية وإكسسوارات", "ستائر وبرجولات وتظليل", "تنظيف نهائي ومرحلة التسليم"]], ["الأعمال الكهربائية", ["محولات وغرف كهرباء متوسطة الجهد (MV)", "لوحات توزيع جهد منخفض (LV Panels)", "كابلات وصواني وسلالم كابلات", "تأسيس وتمديدات كهرباء (مواسير وأسلاك)", "وحدات إنارة وتركيبات", "إنارة خارجية وطرق وحدائق", "تأريض وحماية من الصواعق", "مولدات كهرباء وUPS", "طاقة شمسية", "تيار خفيف (ELV): شبكات بيانات وتليفونات", "كاميرات مراقبة وأنظمة أمنية (CCTV)", "إنذار حريق (Fire Alarm)", "أنظمة صوتيات ونداء (PA / Audio)", "نظام إدارة المبنى (BMS)", "أنظمة التحكم في الدخول والبوابات", "شاشات وأنظمة عرض إعلانية"]], ["الأعمال الميكانيكية", ["تكييف وتهوية (HVAC)", "شيلرات وتبريد مركزي", "مجاري هواء وعزل (Ducts)", "شفط دخان وتهوية مواقف (Smoke Extraction)", "تغذية مياه وصرف صحي (Plumbing)", "مضخات وغرف مضخات", "مكافحة حريق (Sprinklers / Fire Fighting)", "طفايات حريق ومعدات إطفاء", "شبكات غاز طبيعي", "غازات طبية", "مصاعد (Elevators)", "سلالم متحركة وممرات متحركة (Escalators)", "محطات معالجة مياه وصرف", "حمامات سباحة ونوافير", "مطابخ ومعدات تجارية", "خزانات مياه وأنظمة تخزين"]], ["الأعمال المدنية والخارجية والمرافق", ["طرق وأسفلت", "رصف وانترلوك وبردورات", "شبكات مياه وصرف وأمطار خارجية", "شبكات كهرباء وكابلات خارجية", "غرف تفتيش وخزانات خرسانية", "أسوار وبوابات وحواجز", "تنسيق حدائق (Landscape) وري", "مواقف سيارات ومظلات", "ملاعب وألعاب أطفال", "أعمال تسوية وتجهيز مداخل ومخارج", "علامات مرورية ودهانات أرضيات مواقف"]], ["مواد وخدمات مساندة", ["مورد مواد بناء (أسمنت / رمل / زلط / طوب)", "مورد حديد وأسياخ", "مورد أدوات كهربائية وصحية", "مورد دهانات ومواد تشطيب", "تأجير معدات ثقيلة ونقل", "تأجير ونش ورافعات", "تأجير سقالات وشدات", "مقاول عمالة (توريد عمالة)", "معامل اختبارات ومواد", "خدمات سلامة وأمن وحراسة", "خدمات مساحة وهندسة واستشارات", "نقل مخلفات ومخلفات هدم", "خدمات تأمين وضمانات", "أخرى"]]];
+const SUPPLIER_TYPES_FLAT = SUPPLIER_TYPE_GROUPS.reduce((a,g)=>a.concat(g[1]),[]);
+function supplierGroupOf(t){ const g=SUPPLIER_TYPE_GROUPS.find(x=>x[1].includes(t)); return g?g[0]:''; }
+
 const MODULES = {
   projects:{
     title:'المشاريع', permKey:'projects',
@@ -1982,7 +1987,7 @@ const MODULES = {
     title:'الموردون والمقاولون', permKey:'suppliers',
     fields:[
       {name:'name',label:'الاسم',type:'text',required:true},
-      {name:'type',label:'النوع',type:'select',options:['مورد مواد','مقاول باطن','مقاول متخصص']},
+      {name:'type',label:'النوع',type:'select',options:SUPPLIER_TYPES_FLAT,groups:SUPPLIER_TYPE_GROUPS},
       {name:'phone',label:'تليفون',type:'text'},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
@@ -3867,6 +3872,19 @@ function moduleHTML(key, mod){
       else filtered = list.filter(r=>String(r.projectId)===String(effectivePid));
     }
   }
+  if(key==='suppliers'){
+    const sg=projectFilter.suppliers_group||'', st=projectFilter.suppliers_type||'';
+    const g=SUPPLIER_TYPE_GROUPS.find(x=>x[0]===sg);
+    const typeOpts=(g?[g]:SUPPLIER_TYPE_GROUPS).map(gr=>`<optgroup label="${escapeHtml(gr[0])}">${gr[1].map(o=>`<option value="${escapeHtml(o)}" ${st===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}</optgroup>`).join('');
+    filterBar += `<span class="sort-label">فلترة بالتخصص:</span>
+      <select onchange="setSupplierFilter('group',this.value)"><option value="">كل التخصصات الرئيسية</option>${SUPPLIER_TYPE_GROUPS.map(gr=>`<option value="${escapeHtml(gr[0])}" ${sg===gr[0]?'selected':''}>${escapeHtml(gr[0])}</option>`).join('')}</select>
+      <select onchange="setSupplierFilter('type',this.value)"><option value="">كل الأنواع</option>${typeOpts}</select>
+      <input type="search" placeholder="بحث بالاسم أو التليفون..." value="${escapeHtml(projectFilter.suppliers_q||'')}" oninput="setSupplierFilter('q',this.value)" style="padding:8px 10px;border:1px solid #d6dbe3;border-radius:8px;min-width:160px;">`;
+    if(st) filtered=filtered.filter(r=>r.type===st);
+    else if(g) filtered=filtered.filter(r=>g[1].includes(r.type));
+    const q=(projectFilter.suppliers_q||'').trim().toLowerCase();
+    if(q) filtered=filtered.filter(r=>((r.name||'')+' '+(r.phone||'')+' '+(r.notes||'')).toLowerCase().includes(q));
+  }
   if(sortField){ filtered.sort((a,b)=>{ const av=a[sortField]||'', bv=b[sortField]||''; return (String(av).localeCompare(String(bv)))*(sortDir==='asc'?1:-1); }); }
 
   const rows = filtered.map((r,rowIndex)=>{
@@ -3956,6 +3974,17 @@ function printRecordsBatch(key,records){
   w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{background:#eee;font-family:Arial;margin:0}.print-document{background:#fff;color:#111;max-width:900px;margin:20px auto;padding:30px;line-height:1.8}.doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #bbb;padding:12px;margin-bottom:15px}.print-document table{width:100%;border-collapse:collapse}.print-document th,.print-document td{border:1px solid #999;padding:7px;text-align:right}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center}.page-break{page-break-after:always}@media print{body{background:#fff}.print-document{margin:0;max-width:none}.page-break{page-break-after:always}}</style></head><body>${blocks}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`); w.document.close();
 }
 function setProjectFilter(key, val){ projectFilter[key] = val; render(); }
+function setSupplierFilter(kind,val){
+  projectFilter['suppliers_'+kind]=val;
+  if(kind==='group') projectFilter.suppliers_type='';
+  if(kind==='q'){
+    render();
+    const el=document.querySelector('input[type=search][oninput*="setSupplierFilter"]');
+    if(el){ el.focus(); const l=el.value.length; try{el.setSelectionRange(l,l);}catch(e){} }
+    return;
+  }
+  render();
+}
 function setSort(key,val){ projectFilter[key+'_sortField']=val; render(); }
 function setSortDir(key,val){ projectFilter[key+'_sortDir']=val; render(); }
 function printDocument(key,id){
@@ -4037,9 +4066,17 @@ function modalHTML(){
       const opts=incidentApprovalSections();
       input=`<div id="f_${f.name}" class="multi-check-grid">${opts.map(([k,l])=>`<label style="display:flex;gap:6px;align-items:center;padding:6px;border:1px solid #e5e7eb;border-radius:6px;"><input type="checkbox" name="f_${f.name}" value="${k}" ${selected.includes(k)?'checked':''} ${!editable?'disabled':''}>${escapeHtml(l)}</label>`).join('')}</div>`;
     } else if(f.type==='select'){
+      const _optHTML=(o)=>`<option value="${escapeHtml(o)}" ${val===o?'selected':''}>${escapeHtml(optionLabel(o))}</option>`;
+      let _opts;
+      if(Array.isArray(f.groups)){
+        _opts=f.groups.map(g=>`<optgroup label="${escapeHtml(g[0])}">${g[1].map(_optHTML).join('')}</optgroup>`).join('');
+        if(val && !f.options.includes(val)) _opts+=`<optgroup label="قيم سابقة">${_optHTML(val)}</optgroup>`;
+      } else {
+        _opts=(f.name==='specialty'||f.name==='discipline'?specialtyList():f.options).map(_optHTML).join('');
+      }
       input = `<select id="f_${f.name}" ${!editable?'disabled':''}>
         <option value="">—</option>
-        ${(f.name==='specialty'||f.name==='discipline'?specialtyList():f.options).map(o=>`<option value="${escapeHtml(o)}" ${val===o?'selected':''}>${escapeHtml(optionLabel(o))}</option>`).join('')}
+        ${_opts}
       </select>`;
     } else if(f.type==='textarea'){
       input = `<textarea id="f_${f.name}" rows="3" ${!editable?'disabled':''}>${escapeHtml(val)}</textarea>`;
@@ -4554,19 +4591,59 @@ function activityLogHTML(){
 }
 
 /* ===================== Backup / Restore ===================== */
-async function exportBackup(){
+/* النسخة الاحتياطية: ملف واحد ثابت يتم تحديثه (استبداله) في كل مرة — بدون تراكم نسخ قديمة */
+const BACKUP_FILE_NAME = 'erp-backup-latest.json';
+function _bkIdb(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('erp_backup_meta',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  });
+}
+async function _bkGet(k){ try{ const db=await _bkIdb(); return await new Promise((res,rej)=>{ const q=db.transaction('kv').objectStore('kv').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }catch(e){ return null; } }
+async function _bkSet(k,v){ try{ const db=await _bkIdb(); await new Promise((res,rej)=>{ const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(v,k); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }catch(e){} }
+function buildBackupDump(){
   const allKeys = ['users','specialties','menuVisibility','branding','approvalPolicies', ...Object.keys(MODULES), 'handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','jobTasks'];
   const dump = {};
   for(const k of allKeys){ dump[k] = STATE[k] || []; }
-  const blob = new Blob([JSON.stringify(dump, null, 2)], {type:'application/json'});
+  dump.__meta = { savedAt: new Date().toISOString(), note:'latest-only backup' };
+  return dump;
+}
+async function exportBackup(forcePick){
+  const json = JSON.stringify(buildBackupDump()); // بدون تنسيق مسافات لتقليل الحجم
+  // 1) متصفحات تدعم الكتابة على نفس الملف (Chrome / Edge): نستبدل نفس الملف في كل مرة
+  if(window.showSaveFilePicker){
+    try{
+      let handle = forcePick===true ? null : await _bkGet('fileHandle');
+      if(handle){
+        let perm = await handle.queryPermission({mode:'readwrite'});
+        if(perm!=='granted') perm = await handle.requestPermission({mode:'readwrite'});
+        if(perm!=='granted') handle = null;
+      }
+      if(!handle){
+        handle = await window.showSaveFilePicker({ suggestedName: BACKUP_FILE_NAME, types:[{description:'ERP Backup (JSON)', accept:{'application/json':['.json']}}] });
+        await _bkSet('fileHandle', handle);
+      }
+      const w = await handle.createWritable(); // يستبدل محتوى الملف بالكامل
+      await w.write(json); await w.close();
+      try{ localStorage.setItem('erp_last_backup', new Date().toISOString()); }catch(e){}
+      alert('تم تحديث ملف النسخة الاحتياطية (' + (handle.name||BACKUP_FILE_NAME) + ') على آخر نسخة فقط.');
+      if(currentRoute==='backup') render();
+      return;
+    }catch(e){
+      if(e && e.name==='AbortError') return; // المستخدم ألغى
+      console.error('backup overwrite failed, falling back to download', e);
+    }
+  }
+  // 2) بديل: تنزيل بنفس الاسم الثابت (قد يضيف المتصفح رقم للملف المتكرر — احذف القديم)
+  const blob = new Blob([json], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'erp-backup-' + todayISO() + '.json';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  a.href = url; a.download = BACKUP_FILE_NAME;
+  document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
+  try{ localStorage.setItem('erp_last_backup', new Date().toISOString()); }catch(e){}
+  if(currentRoute==='backup') render();
 }
 
 async function importBackupFile(input){
@@ -4577,6 +4654,7 @@ async function importBackupFile(input){
     const text = await file.text();
     const dump = JSON.parse(text);
     for(const key of Object.keys(dump)){
+      if(key==='__meta') continue;
       STATE[key] = dump[key];
       await dbSet(key, dump[key]);
     }
@@ -4771,12 +4849,14 @@ async function resetBrandingDefaults(){
 function backupHTML(){
   return `
     <div class="section-note">
-      يمكنك تحميل نسخة احتياطية كاملة من كل بيانات النظام كملف JSON، أو استرجاع نسخة سابقة.
+      النسخة الاحتياطية ملف واحد ثابت يتم استبداله بآخر نسخة في كل مرة (بدون تراكم نسخ قديمة). يمكنك أيضاً استرجاع النسخة من الملف.
     </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
       <div class="stat-card" style="flex:1;min-width:240px;">
         <div class="l" style="margin-bottom:10px;">تنزيل نسخة احتياطية من كل البيانات</div>
-        <button class="btn btn-amber" onclick="exportBackup()">⬇️ تحميل Backup</button>
+        <button class="btn btn-amber" onclick="exportBackup()">⬇️ تحديث ملف Backup (آخر نسخة فقط)</button>
+        ${window.showSaveFilePicker?`<button class="btn btn-ghost" style="margin-top:8px" onclick="exportBackup(true)">📁 اختيار ملف / مكان جديد</button>`:''}
+        <div class="section-note" style="margin-top:10px">${(()=>{ let t=''; try{ t=localStorage.getItem('erp_last_backup')||''; }catch(e){} if(!t) return 'لم يتم حفظ نسخة من هذا المتصفح بعد.'; let w=t; try{ w=new Date(t).toLocaleString('ar-EG'); }catch(e){} return 'آخر تحديث للنسخة: '+escapeHtml(w); })()} · الملف: ${BACKUP_FILE_NAME}</div>
       </div>
       <div class="stat-card" style="flex:1;min-width:240px;">
         <div class="l" style="margin-bottom:10px;">استرجاع نسخة احتياطية (ملف JSON)</div>
