@@ -398,8 +398,8 @@ function genId(){ return Date.now().toString(36)+Math.random().toString(36).slic
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 
 /* ===================== State ===================== */
-const PERM_KEYS = ['company','projects','details','planning','siteExecution','engineer','engineersList','labor','equipment',
-  'techoffice','boq','purchases','suppliers','deliveries','warehouse','warehousesLoc','contracts','salesContracts','sales','customerService','extracts',
+const PERM_KEYS = [ 'salesContracts','projectResources','sales','customerService','company','projects','details','planning','siteExecution','engineer','engineersList','labor','equipment',
+  'techoffice','boq','purchases','suppliers','deliveries','warehouse','warehousesLoc','contracts','extracts',
   'invoices','finance','accounting','qaqc','hse','handoverRequests','documents','correspondence','changeOrders','claims','risks','handover','reports','siteIncidents',
   'consultantExtracts','consultantDirectives','contractorRequests','jobTasks',
   'hrEmployees','hrOrganization','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit',
@@ -407,12 +407,12 @@ const PERM_KEYS = ['company','projects','details','planning','siteExecution','en
   'projectMgrDirectives','projectMgrApprovalRequests',
   'adminMgrDirectives','adminMgrApprovalRequests',
   'surveillanceCameras','electronicSignatures','companyStamps','socialMedia'];
-const PERM_LABELS = {
+const PERM_LABELS = { sales:'إدارة المبيعات', customerService:'خدمة العملاء', salesContracts:'عقود المبيعات', projectResources:'موارد المشروع — مهندسون وعمالة ومعدات',
   company:'الشركة والفروع', projects:'المشاريع', details:'تفاصيل المشروع', planning:'التخطيط والبرنامج الزمني',
   siteExecution:'التنفيذ ومتابعة الموقع', engineer:'المهندس المدني (تقارير الموقع)', engineersList:'المهندسون (سجل)', labor:'العمالة', equipment:'المعدات',
   techoffice:'المكتب الفني', boq:'الكميات / BOQ', purchases:'المشتريات', suppliers:'الموردون والمقاولون',
   deliveries:'التوريدات والاستلام', warehouse:'المخزن (الأصناف والحركة)', warehousesLoc:'المخازن',
-  contracts:'عقود المقاولات', salesContracts:'عقود المبيعات', sales:'إدارة المبيعات', customerService:'خدمة العملاء', extracts:'المستخلصات (المقاول)', invoices:'الفواتير', finance:'الماليات', accounting:'المحاسبة',
+  contracts:'العقود', extracts:'المستخلصات (المقاول)', invoices:'الفواتير', finance:'الماليات', accounting:'المحاسبة',
   qaqc:'QA/QC والجودة', hse:'HSE والسلامة', handoverRequests:'طلبات الاستلام والتسليم', documents:'إدارة المستندات والرسومات',
   correspondence:'المراسلات والخطابات', changeOrders:'الأوامر التغييرية', claims:'Claims المطالبات',
   risks:'المخاطر', handover:'التسليم والصيانة بعد التسليم', reports:'التقارير التنفيذية', siteIncidents:'المستحدثات والطارئ بالموقع',
@@ -429,7 +429,7 @@ const PERM_LABELS = {
 
 let STATE = {
   users:[], projects:[], phases:[], siteReports:[], techOffice:[],
-  warehouseItems:[], warehouseTx:[], finance:[], extracts:[], contracts:[], salesContracts:[],
+  warehouseItems:[], warehouseTx:[], finance:[], extracts:[], contracts:[],
   company:[], planning:[], siteExecution:[], engineersList:[], labor:[], equipment:[],
   boq:[], purchases:[], suppliers:[], deliveries:[], warehousesLoc:[], invoices:[],
   accounting:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
@@ -518,7 +518,7 @@ function applyDocumentLang(){
 const NAV_LABEL_EN = {
   dashboard:'Home', executiveDashboard:'Executive Dashboard', projects:'Projects', phases:'Project Details',
   planning:'Planning & Schedule', scheduleAdvanced:'Advanced Schedule (Gantt)', siteExecution:'Site Execution', siteIncidents:'Site Incidents & Emergencies',
-  contracts:'Contracts', changeOrders:'Change Orders', claims:'Claims', purchases:'Purchases',
+  contracts:'Construction Contracts', salesContracts:'Sales Contracts', projectResources:'Project Resources', changeOrders:'Change Orders', claims:'Claims', purchases:'Purchases',
   suppliers:'Suppliers & Subcontractors', deliveries:'Deliveries & Receiving', handoverRequests:'Handover Requests',
   handoverCenter:'Handover & Approval Center', warehousesLoc:'Warehouses', warehouseItems:'Warehouse Items',
   warehouseTx:'Warehouse Movements', extracts:'Payment Certificates', invoices:'Invoices', finance:'Finance',
@@ -545,7 +545,7 @@ const MODULE_TITLE_EN = {
   projects:'Projects', phases:'Project Details — Phases & Progress', siteReports:'Civil Engineer — Daily Site Reports',
   techOffice:'Technical Office — Drawings & Documents', warehouseItems:'Warehouse — Items',
   warehouseTx:'Warehouse — In/Out Movements', finance:'Finance', consultantExtracts:'Consultant Payment Certificate',
-  extracts:'Owner–Contractor Payment Certificates', contracts:'Owner–Contractor Contracts',
+  extracts:'Owner–Contractor Payment Certificates', contracts:'Construction Contracts', salesContracts:'Sales Contracts', projectResources:'Project Resources',
   company:'Company & Branches', planning:'Planning & Schedule', siteExecution:'Site Execution & Follow-up',
   siteIncidents:'Site Incidents & Emergencies', engineersList:'Engineers', labor:'Labor', equipment:'Equipment',
   boq:'BOQ / Quantities', purchases:'Purchases', suppliers:'Suppliers & Subcontractors',
@@ -572,7 +572,7 @@ const SECTION_LABEL_EN = {
   'المشاريع':'Projects',
   'المستحدثات والطارئ بالموقع':'Site Incidents',
   'الاستلام والتسليم':'Handover',
-  'العقود':'Contracts','عقود المقاولات':'Contracting Contracts','عقود المبيعات':'Sales Contracts',
+  'العقود':'Contracts',
   'المشتريات':'Purchases',
   'المخازن':'Warehouses',
   'المستخلصات':'Payment Certificates',
@@ -717,7 +717,7 @@ const SECTION_LABEL_FR = {
   'المشاريع':'Projets',
   'المستحدثات والطارئ بالموقع':'Incidents chantier',
   'الاستلام والتسليم':'Réception',
-  'العقود':'Contrats','عقود المقاولات':'Contrats de construction','عقود المبيعات':'Contrats de vente',
+  'العقود':'Contrats',
   'المشتريات':'Achats',
   'المخازن':'Entrepôts',
   'المستخلصات':'Décomptes',
@@ -1765,115 +1765,23 @@ const SUPPLIER_TYPE_GROUPS = [["تصنيف عام", ["مورد مواد", "مق�
 const SUPPLIER_TYPES_FLAT = SUPPLIER_TYPE_GROUPS.reduce((a,g)=>a.concat(g[1]),[]);
 function supplierGroupOf(t){ const g=SUPPLIER_TYPE_GROUPS.find(x=>x[1].includes(t)); return g?g[0]:''; }
 
-/* ===== مكتبة العقود وأنواع المشاريع ===== */
-const CL={
-parties:['الأطراف','بيانات المالك والمقاول وممثليهما المفوضين بالتوقيع كما وردت بصدر العقد.'],
-docs:['مستندات العقد','يتكون العقد من: هذا العقد والمخططات والمواصفات وجداول الكميات والبرنامج الزمني، وعند التعارض يؤخذ بالترتيب المذكور.'],
-scope:['نطاق الأعمال','ينفذ المقاول الأعمال الموضحة بالعقد وملحقاته كاملة وبمواصفات الجودة المعتمدة.'],
-price:['قيمة العقد','القيمة الإجمالية والعملة كما بصدر العقد، شاملة الضرائب ما لم يُنص على غير ذلك.'],
-time:['مدة التنفيذ والبرنامج','يبدأ التنفيذ من تاريخ تسليم الموقع، ويلتزم المقاول ببرنامج زمني معتمد وتقارير تقدم دورية.'],
-site:['تسليم الموقع','يسلّم المالك الموقع خالياً من العوائق، ويلتزم المقاول بحمايته ونظافته.'],
-adv:['الدفعة المقدمة','تُصرف الدفعة المقدمة مقابل خطاب ضمان بنكي وتُخصم نسبياً من المستخلصات.'],
-pay:['المستخلصات والدفع','يقدم المقاول مستخلصاً شهرياً بالأعمال المنفذة، ويُصرف صافيه خلال المدة المتفق عليها بعد اعتماد المالك أو الاستشاري.'],
-ret:['الاحتجاز','تُحتجز نسبة من كل مستخلص كضمان، وتُفرج بعد الاستلام النهائي.'],
-bond:['ضمان حسن التنفيذ','يقدم المقاول خطاب ضمان بنسبة من قيمة العقد ساري حتى الاستلام الابتدائي.'],
-ins:['التأمينات','يؤمّن المقاول على الأعمال والعمالة والمعدات والمسؤولية تجاه الغير طوال مدة العقد.'],
-delay:['غرامة التأخير','عن كل يوم تأخير غرامة بنسبة محددة وبحد أقصى من قيمة العقد، دون إخلال بحق المالك في التعويض.'],
-var:['الأوامر التغييرية','لا يُنفذ تعديل أو زيادة أو حذف إلا بأمر تغييري كتابي معتمد يحدد أثره على القيمة والمدة.'],
-qual:['الجودة والمواد','تطابق المواد والأعمال المواصفات، وتخضع للفحص والعينات والاختبارات قبل الاعتماد.'],
-hse:['السلامة والبيئة','يلتزم المقاول باشتراطات السلامة والصحة المهنية وحماية البيئة، ويتحمل مسؤولية حوادث موقعه.'],
-lab:['العمالة والباطن','عمالة مؤهلة ومؤمن عليها، ولا يُتعاقد من الباطن إلا بموافقة المالك الكتابية.'],
-hand:['الاستلام','استلام ابتدائي بعد إتمام الأعمال وفحصها، واستلام نهائي بعد انتهاء فترة الضمان.'],
-warr:['فترة الضمان','يضمن المقاول عيوب التنفيذ والمواد خلال فترة الضمان ويصلحها على نفقته.'],
-term:['الإيقاف والفسخ','يحق للمالك الفسخ عند الإخلال الجسيم بعد إخطار ومهلة تصحيح، ويحق للمقاول الإيقاف عند التأخر في السداد.'],
-force:['القوة القاهرة','لا يُسأل طرف عن تأخير ناتج عن قوة قاهرة بشرط الإخطار الفوري، وتُمدد المدة بقدرها.'],
-disp:['تسوية النزاعات','تُسوى النزاعات ودياً ثم بالتحكيم أو القضاء المختص وفق ما يُتفق عليه.'],
-law:['القانون الواجب التطبيق','يخضع العقد لقانون بلد تنفيذ المشروع.'],
-notes:['الإخطارات والسرية','المراسلات كتابية على العناوين المعتمدة، ويلتزم الطرفان بسرية المعلومات.'],
-sign:['أحكام ختامية','حُرر العقد من نسختين لكل طرف نسخة، ولا يُعدّل إلا باتفاق كتابي موقع.'],
-meas:['القياس والمقايسة','يُحاسب المقاول على الكميات الفعلية بأسعار الوحدة المعتمدة بعد القياس المشترك.'],
-cost:['التكلفة والأتعاب','يسدد المالك التكلفة الفعلية المستندية مع نسبة أتعاب متفق عليها، وسقف مضمون وتقاسم وفر إن وُجد.'],
-dsgn:['التصميم والمسؤولية','يتولى المقاول التصميم واعتماده من الجهات المختصة، ويتحمل مسؤولية سلامته وملاءمته للغرض.'],
-test:['الاختبارات والتشغيل التجريبي','تُجرى اختبارات الأداء والتشغيل التجريبي قبل الاستلام، مع تسليم الكتالوجات والمخططات المنفذة.'],
-fee:['أتعاب الإدارة والإشراف','تُسدد الأتعاب وفق جدول مرتبط بمراحل الإنجاز، ويلتزم المدير بتمثيل مصلحة المالك.'],
-subc:['العلاقة بالمقاول الرئيسي','يلتزم المقاول من الباطن بشروط العقد الرئيسي، وتُسدد مستحقاته بعد استلام الرئيسي مستحقاته عن أعماله.'],
-supply:['التوريد والتركيب','يورّد المقاول مواد مطابقة ويركبها ويختبرها ويسلّمها وفق المواصفات.'],
-labo:['المصنعيات','يُحاسب المقاول على أعمال العمالة فقط بالأسعار المتفق عليها، والخامات على المالك.'],
-sla:['مستوى الخدمة','جدول صيانة وزمن استجابة محدد وتقارير دورية.'],
-demo:['الهدم والمخلفات','هدم آمن وإزالة المخلفات ونقلها لأماكن معتمدة.'],
-eng:['المهندس / الاستشاري','يمثل الاستشاري المالك في الإشراف والاعتماد، وتُراجع قراراته وفق آلية العقد.']
-};
-const SL={
-spar:['الأطراف','بيانات البائع والمشتري وممثليهما كما وردت بصدر العقد.'],
-subj:['محل التعاقد','تحديد الوحدة / السلعة / الخدمة المباعة ومواصفاتها وموقعها وحدودها بدقة.'],
-sprice:['الثمن','إجمالي الثمن والعملة، وهو نهائي شامل ما لم يُنص على غير ذلك.'],
-spay:['شروط السداد','يُسدد الثمن وفق الجدول المرفق، ويُعد كل قسط التزاماً مستقلاً.'],
-dp:['دفعة الحجز والمقدم','تُسدد عند التوقيع وتُخصم من الثمن.'],
-inst:['الأقساط','تُسدد في مواعيدها، وعند التأخر تستحق غرامة بنسبة محددة.'],
-spec:['المواصفات والمطابقة','يلتزم البائع بمطابقة المبيع للمواصفات المتفق عليها.'],
-deliv:['التسليم','يُسلَّم المبيع في الموعد بمحضر استلام موقع، وتنتقل مخاطره للمشتري بعد التسليم.'],
-own:['نقل الملكية والتسجيل','تنتقل الملكية بعد سداد كامل الثمن، ويتعاون البائع في التسجيل ويتحمل المشتري الرسوم المتفق عليها.'],
-swarr:['الضمان والعيوب','يضمن البائع العيوب الخفية خلال فترة الضمان ويصلحها أو يستبدلها.'],
-late:['التأخر والإخلال','عند تأخر المشتري عن السداد بعد الإخطار يحق للبائع الفسخ وفق المنصوص.'],
-cancel:['الإلغاء والاسترداد','تحدد نسبة الاستقطاع من المسدد عند الإلغاء وآجال الاسترداد.'],
-ret2:['الاسترجاع والاستبدال','يحق للمشتري الاسترجاع أو الاستبدال خلال المدة المحددة وفق شروطها.'],
-maint:['الصيانة والخدمات','تحدد وديعة الصيانة واتحاد الملاك والخدمات المشتركة.'],
-sup:['جدول التوريد','يُورَّد على دفعات بالكميات والمواعيد المحددة ويُفحص عند الاستلام.'],
-exclu:['الحصرية والمنطقة','تحدد منطقة البيع وحدود الحصرية ومدة التوزيع.'],
-comm:['العمولة','تُحتسب بنسبة من قيمة الصفقة عند إتمامها وسداد الثمن.'],
-assign:['التنازل','لا يتنازل المشتري عن العقد إلا بموافقة البائع الكتابية ودفع رسوم التنازل.'],
-tax:['الضرائب والرسوم','يتحمل كل طرف ما يخصه من الضرائب والرسوم وفق القانون.']
-};
-const CT=[['مقاولة بالمقطوعية (Lump Sum)',['site']],['مقاولة بالمقايسة / سعر الوحدة',['site','meas']],['مقاولة بالتكلفة + أتعاب',['cost']],['تكلفة مع سقف سعر مضمون (GMP)',['cost']],
-['تصميم وبناء (Design & Build)',['site','dsgn']],['تسليم مفتاح (EPC)',['dsgn','test']],['إدارة إنشاءات (CM)',['fee']],['إشراف واستشارات هندسية',['fee','eng']],
-['مقاول من الباطن',['subc','lab']],['توريد وتركيب',['supply','test']],['عمالة فقط (مصنعيات)',['labo']],
-['أعمال كهربائية وميكانيكية',['site','test']],['تشطيبات وديكور',['site','supply']],['طرق وبنية تحتية (FIDIC)',['site','meas','eng']],['كباري ومنشآت فنية (FIDIC)',['site','meas','eng','test']],['لاند سكيب وتنسيق مواقع',['site','supply']],['صيانة وتشغيل',['sla']],['هدم وإزالة',['demo']]];
-const ST=[['بيع وحدة سكنية / تجارية',['dp','maint']],['حجز مبدئي (عربون)',['dp']],['عقد بيع ابتدائي',['dp','inst']],['بيع بالتقسيط',['dp','inst']],['بيع على الخريطة (تحت الإنشاء)',['dp','inst','maint']],['بيع أرض',['dp','inst']],
-['توريد بضائع / مواد بناء',['sup','ret2']],['توريد دوري (طويل الأجل)',['sup']],['توزيع / وكالة تجارية',['exclu','sup']],['سمسرة وتسويق عقاري',['comm','exclu']],['تنازل عن وحدة / عقد',['assign']],['بيع خدمات / صيانة',['ret2']]];
-const CT_NAMES=CT.map(x=>x[0]), ST_NAMES=ST.map(x=>x[0]);
-const CT_GROUPS=[['حسب أسلوب التسعير',CT_NAMES.slice(0,4)],['تصميم وبناء وإدارة وإشراف',CT_NAMES.slice(4,8)],['باطن وتوريد وعمالة',CT_NAMES.slice(8,11)],['تخصصية',CT_NAMES.slice(11)]];
-const PT=[['إنشائي (هيكل)',['هيكل خرساني (أساسات وأعمدة وبلاطات)','هيكل معدني / حديد','خرسانة مسبقة الصنع','حفر وأساسات وسندات'],'str'],
-['تشطيبات',['تشطيبات داخلية كاملة','تشطيبات خارجية وواجهات','ترميم وتجديد','ديكور وتصميم داخلي'],'fin'],
-['كهروميكانيكية',['أعمال كهربائية (قوى وإنارة)','تيار خفيف وأنظمة ذكية','تكييف وتهوية','سباكة وصرف ومكافحة حريق','مصاعد وسلالم متحركة'],'mep'],
-['لاند سكيب',['تنسيق حدائق وري','أرضيات وممرات خارجية','حمامات سباحة ونوافير'],'land'],
-['طرق وبنية تحتية',['رصف طرق','طرق سريعة ومحاور','شبكات مياه وصرف','إنارة طرق وشبكات','أنفاق ومحطات معالجة'],'road'],
-['كباري ومنشآت فنية',['كباري علوية','كباري مشاة','أسوار وحوائط استنادية','قنوات وسدود وكورنيش'],'bridge'],
-['أعمال متكاملة (تسليم مفتاح)',['فيلا متكاملة','عمارة سكنية متكاملة','برج / مبنى متعدد الاستخدام','مصنع / مخزن','مبنى إداري / مقر شركة','مول / مبنى تجاري','مدرسة / مستشفى / فندق','مجمع سكني متكامل'],'int'],
-['أخرى',['أخرى'],'other']];
-const PT_NAMES=[].concat(...PT.map(g=>g[1])), PT_GROUPS=PT.map(g=>[g[0],g[1]]);
-const PT_CT={str:[0,1,8],fin:[0,12,8,10],mep:[11,9,8],land:[15,0,8],road:[13,1],bridge:[14,1],int:[4,5,0],other:[0,1]};
-function ctMod(k){return k==='contracts'||k==='salesContracts';}
-function ctLib(k){return k==='salesContracts'?{types:ST,cl:Object.assign({},CL,SL),base:['spar','subj','sprice','spay','spec','deliv','own','swarr','late','cancel','tax']}:{types:CT,cl:CL,base:['parties','docs','scope','price','time','adv','pay','ret','bond','ins','delay','var','qual','hse','lab','hand','warr']};}
-function ctText(k,ids){const L=ctLib(k);return ids.map((id,i)=>L.cl[id]?(i+1)+'- '+L.cl[id][0]+': '+L.cl[id][1]:'').filter(Boolean).join('\n');}
-function ctSuggest(k){const L=ctLib(k),n=document.getElementById('f_contractType').value,T=L.types.find(x=>x[0]===n);if(!T)return alert('اختر نوع العقد أولاً.');const ta=document.getElementById('f_clauses');if(ta.value.trim()&&!confirm('استبدال البنود الحالية بالبنود المقترحة؟'))return;ta.value=ctText(k,L.base.concat(T[1],['term','force','disp','law','notes','sign']));}
-function ctAdd(k){const v=document.getElementById('ct_pick').value;if(!v)return;const c=ctLib(k).cl[v],ta=document.getElementById('f_clauses');ta.value+=(ta.value.trim()?'\n':'')+(ta.value.split('\n').filter(Boolean).length+1)+'- '+c[0]+': '+c[1];}
-function ctTools(k){const L=ctLib(k);return `<div class="field full no-print" style="border:1px dashed #c9a24d;padding:8px;border-radius:8px"><b>📑 بنود العقد حسب نوعه</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button type="button" class="btn btn-amber" onclick="ctSuggest('${k}')">اقتراح البنود الكاملة لنوع العقد</button><select id="ct_pick" style="flex:1;min-width:140px"><option value="">— إضافة بند من المكتبة —</option>${Object.keys(L.cl).map(x=>`<option value="${x}">${L.cl[x][0]}</option>`).join('')}</select><button type="button" class="btn btn-ghost" onclick="ctAdd('${k}')">+ إضافة</button></div></div>`;}
-function ctProj(id){return (STATE.projects||[]).find(x=>String(x.id)===String(id));}
-function ctHint(id,k){const p=ctProj(id);if(!p||!p.projectType)return 'اختر مشروعاً لعرض نوعه والمقترحات المناسبة (يُحدد نوع المشروع من شاشة المشاريع).';let m='نوع المشروع: <b>'+escapeHtml(p.projectType)+'</b>';if(k!=='salesContracts'){const g=PT.find(x=>x[1].includes(p.projectType));m+=' — أنواع العقود المقترحة: '+(PT_CT[g?g[2]:'other']||[]).map(i=>CT[i][0]).join('، ');}return m;}
-function ctHintUpd(v){const e=document.getElementById('ct_hint');if(e&&modalState)e.innerHTML=ctHint(v,modalState.moduleKey);}
-function ptTag(id){const p=ctProj(id);return p&&p.projectType?`<br><small style="color:var(--ink-soft)">${escapeHtml(p.projectType)}</small>`:'';}
-function ctPrintHTML(key,r,p){const s=key==='salesContracts',e=escapeHtml,a=s?['البائع',r.seller,'المشتري',r.buyer]:['المالك',r.owner,'المقاول',r.contractor||r.party];
-const rows=[['المشروع',p],['رقم العقد',r.contractNumber],['نوع العقد',r.contractType],[a[0],a[1]],[a[2],a[3]],['القيمة',(r.value||'')+' '+(r.currency||'')],[s?'تاريخ التعاقد':'تاريخ البدء',r.startDate],[s?'تاريخ التسليم':'تاريخ الانتهاء',r.endDate]];
-if(!s)rows.push(['مدة التنفيذ',(r.duration||'')+' يوم'],['الاحتجاز',r.retention],['الدفعة المقدمة',r.advance]);
-const sg=`<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div>`;
-return `<div class="print-document"><h1>${s?'عقد مبيعات':'عقد مقاولة'}</h1><h2>${e(r.contractType||'')}</h2><div class="doc-meta">${rows.map(x=>`<div><b>${x[0]}:</b> ${e(x[1]||'')}</div>`).join('')}</div><h3>أولاً: ${s?'محل التعاقد':'نطاق الأعمال'}</h3><p style="white-space:pre-wrap">${e(r.scope||'')}</p><h3>ثانياً: شروط الدفع</h3><p style="white-space:pre-wrap">${e(r.paymentTerms||'')}</p><h3>ثالثاً: بنود وشروط العقد</h3><p style="white-space:pre-wrap">${e(r.clauses||'')}</p><div class="signatures"><div><b>${a[0]}</b>${sg}<div><b>${a[2]}</b>${sg}</div>`;}
-function ctMigrate(){try{const m=(STATE.contracts||[]).filter(x=>x.sourceSalesId&&!x.hasAttachment);if(m.length){STATE.salesContracts=(STATE.salesContracts||[]).concat(m.map(x=>Object.assign({},x,{buyer:x.owner,seller:x.contractor})));STATE.contracts=STATE.contracts.filter(x=>!m.includes(x));dbSet('contracts',STATE.contracts);dbSet('salesContracts',STATE.salesContracts);}
-(STATE.users||[]).forEach(u=>{const p=u.permissions;if(!p)return;if(p.contracts&&!p.salesContracts)p.salesContracts=p.contracts;if(p.__menuItems&&p.__menuItems.contracts&&!p.__menuItems.salesContracts)p.__menuItems.salesContracts=p.__menuItems.contracts;});}catch(e){console.warn(e);}}
 const MODULES = {
   projects:{
     title:'المشاريع', permKey:'projects',
     fields:[
       {name:'name',label:'اسم المشروع',type:'text',required:true},
       {name:'client',label:'العميل / المالك',type:'text'},
-      {name:'projectType',label:'نوع المشروع / الأعمال',type:'select',options:PT_NAMES,groups:PT_GROUPS},
       {name:'location',label:'الموقع',type:'text'},
+      {name:'projectType',label:'نوع المشروع / الأعمال',type:'select',options:['هيكل خرساني','هيكل معدني','تشطيبات','أعمال كهربائية','أعمال ميكانيكية','أعمال صحية','تكييف وتهوية HVAC','أعمال MEP متكاملة','لاندسكيب وتنسيق مواقع','طرق وأعمال بنية تحتية','كباري ومنشآت معدنية','خوازيق وأعمال أساسات','أعمال بحرية وموانئ','مطارات ومرافق طيران','سكك حديد ومترو','سدود ومحطات مياه','محطات معالجة وصرف صحي','محطات كهرباء وطاقة','طاقة شمسية ومتجددة','اتصالات وشبكات','مراكز بيانات وتقنية معلومات','أعمال صناعية ثقيلة','فيلا متكاملة','عمارة سكنية متكاملة','مول / مركز تجاري','معرض سيارات','مصنع / منشأة صناعية','مسجد / مبنى ديني','مستشفى / منشأة صحية','مدرسة / منشأة تعليمية','مبنى إداري / شركة','أعمال صيانة وترميم','أعمال متكاملة متعددة التخصصات','أخرى']},
+      {name:'projectSubtype',label:'وصف تفصيلي / تخصص المشروع',type:'text'},
+      {name:'resourceSummary',label:'ملخص الموارد المطلوبة (مهندسون / عمالة / معدات)',type:'textarea'},
       {name:'status',label:'الحالة',type:'select',options:['لم يبدأ','قيد التنفيذ','متوقف مؤقتاً','منتهي']},
       {name:'budget',label:'الميزانية التقديرية',type:'number'},
       {name:'startDate',label:'تاريخ البدء',type:'date'},
       {name:'endDate',label:'تاريخ الانتهاء المتوقع',type:'date'},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['name','المشروع'],['projectType','النوع'],['client','العميل'],['status','الحالة'],['budget','الميزانية']]
+    columns:[['name','المشروع'],['client','العميل'],['status','الحالة'],['budget','الميزانية']]
   },
   phases:{
     title:'تفاصيل المشروع — المراحل والإنجاز', permKey:'details', hasProject:true,
@@ -1990,10 +1898,11 @@ const MODULES = {
     columns:[['number','رقم المستخلص'],['date','التاريخ'],['owner','المالك'],['contractor','المقاول'],['amount','الإجمالي'],['netAmount','الصافي'],['status','الحالة']]
   },
   contracts:{
-    title:'عقود المقاولات (المالك والمقاول)', permKey:'contracts', hasProject:true,
+    title:'عقود المالك والمقاول', permKey:'contracts', hasProject:true,
     fields:[
       {name:'contractNumber',label:'رقم العقد',type:'text',required:true},
-      {name:'contractType',label:'نوع العقد (يقترح البنود)',type:'select',options:CT_NAMES,groups:CT_GROUPS},
+      {name:'contractType',label:'نوع عقد المقاولات',type:'select',options:['مقاولة هيكل خرساني','مقاولة هيكل معدني','مقاولة تشطيبات','مقاولة كهرباء','مقاولة ميكانيكا وتكييف','مقاولة أعمال صحية','مقاولة MEP متكاملة','مقاولة لاندسكيب','مقاولة طرق وبنية تحتية','مقاولة خوازيق وأساسات','مقاولة كباري','مقاولة إنشاءات متكاملة','مقاولة باطن','توريد وتركيب','تصميم وتنفيذ Design & Build','إدارة مشروع','صيانة وترميم','عقد زمني / عمالة ومعدات','تصميم واستشارات هندسية','إدارة وإشراف هندسي','تشغيل وصيانة O&M','عقد EPC / تسليم مفتاح','عقد BOT / امتياز','عقد توريد فقط','عقد نقل ومناولة','عقد تأجير معدات','عقد مقطوعية','عقد إعادة قياس / كميات','أخرى']},
+      {name:'contractPreamble',label:'مقدمة العقد وتعريف الأطراف',type:'textarea'},
       {name:'owner',label:'اسم المالك',type:'text',required:true},
       {name:'contractor',label:'اسم المقاول',type:'text',required:true},
       {name:'party',label:'الطرف الثاني (للتوافق مع البيانات السابقة)',type:'text'},
@@ -2006,30 +1915,13 @@ const MODULES = {
       {name:'advance',label:'الدفعة المقدمة',type:'number'},
       {name:'retention',label:'نسبة / قيمة الاحتجاز',type:'text'},
       {name:'paymentTerms',label:'شروط الدفع والمستخلصات',type:'textarea'},
-      {name:'clauses',label:'بنود وشروط العقد',type:'textarea'},
+      {name:'clauses',label:'بنود وشروط العقد (يمكن تعديل المقترح)',type:'textarea'},
+      {name:'attachmentsSchedule',label:'الملاحق والمستندات المرجعية (رسومات / BOQ / مواصفات)',type:'textarea'},
+      {name:'disputeResolution',label:'القانون الواجب التطبيق وتسوية النزاعات',type:'textarea'},
       {name:'status',label:'الحالة',type:'select',options:['مسودة','ساري','منتهي','ملغي']},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
     columns:[['contractNumber','رقم العقد'],['owner','المالك'],['contractor','المقاول'],['value','القيمة'],['startDate','البدء'],['endDate','الانتهاء'],['status','الحالة']]
-  },
-  salesContracts:{
-    title:'عقود المبيعات', permKey:'salesContracts', hasProject:true,
-    fields:[
-      {name:'contractNumber',label:'رقم العقد',type:'text',required:true},
-      {name:'contractType',label:'نوع العقد (يقترح البنود)',type:'select',options:ST_NAMES},
-      {name:'seller',label:'اسم البائع',type:'text',required:true},
-      {name:'buyer',label:'اسم المشتري / العميل',type:'text',required:true},
-      {name:'scope',label:'محل التعاقد / نطاق البيع',type:'textarea'},
-      {name:'value',label:'قيمة العقد',type:'number'},
-      {name:'currency',label:'العملة',type:'text'},
-      {name:'startDate',label:'تاريخ التعاقد',type:'date'},
-      {name:'endDate',label:'تاريخ التسليم',type:'date'},
-      {name:'paymentTerms',label:'شروط السداد',type:'textarea'},
-      {name:'clauses',label:'بنود وشروط العقد',type:'textarea'},
-      {name:'status',label:'الحالة',type:'select',options:['مسودة','ساري','منتهي','ملغي']},
-      {name:'notes',label:'ملاحظات',type:'textarea'}
-    ],
-    columns:[['contractNumber','رقم العقد'],['contractType','النوع'],['buyer','المشتري'],['value','القيمة'],['startDate','التعاقد'],['status','الحالة']]
   },
   company:{
     title:'الشركة والفروع', permKey:'company',
@@ -2694,6 +2586,30 @@ const MODULES = {
     ],
     columns:[['opportunityNo','رقم الفرصة'],['customerName','العميل'],['recordType','نوع السجل'],['projectProduct','المشروع / المنتج'],['salesOwner','مسؤول المبيعات'],['stage','مرحلة البيع'],['finalValue','القيمة النهائية'],['nextFollowup','المتابعة التالية'],['status','الحالة']]
   },
+  salesContracts:{
+    title:'عقود المبيعات',permKey:'salesContracts',hasProject:true,
+    fields:[
+      {name:'contractNumber',label:'رقم عقد البيع',type:'text',required:true},
+      {name:'contractType',label:'نوع عقد المبيعات',type:'select',options:['بيع وحدة عقارية','بيع فيلا','بيع شقة / وحدة سكنية','بيع محل تجاري','بيع مكتب إداري','بيع أرض','بيع مصنع / منشأة','بيع مواد ومستلزمات','توريد منتجات','بيع معدات / آلات','بيع خدمات','بيع بالتقسيط','بيع نقدي','حجز / تخصيص وحدة','تأجير مع خيار الشراء','بيع بالجملة','بيع تجزئة','بيع مركبات / سيارات','بيع مواد خام صناعية','بيع منتجات رقمية / تراخيص','بيع عبر الإنترنت','اتفاقية توزيع / وكالة','عقد اشتراك / صيانة','عقد بيع مخصص','أخرى']},
+      {name:'seller',label:'البائع / الشركة',type:'text',required:true},{name:'buyer',label:'المشتري / العميل',type:'text',required:true},
+      {name:'buyerId',label:'الرقم القومي / السجل التجاري',type:'text'},{name:'phone',label:'الهاتف',type:'text'},{name:'email',label:'البريد الإلكتروني',type:'text'},
+      {name:'itemDescription',label:'وصف المبيع / المنتج / الخدمة',type:'textarea',required:true},{name:'quantity',label:'الكمية / عدد الوحدات',type:'number'},
+      {name:'unitPrice',label:'سعر الوحدة',type:'number'},{name:'value',label:'إجمالي قيمة العقد',type:'number'},{name:'currency',label:'العملة',type:'select',options:['EGP جنيه مصري','SAR ريال سعودي','USD دولار أمريكي','AED درهم إماراتي','KWD دينار كويتي','QAR ريال قطري','OMR ريال عماني','BHD دينار بحريني','JOD دينار أردني','LYD دينار ليبي','YER ريال يمني','EUR يورو','GBP جنيه إسترليني']},
+      {name:'tax',label:'الضرائب والرسوم',type:'number'},{name:'discount',label:'الخصم',type:'number'},{name:'paymentTerms',label:'جدول وشروط السداد',type:'textarea'},
+      {name:'deliveryTerms',label:'التسليم / نقل الملكية / الضمان',type:'textarea'},{name:'contractPreamble',label:'مقدمة العقد وتعريف الأطراف',type:'textarea'},
+      {name:'clauses',label:'بنود وشروط عقد المبيعات (قابلة للتعديل)',type:'textarea'},
+      {name:'disputeResolution',label:'القانون وتسوية النزاعات',type:'textarea'},{name:'startDate',label:'تاريخ العقد',type:'date'},{name:'endDate',label:'تاريخ انتهاء / تسليم',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','للمراجعة','قيد الاعتماد','معتمد','ساري','مكتمل','ملغي']},{name:'notes',label:'ملاحظات',type:'textarea'}
+    ],columns:[['contractNumber','رقم العقد'],['contractType','نوع العقد'],['buyer','المشتري'],['value','القيمة'],['startDate','التاريخ'],['status','الحالة']]
+  },
+  projectResources:{title:'موارد المشروع — مهندسون وعمالة ومعدات',permKey:'projectResources',hasProject:true,
+    fields:[{name:'resourceType',label:'نوع المورد',type:'select',options:['مهندس','مشرف','فني','عامل ماهر','عامل عادي','طاقم / مقاول باطن','معدة','سيارة / وسيلة نقل','مواد مرتبطة بالتعبئة','أخرى'],required:true},
+    {name:'resourceName',label:'الاسم / وصف المورد',type:'text',required:true},{name:'specialty',label:'التخصص / المهنة',type:'text'},
+    {name:'quantity',label:'العدد / الكمية',type:'number',required:true},{name:'unit',label:'الوحدة',type:'select',options:['فرد','طاقم','معدة','يوم','وردية','ساعة','شهر','قطعة','أخرى']},
+    {name:'fromDate',label:'تاريخ التعبئة / البداية',type:'date'},{name:'toDate',label:'تاريخ الإخلاء / النهاية',type:'date'},
+    {name:'shift',label:'الوردية',type:'select',options:['صباحية','مسائية','ليلية','24 ساعة','حسب الحاجة']},{name:'operator',label:'المشغل / المسؤول',type:'text'},
+    {name:'dailyRate',label:'التكلفة اليومية / سعر الوحدة',type:'number'},{name:'status',label:'الحالة',type:'select',options:['مطلوب','مقترح','محجوز','تم التخصيص','موجود بالموقع','متوقف','تم الإخلاء','ملغي']},{name:'notes',label:'ملاحظات',type:'textarea'}],
+    columns:[['resourceType','النوع'],['resourceName','المورد'],['specialty','التخصص'],['quantity','الكمية'],['fromDate','من'],['toDate','إلى'],['status','الحالة']]},
   customModuleBuilder:{title:'مولّد الأقسام الرئيسية',permKey:'customModuleBuilder',fields:[],columns:[]},
 };
 
@@ -2701,6 +2617,7 @@ const NAV = [
   {key:'dashboard',label:'الرئيسية',special:true},
   {key:'executiveDashboard',label:'لوحة القيادة',special:true},
   {key:'projects',label:'المشاريع',module:'projects'},
+  {key:'projectResources',label:'موارد المشروع — مهندسون وعمالة ومعدات',module:'projectResources'},
   {key:'phases',label:'تفاصيل المشروع',module:'phases'},
   {key:'planning',label:'التخطيط والبرنامج الزمني',module:'planning'},
   {key:'scheduleAdvanced',label:'البرنامج الزمني المتقدم (Gantt)',special:true},
@@ -2805,6 +2722,12 @@ function permLevel(permKey){
   }
   return (currentUser.permissions && currentUser.permissions[permKey]) || 'none';
 }
+function routeActionAllowed(action, routeKey=currentRoute){
+ if(!currentUser||currentUser.isAdmin)return true;
+ const a=currentUser.permissions&&currentUser.permissions.__menuActions&&currentUser.permissions.__menuActions[routeKey];
+ if(!a||a.mode!=='detail')return true;
+ return !!a[action];
+}
 function canView(permKey){
   if(currentUser && currentUser.isAdmin) return true;
   const lv=permLevel(permKey);
@@ -2812,6 +2735,11 @@ function canView(permKey){
 }
 function canEdit(permKey){
   if(currentUser && currentUser.isAdmin) return true;
+  const route=typeof currentRoute==='string'?currentRoute:'';
+  const navItem=(typeof NAV!=='undefined'&&Array.isArray(NAV))?NAV.find(x=>x.key===route):null;
+  const mod=navItem&&navItem.module&&typeof MODULES!=='undefined'?MODULES[navItem.module]:((typeof MODULES!=='undefined')?MODULES[route]:null);
+  const detail=currentUser&&currentUser.permissions&&currentUser.permissions.__menuActions&&currentUser.permissions.__menuActions[route];
+  if(mod&&mod.permKey===permKey&&detail&&detail.mode==='detail') return !!(detail.add||detail.edit||detail.delete);
   return permLevel(permKey)==='edit';
 }
 function canApprovePerm(permKey){
@@ -3010,7 +2938,7 @@ const NATIVE_APPROVAL_MODULES=[
   'ownerApprovalRequests','pmApprovalRequests','projectMgrApprovalRequests','adminMgrApprovalRequests',
   'ownerDirectives','pmDirectives','projectMgrDirectives','adminMgrDirectives',
   'consultantDirectives','contractorRequests','consultantExtracts',
-  'changeOrders','claims','contracts','salesContracts','extracts','purchases','deliveries',
+  'changeOrders','claims','contracts','extracts','purchases','deliveries',
   'handoverRequests','siteIncidents','techOffice','documents'
 ];
 function isNativeApprovalModule(moduleKey){
@@ -3082,6 +3010,7 @@ function pickApprovedStatusValue(moduleKey, decision){
   return any||'معتمد';
 }
 async function approveRecord(moduleKey,id,decision='اعتماد'){
+  if(!routeActionAllowed('approve',moduleKey)){alert('ليس لديك صلاحية اعتماد في هذا البند.');return;}
   const rec=(STATE[moduleKey]||[]).find(x=>x.id===id); if(!rec)return;
   if(workflowEnabled(moduleKey)){
     if(!canApproveRecord(moduleKey,rec)){alert('لا تملك صلاحية المرحلة الحالية من Workflow الاعتماد.');return;}
@@ -3130,7 +3059,7 @@ async function approveRecord(moduleKey,id,decision='اعتماد'){
 /** الوحدات التي يُفضّل تفعيل الاعتماد لها افتراضياً (يمكن للأدمن تعديلها) */
 const DEFAULT_APPROVAL_MODULES=[
   'purchases','deliveries','warehouseItems','warehouseTx','warehousesLoc','siteExecution','siteIncidents',
-  'contracts','salesContracts','extracts','changeOrders','claims','handoverRequests',
+  'contracts','extracts','changeOrders','claims','handoverRequests',
   'contractorRequests','consultantDirectives','consultantExtracts',
   'hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit',
   'ownerApprovalRequests','ownerDirectives',
@@ -3334,7 +3263,7 @@ function pendingApprovalsHTML(){ return approvalInboxHTML('pending'); }
 function decidedApprovalsHTML(){ return approvalInboxHTML('decided'); }
 function incidentApprovalSections(){
   const base=[
-    ['projects','إدارة المشاريع'],['planning','التخطيط'],['siteExecution','التنفيذ'],['siteIncidents','المستحدثات والطارئ'],['contracts','عقود المقاولات'],['salesContracts','عقود المبيعات'],['changeOrders','الأوامر التغييرية'],['claims','المطالبات'],['purchases','المشتريات'],['suppliers','الموردون والمقاولون'],['deliveries','التوريدات والاستلام'],['handoverRequests','الاستلام والتسليم'],['warehouseItems','المخازن'],['extracts','المستخلصات'],['invoices','الفواتير'],['finance','الماليات'],['accounting','المحاسبة'],['labor','العمالة'],['equipment','المعدات'],['engineersList','المهندسون'],['correspondence','المراسلات'],['risks','المخاطر'],['hse','HSE والسلامة'],['qaqc','QA/QC والجودة'],['siteReports','تقارير الموقع'],['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','المستندات والرسومات'],['execReports','التقارير التنفيذية']
+    ['projects','إدارة المشاريع'],['planning','التخطيط'],['siteExecution','التنفيذ'],['siteIncidents','المستحدثات والطارئ'],['contracts','العقود'],['changeOrders','الأوامر التغييرية'],['claims','المطالبات'],['purchases','المشتريات'],['suppliers','الموردون والمقاولون'],['deliveries','التوريدات والاستلام'],['handoverRequests','الاستلام والتسليم'],['warehouseItems','المخازن'],['extracts','المستخلصات'],['invoices','الفواتير'],['finance','الماليات'],['accounting','المحاسبة'],['labor','العمالة'],['equipment','المعدات'],['engineersList','المهندسون'],['correspondence','المراسلات'],['risks','المخاطر'],['hse','HSE والسلامة'],['qaqc','QA/QC والجودة'],['siteReports','تقارير الموقع'],['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','المستندات والرسومات'],['execReports','التقارير التنفيذية']
   ];
   return base;
 }
@@ -3501,7 +3430,7 @@ async function loadAllData(){
     if(DB_LOAD_FAILED.has(key)) return STATE[key]||[];   // فشلت القراءة: نُبقي ما هو موجود ولا نكتب فوقه
     DB_LOADED.add(key); return v;
   };
-  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps','salesContracts','sales','customerService','socialMedia'];
+  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
   keys.forEach(k=>DB_GUARDED.add(k));
   DB_LOADING=true;
   try{
@@ -3511,7 +3440,7 @@ async function loadAllData(){
     if(i===0) render();
   }
   } finally { DB_LOADING=false; }
-  ensureDefaultApprovalPolicies(); ctMigrate();
+  ensureDefaultApprovalPolicies();
   if(!STATE.menuVisibility || typeof STATE.menuVisibility!=='object') STATE.menuVisibility={sections:{},items:{}};
   if(!STATE.branding || typeof STATE.branding!=='object') STATE.branding=Object.assign({}, DEFAULT_BRANDING);
   else STATE.branding=Object.assign({}, DEFAULT_BRANDING, STATE.branding);
@@ -3590,6 +3519,8 @@ function firstAllowedRoute(){
 function navAllowed(item){
   if(!currentUser) return false;
   if(currentUser.isAdmin) return true;
+  const detail=currentUser.permissions&&currentUser.permissions.__menuActions&&currentUser.permissions.__menuActions[item.key];
+  if(detail&&detail.mode==='detail')return !!detail.view;
   const itemLevel=routePermissionLevel(item.key);
   if(itemLevel!==null){
     if(!['view','edit','approve'].includes(itemLevel)) return false;
@@ -3622,10 +3553,10 @@ const MENU_SECTIONS = [
   {key:'securityCam',label:'الأمن والمراقبة',icon:'📹',items:[['surveillanceCameras','كاميرات المراقبة']]},
   {key:'signStamp',label:'التوقيع والختم',icon:'🔏',items:[['electronicSignatures','التوقيع الإلكتروني'],['companyStamps','ختم الشركة']]},
   {key:'socialMediaSec',label:'التواصل الاجتماعي',icon:'📣',items:[['socialMedia','التواصل الاجتماعي والمنصات']]},
-  {key:'projects',label:'المشاريع',icon:'▤',items:[['projects','المشاريع'],['phases','تفاصيل المشروع'],['siteExecution','التنفيذ ومتابعة الموقع'],['siteReports','تقارير الموقع'],['planning','البرنامج الزمني (قائمة)'],['scheduleAdvanced','البرنامج الزمني المتقدم (Gantt)'],['finalHandover','التسليم النهائي'],['postHandoverMaint','الصيانة بعد التسليم']]},
+  {key:'projects',label:'المشاريع',icon:'▤',items:[['projects','المشاريع'],['projectResources','تعبئة مهندسين وعمالة ومعدات'],['phases','تفاصيل المشروع'],['siteExecution','التنفيذ ومتابعة الموقع'],['siteReports','تقارير الموقع'],['planning','البرنامج الزمني (قائمة)'],['scheduleAdvanced','البرنامج الزمني المتقدم (Gantt)'],['finalHandover','التسليم النهائي'],['postHandoverMaint','الصيانة بعد التسليم']]},
   {key:'siteIncidents',label:'المستحدثات والطارئ بالموقع',icon:'⚠',items:[['siteIncidents','المستحدثات والطارئ بالموقع']]},
   {key:'siteHandover',label:'الاستلام والتسليم',icon:'⇄',items:[['handoverRequests','طلبات الاستلام والتسليم'],['handoverCenter','مركز دورة الاستلام والاعتماد'],['deliveries','التوريدات والاستلام'],['finalHandover','التسليم النهائي'],['postHandoverMaint','الصيانة بعد التسليم']]},
-  {key:'contracts',label:'العقود',icon:'▧',items:[['contracts','عقود المقاولات'],['changeOrders','الأوامر التغييرية'],['claims','المطالبات']]},
+  {key:'contracts',label:'العقود',icon:'▧',items:[['contracts','عقود المقاولات'],['salesContracts','عقود المبيعات'],['changeOrders','الأوامر التغييرية'],['claims','المطالبات']]},
   {key:'purchases',label:'المشتريات',icon:'🛒',items:[['purchases','المشتريات'],['suppliers','الموردون والمقاولون'],['deliveries','التوريدات والاستلام']]},
   {key:'warehouse',label:'المخازن',icon:'⌂',items:[['warehousesLoc','المخازن'],['warehouseItems','أصناف المخزن'],['warehouseTx','حركة الوارد والمنصرف']]},
   {key:'extracts',label:'المستخلصات',icon:'▣',items:[['extracts','المستخلصات (المقاول)'],['consultantExtracts','مستخلص الاستشاري'],['invoices','الفواتير']]},
@@ -3638,7 +3569,7 @@ const MENU_SECTIONS = [
   {key:'technical',label:'المكتب الفني',icon:'⌘',items:[['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','إدارة المستندات والرسومات']]},
   {key:'links',label:'الترابط والرسومات',icon:'⌗',items:[['linksDrawings','الترابط والرسومات'],['documents','المستندات والإصدارات'],['techOffice','المراجعات الفنية']]},
   {key:'reports',label:'التقارير والإحصائيات',icon:'▥',items:[['reportsStats','التقارير والإحصائيات'],['projectSummaries','ملخصات المشاريع والتخصصات'],['execReports','التقارير التنفيذية'],['activityLog','سجل العمليات']]},
-  {key:'salesMenu',label:'المبيعات والعملاء',icon:'📈',items:[['salesDashboard','مؤشرات المبيعات والتحصيل'],['sales','إدارة المبيعات'],['salesContracts','عقود المبيعات'],['customerService','خدمة العملاء']]},
+  {key:'salesMenu',label:'المبيعات والعملاء',icon:'📈',items:[['salesDashboard','مؤشرات المبيعات والتحصيل'],['sales','إدارة المبيعات'],['customerService','خدمة العملاء']]},
   {key:'customDepartmentsMenu',label:'إنشاء أقسام جديدة',icon:'🧩',items:[['customModuleBuilder','مولّد الأقسام الرئيسية']]},
   {key:'system',label:'إدارة النظام',icon:'⚙',adminOnly:true,items:[['systemManagement','إدارة النظام'],['jobTasks','المهام الوظيفية'],['approvalSettings','إدارة الاعتمادات'],['admin','المستخدمون والصلاحيات'],['activityLog','سجل العمليات'],['backup','Backup / Restore'],['brandingSettings','الهوية والواجهات'],['listManagement','إدارة القوائم']]}
 ];
@@ -3920,7 +3851,7 @@ function salesCreateLinked(kind,id){
   if(!r){alert('لم يتم العثور على سجل المبيعات.');return;}
   let key,record;
   if(kind==='contract'){
-    key='salesContracts';record={projectId:r.projectId||'',sourceSalesId:r.id,sourceOpportunityNo:r.opportunityNo||'',contractNumber:r.contractNo||r.opportunityNo||('CTR-'+Date.now()),buyer:r.customerName||'',seller:(getBranding().nameAr||'الشركة'),scope:[r.projectProduct||'',r.itemDescription||''].filter(Boolean).join(' — '),value:r.finalValue||r.expectedValue||'',currency:r.currency||'EGP',startDate:todayISO(),paymentTerms:r.paymentTerms||'',status:'مسودة',notes:'تم إنشاء مسودة من فرصة المبيعات '+(r.opportunityNo||'')+'؛ يلزم مراجعة واعتماد العقد.'};
+    key='contracts';record={projectId:r.projectId||'',sourceSalesId:r.id,sourceOpportunityNo:r.opportunityNo||'',contractNumber:r.contractNo||r.opportunityNo||('CTR-'+Date.now()),owner:r.customerName||'',contractor:(getBranding().nameAr||'الشركة'),scope:[r.projectProduct||'',r.itemDescription||''].filter(Boolean).join(' — '),value:r.finalValue||r.expectedValue||'',currency:r.currency||'EGP',startDate:todayISO(),paymentTerms:r.paymentTerms||'',status:'مسودة',notes:'تم إنشاء مسودة من فرصة المبيعات '+(r.opportunityNo||'')+'؛ يلزم مراجعة واعتماد العقد.'};
   }else if(kind==='invoice'){
     key='invoices';record={projectId:r.projectId||'',sourceSalesId:r.id,sourceOpportunityNo:r.opportunityNo||'',number:r.invoiceNo||('INV-'+Date.now()),party:r.customerName||'',amount:r.finalValue||r.expectedValue||'',date:todayISO(),status:'غير مدفوعة',notes:'فاتورة مقترحة من فرصة المبيعات '+(r.opportunityNo||'')+'؛ يلزم مراجعة بيانات الضريبة والمستندات قبل الإصدار.'};
   }else if(kind==='ticket'){
@@ -4498,7 +4429,7 @@ function moduleHTML(key, mod){
   const rows = filtered.map((r,rowIndex)=>{
     const cells = mod.columns.map(([f,_])=>`<td>${formatCell(mod,f,r[f])}</td>`).join('');
     const projLabel = key==='surveillanceCameras' && (r.scopeMode==='كل المشاريع' || !r.projectId) ? 'كل المشاريع' : projectName(r.projectId);
-    const projCell = mod.hasProject ? `<td>${escapeHtml(projLabel)}${ptTag(r.projectId)}</td>` : '';
+    const projCell = mod.hasProject ? `<td>${escapeHtml(projLabel)}</td>` : '';
     const creator = r.createdByName || r.createdBy || '—';
     const lastEdit = (Array.isArray(r.editHistory)&&r.editHistory.length)
       ? r.editHistory[r.editHistory.length-1]
@@ -4540,7 +4471,7 @@ function moduleHTML(key, mod){
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-ghost" onclick="window.print()">🖨️ ${t('طباعة الصفحة','Print page','Imprimer la page')}</button>
         <button class="btn btn-primary" onclick="printSelectedRecords('${key}')">📑 ${t('طباعة المحدد','Print selected','Imprimer la sélection')}</button>
-        ${(key==='contracts'||key==='salesContracts'||key==='extracts') && filtered.length ? `<button class="btn btn-primary" onclick="printDocument('${key}','${filtered[0].id}')">📄 طباعة نموذج كامل</button>`:''}
+        ${(key==='contracts'||key==='extracts') && filtered.length ? `<button class="btn btn-primary" onclick="printDocument('${key}','${filtered[0].id}')">📄 طباعة نموذج كامل</button>`:''}
         ${editable ? `<button class="btn btn-amber" onclick="openNew('${key}')">+ ${t('إضافة','Add','Ajouter')}</button>` : ''}
       </div>
     </div>
@@ -4565,7 +4496,7 @@ function printSelectedRecords(key){
   printRecordsBatch(key,records);
 }
 function printAnyRecord(key,id){
-  if(key==='contracts' || key==='salesContracts' || key==='extracts'){ printDocument(key,id); return; }
+  if(key==='contracts' || key==='extracts'){ printDocument(key,id); return; }
   const r=(STATE[key]||[]).find(x=>x.id===id); if(!r)return;
   printRecordsBatch(key,[r]);
 }
@@ -4597,9 +4528,9 @@ function setSort(key,val){ projectFilter[key+'_sortField']=val; render(); }
 function setSortDir(key,val){ projectFilter[key+'_sortDir']=val; render(); }
 function printDocument(key,id){
   const r=(STATE[key]||[]).find(x=>x.id===id); if(!r)return;
-  const title=key==='salesContracts'?'عقد مبيعات':key==='contracts'?'عقد مقاولة بين المالك والمقاول':'مستخلص أعمال بين المالك والمقاول';
+  const title=key==='contracts'?'عقد مقاولة بين المالك والمقاول':'مستخلص أعمال بين المالك والمقاول';
   const p=projectName(r.projectId);
-  const html=(key==='contracts'||key==='salesContracts')?ctPrintHTML(key,r,p):key==='contracts'?`<div class="print-document"><h1>عقد مقاولة</h1><h2>بين المالك والمقاول</h2><div class="doc-meta"><div><b>المشروع:</b> ${escapeHtml(p)}</div><div><b>رقم العقد:</b> ${escapeHtml(r.contractNumber||'')}</div><div><b>المالك:</b> ${escapeHtml(r.owner||'')}</div><div><b>المقاول:</b> ${escapeHtml(r.contractor||r.party||'')}</div><div><b>قيمة العقد:</b> ${escapeHtml(r.value||'')} ${escapeHtml(r.currency||'')}</div><div><b>مدة التنفيذ:</b> ${escapeHtml(r.duration||'')} يوم</div><div><b>تاريخ البدء:</b> ${escapeHtml(r.startDate||'')}</div><div><b>تاريخ الانتهاء:</b> ${escapeHtml(r.endDate||'')}</div><div><b>الاحتجاز:</b> ${escapeHtml(r.retention||'')}</div><div><b>الدفعة المقدمة:</b> ${escapeHtml(r.advance||'')}</div></div><h3>أولاً: نطاق الأعمال</h3><p>${escapeHtml(r.scope||'')}</p><h3>ثانياً: شروط الدفع والمستخلصات</h3><p>${escapeHtml(r.paymentTerms||'')}</p><h3>ثالثاً: بنود وشروط العقد</h3><p style="white-space:pre-wrap">${escapeHtml(r.clauses||'')}</p><h3>رابعاً: أحكام عامة</h3><p>يلتزم الطرفان بتنفيذ الأعمال طبقاً للمخططات والمواصفات والعقد والبرنامج الزمني، وتوثيق المستخلصات والمراسلات والاستلامات طبقاً لإجراءات المشروع.</p><div class="signatures"><div><b>المالك</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div><b>المقاول</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></div>`:`<div class="print-document"><h1>مستخلص أعمال</h1><h2>بين المالك والمقاول</h2><div class="doc-meta"><div><b>المشروع:</b> ${escapeHtml(p)}</div><div><b>رقم المستخلص:</b> ${escapeHtml(r.number||'')}</div><div><b>المالك:</b> ${escapeHtml(r.owner||'')}</div><div><b>المقاول:</b> ${escapeHtml(r.contractor||'')}</div><div><b>رقم العقد:</b> ${escapeHtml(r.contractNumber||'')}</div><div><b>تاريخ المستخلص:</b> ${escapeHtml(r.date||'')}</div><div><b>الفترة:</b> ${escapeHtml(r.periodFrom||'')} إلى ${escapeHtml(r.periodTo||'')}</div><div><b>الحالة:</b> ${escapeHtml(r.status||'')}</div></div><h3>بيان الأعمال</h3><p style="white-space:pre-wrap">${escapeHtml(r.workDescription||'')}</p><table><tr><th>البيان</th><th>القيمة</th></tr><tr><td>إجمالي الأعمال السابقة</td><td>${escapeHtml(r.previousAmount||0)}</td></tr><tr><td>أعمال الفترة الحالية</td><td>${escapeHtml(r.currentAmount||0)}</td></tr><tr><td>إجمالي الأعمال حتى تاريخه</td><td>${escapeHtml(r.amount||0)}</td></tr><tr><td>إجمالي الاستقطاعات</td><td>${escapeHtml(r.deductions||0)}</td></tr><tr><td><b>صافي المستخلص المستحق</b></td><td><b>${escapeHtml(r.netAmount||0)}</b></td></tr></table><h3>ملاحظات وشروط الدفع</h3><p style="white-space:pre-wrap">${escapeHtml(r.notes||'')}</p><div class="signatures"><div><b>اعتماد المالك / الاستشاري</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div><b>المقاول</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></div>`;
+  const html=key==='contracts'?`<div class="print-document"><h1>عقد مقاولة</h1><h2>بين المالك والمقاول</h2><div class="doc-meta"><div><b>المشروع:</b> ${escapeHtml(p)}</div><div><b>رقم العقد:</b> ${escapeHtml(r.contractNumber||'')}</div><div><b>المالك:</b> ${escapeHtml(r.owner||'')}</div><div><b>المقاول:</b> ${escapeHtml(r.contractor||r.party||'')}</div><div><b>قيمة العقد:</b> ${escapeHtml(r.value||'')} ${escapeHtml(r.currency||'')}</div><div><b>مدة التنفيذ:</b> ${escapeHtml(r.duration||'')} يوم</div><div><b>تاريخ البدء:</b> ${escapeHtml(r.startDate||'')}</div><div><b>تاريخ الانتهاء:</b> ${escapeHtml(r.endDate||'')}</div><div><b>الاحتجاز:</b> ${escapeHtml(r.retention||'')}</div><div><b>الدفعة المقدمة:</b> ${escapeHtml(r.advance||'')}</div></div><h3>أولاً: نطاق الأعمال</h3><p>${escapeHtml(r.scope||'')}</p><h3>ثانياً: شروط الدفع والمستخلصات</h3><p>${escapeHtml(r.paymentTerms||'')}</p><h3>ثالثاً: بنود وشروط العقد</h3><p style="white-space:pre-wrap">${escapeHtml(r.clauses||'')}</p><h3>رابعاً: أحكام عامة</h3><p>يلتزم الطرفان بتنفيذ الأعمال طبقاً للمخططات والمواصفات والعقد والبرنامج الزمني، وتوثيق المستخلصات والمراسلات والاستلامات طبقاً لإجراءات المشروع.</p><div class="signatures"><div><b>المالك</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div><b>المقاول</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></div>`:`<div class="print-document"><h1>مستخلص أعمال</h1><h2>بين المالك والمقاول</h2><div class="doc-meta"><div><b>المشروع:</b> ${escapeHtml(p)}</div><div><b>رقم المستخلص:</b> ${escapeHtml(r.number||'')}</div><div><b>المالك:</b> ${escapeHtml(r.owner||'')}</div><div><b>المقاول:</b> ${escapeHtml(r.contractor||'')}</div><div><b>رقم العقد:</b> ${escapeHtml(r.contractNumber||'')}</div><div><b>تاريخ المستخلص:</b> ${escapeHtml(r.date||'')}</div><div><b>الفترة:</b> ${escapeHtml(r.periodFrom||'')} إلى ${escapeHtml(r.periodTo||'')}</div><div><b>الحالة:</b> ${escapeHtml(r.status||'')}</div></div><h3>بيان الأعمال</h3><p style="white-space:pre-wrap">${escapeHtml(r.workDescription||'')}</p><table><tr><th>البيان</th><th>القيمة</th></tr><tr><td>إجمالي الأعمال السابقة</td><td>${escapeHtml(r.previousAmount||0)}</td></tr><tr><td>أعمال الفترة الحالية</td><td>${escapeHtml(r.currentAmount||0)}</td></tr><tr><td>إجمالي الأعمال حتى تاريخه</td><td>${escapeHtml(r.amount||0)}</td></tr><tr><td>إجمالي الاستقطاعات</td><td>${escapeHtml(r.deductions||0)}</td></tr><tr><td><b>صافي المستخلص المستحق</b></td><td><b>${escapeHtml(r.netAmount||0)}</b></td></tr></table><h3>ملاحظات وشروط الدفع</h3><p style="white-space:pre-wrap">${escapeHtml(r.notes||'')}</p><div class="signatures"><div><b>اعتماد المالك / الاستشاري</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div><b>المقاول</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></div>`;
   const w=window.open('','_blank'); if(!w)return; w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{background:#eee;font-family:Arial}.print-document{background:#fff;color:#111;max-width:900px;margin:20px auto;padding:30px;line-height:1.8}.doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #bbb;padding:12px}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center}.print-document table{width:100%;border-collapse:collapse}.print-document th,.print-document td{border:1px solid #999;padding:7px}</style></head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`); w.document.close();
 }
 function projectName(id){ const p = STATE.projects.find(x=>x.id===id); return p ? p.name : '—'; }
@@ -4636,8 +4567,10 @@ function formatCell(mod, field, val){
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ---------- Modal (create/edit record) ---------- */
-function openNew(key){ modalState = {moduleKey:key, record:{}, isNew:true}; render(); }
+window.__epmsPrefillProjectId='';
+function openNew(key){ if(!canEdit((MODULES[key]||{}).permKey||key)||!routeActionAllowed('add',key)){alert('ليس لديك صلاحية إضافة سجل في هذا البند.');return;} modalState = {moduleKey:key, record:{...(key==='projectResources'&&window.__epmsPrefillProjectId?{projectId:window.__epmsPrefillProjectId}:{})}, isNew:true}; window.__epmsPrefillProjectId=''; render(); }
 function openEdit(key, id){
+  if(!routeActionAllowed('view',key)){alert('ليس لديك صلاحية مشاهدة هذا البند.');return;}
   const rec = (STATE[key]||[]).find(r=>r.id===id);
   if(!rec){ alert('السجل غير موجود'); return; }
   if(key==='projects' && !canAccessProject(rec.id)){ alert('هذا المشروع غير ضمن صلاحياتك.'); return; }
@@ -4647,6 +4580,47 @@ function openEdit(key, id){
 }
 function closeModal(){ modalState = null; render(); }
 
+const CONTRACT_CLAUSE_TEMPLATES={
+ 'مقاولة هيكل خرساني':['نطاق الأعمال والرسومات المعتمدة','مستندات العقد وترتيب الأولوية','الموقع وتسليم جبهة العمل','البرنامج الزمني ومراحل التنفيذ','المواد والاختبارات وضبط الجودة','العمالة والمعدات والسلامة','المستخلصات والدفعات والاحتجاز','التغييرات والأعمال الإضافية','التأخير وغرامات التأخير وفق القانون','الاستلام الابتدائي والنهائي','الضمان وإصلاح العيوب','التأمينات والتراخيص','القوة القاهرة','إنهاء العقد وآثاره','تسوية النزاعات والقانون الواجب التطبيق'],
+ 'مقاولة تشطيبات':['نطاق التشطيبات والعينات المعتمدة','المواصفات الفنية وجدول الكميات','اعتماد الخامات والألوان والماركات','حماية الأعمال المنفذة','تنسيق الأعمال مع التخصصات الأخرى','العينات والنماذج التجريبية','القياس والمستخلصات','التغييرات والأعمال الإضافية','البرنامج الزمني والتسليم المرحلي','الجودة ومعالجة الملاحظات','الضمان والصيانة','الاستلام النهائي'],
+ 'مقاولة كهرباء':['نطاق الأعمال والرسومات الكهربائية','المواد والمعدات واعتمادها','الاختبارات والتشغيل','التنسيق مع MEP والتخصصات الأخرى','متطلبات السلامة والعزل','المستخلصات والتغييرات','التسليم والمخططات النهائية As-Built','الضمان والصيانة'],
+ 'مقاولة ميكانيكا وتكييف':['نطاق أعمال الميكانيكا والتكييف','المعدات والمواد المعتمدة','اختبارات الضغط والتوازن والتشغيل','التنسيق مع التخصصات الأخرى','السلامة ومتطلبات التشغيل','المستخلصات والتغييرات','التسليم والتدريب وكتيبات التشغيل','الضمان والصيانة'],
+ 'مقاولة طرق وبنية تحتية':['المسح والرفع المساحي','الأعمال الترابية والإحلال والدمك','طبقات الطريق والاختبارات','المرافق والتعارضات','إدارة المرور والسلامة','ضبط الجودة والاختبارات','المستخلصات والتغييرات','الاستلام والصيانة'],
+ 'مقاولة إنشاءات متكاملة':['نطاق الأعمال والتخصصات المشمولة','مصفوفة المسؤوليات والتنسيق','الرسومات والمواصفات وBOQ','البرنامج الزمني والتعبئة','المواد والمشتريات والموردون','الجودة والاختبارات','السلامة والبيئة','المستخلصات والدفعات والاحتجاز','التغييرات والمطالبات','الاستلام والتشغيل والتدريب','الضمان والصيانة'],
+ 'مقاولة باطن':['حدود نطاق مقاول الباطن','مسؤوليات المقاول الرئيسي والباطن','المواد والمعدات والعمالة','التنسيق والبرنامج الزمني','القياس والمستخلصات','الجودة والسلامة','التغييرات والتأخير','الضمان والاستلام','إنهاء العقد وتسوية النزاعات'],
+ 'default':['تعريف الأطراف والتمهيد','موضوع العقد ونطاقه','مستندات العقد وترتيب الأولوية','القيمة والعملة والضرائب','المدة والبرنامج الزمني','التزامات الطرف الأول','التزامات الطرف الثاني','المواصفات والجودة والفحص','المستخلصات وشروط الدفع','التغييرات والأعمال الإضافية','التأخير والتعويضات وفق القانون','الضمان وإصلاح العيوب','التأمينات والسلامة','القوة القاهرة','الفسخ وإنهاء العقد','تسوية النزاعات والقانون الواجب التطبيق','الإخطارات والمراسلات','التوقيعات والشهود']
+};
+const SALES_CLAUSE_TEMPLATES={
+ 'بيع وحدة عقارية':['وصف الوحدة وموقعها ومساحتها','ملكية البائع وخلو المبيع من الحقوق','الثمن والعملة والضرائب والرسوم','جدول السداد ومواعيد الاستحقاق','الحجز والتخصيص والتسليم','المعاينة وقبول الحالة','نقل الملكية والتسجيل','المرافق والرسوم المشتركة','الضمان والصيانة إن وجدت','التأخير والإلغاء والاسترداد','الإخلال والفسخ والتعويض','تسوية النزاعات والقانون الواجب التطبيق'],
+ 'بيع مواد ومستلزمات':['وصف المنتجات والمواصفات والكميات','السعر والضرائب والخصومات','أوامر الشراء والتوريد','مكان وموعد التسليم ومخاطر النقل','الفحص والقبول والمرتجعات','الضمان والاستبدال','الفواتير وشروط السداد','التأخير والقوة القاهرة','المسؤولية وتسوية النزاعات'],
+ 'بيع معدات / آلات':['الموديل والرقم المسلسل والحالة','السعر والضرائب وشروط السداد','التسليم والتركيب والتشغيل','الفحص والاختبار والتدريب','الضمان وقطع الغيار والصيانة','نقل الملكية ومخاطر الهلاك','الإخلال والفسخ وتسوية النزاعات'],
+ 'default':['تعريف البائع والمشتري','وصف المبيع والكميات والمواصفات','السعر والعملة والضرائب والرسوم','الخصومات وشروط السداد','التسليم / نقل الملكية','الفحص والقبول والمرتجعات','الضمان وخدمة ما بعد البيع','التزامات الطرفين','الإخلال والتعويض والفسخ','القانون الواجب التطبيق وتسوية النزاعات','الإخطارات','التوقيعات']
+};
+function suggestContractClauses(kind,type){
+ const pool=kind==='sales'?SALES_CLAUSE_TEMPLATES:CONTRACT_CLAUSE_TEMPLATES;
+ const items=pool[type]||pool.default;
+ return items.map((x,i)=>`${i+1}. ${x}:\nيلتزم الطرفان بتنفيذ هذا البند وفق المستندات المعتمدة والأنظمة والقوانين واجبة التطبيق، وتُستكمل تفاصيله الخاصة بالمشروع أو الصفقة قبل التوقيع.`).join('\n\n');
+}
+function applyContractTemplate(kind){
+ const typeEl=document.getElementById('f_contractType');const clausesEl=document.getElementById('f_clauses');
+ if(!typeEl||!clausesEl)return;
+ const label=typeEl.value; if(!label)return;
+ if(clausesEl.value.trim()&&!confirm('هل تريد استبدال البنود الحالية بالمقترح؟ يمكنك تعديل البنود بعد إدراجها.'))return;
+ clausesEl.value=suggestContractClauses(kind,label);
+ const pre=document.getElementById('f_contractPreamble');if(pre&&!pre.value.trim())pre.value=kind==='sales'?'إنه في يوم ______ الموافق ______ تم الاتفاق بين الطرفين المبينين بهذا العقد، وهما بكامل أهليتهما القانونية، على ما يلي:':'إنه في يوم ______ الموافق ______ تم الاتفاق بين المالك/صاحب العمل والمقاول المبينين بهذا العقد على تنفيذ الأعمال الموضحة أدناه وفق الشروط والمواصفات والمستندات المعتمدة:';
+}
+function printCurrentContract(){
+ if(!modalState||!['contracts','salesContracts'].includes(modalState.moduleKey))return;
+ const key=modalState.moduleKey, rec=modalState.record||{}, mod=MODULES[key];
+ (mod.fields||[]).forEach(f=>{const el=document.getElementById('f_'+f.name);if(el)rec[f.name]=el.value;});
+ const pid=document.getElementById('f_projectId');if(pid)rec.projectId=pid.value;
+ const labels={};(mod.fields||[]).forEach(f=>labels[f.name]=f.label);
+ const rows=(mod.fields||[]).filter(f=>rec[f.name]!==undefined&&String(rec[f.name]).trim()!=='').map(f=>`<tr><th>${escapeHtml(f.label)}</th><td>${escapeHtml(Array.isArray(rec[f.name])?rec[f.name].join('، '):rec[f.name]).replace(/\n/g,'<br>')}</td></tr>`).join('');
+ const title=key==='contracts'?'عقد مقاولات':'عقد مبيعات';
+ const parties=key==='contracts'?['المالك / صاحب العمل','المقاول']:['البائع / الشركة','المشتري / العميل'];
+ const w=window.open('','_blank');if(!w){alert('اسمح بفتح النوافذ المنبثقة لطباعة العقد.');return;}
+ w.document.write(`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>${title}</title><style>body{font-family:Tahoma,Arial;direction:rtl;margin:25mm 18mm;color:#111;line-height:1.8}h1{text-align:center}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:8px;vertical-align:top}th{width:28%;background:#f2f4f7}.sign{display:flex;justify-content:space-between;margin-top:60px}.sign div{width:40%;text-align:center}@media print{button{display:none}}</style><h1>${title}</h1><p style="text-align:center">${escapeHtml(rec.contractNumber||'')}</p><table>${rows}</table><div class="sign"><div>${parties[0]}<br><br>الاسم والتوقيع: __________________</div><div>${parties[1]}<br><br>الاسم والتوقيع: __________________</div></div><p>الشهود (إن لزم): __________________________</p><button onclick="print()">طباعة / حفظ PDF</button></html>`);w.document.close();
+}
 function modalHTML(){
   const {moduleKey, record, isNew} = modalState;
   const mod = MODULES[moduleKey];
@@ -4658,10 +4632,10 @@ function modalHTML(){
   if(mod.hasProject){
     projField = `<div class="field full">
       <label>${t('المشروع','Project','Projet')} *</label>
-      <select id="f_projectId" ${!editable?'disabled':''} ${ctMod(moduleKey)?'onchange="ctHintUpd(this.value)"':''}>
+      <select id="f_projectId" ${!editable?'disabled':''}>
         <option value="">${t('— اختر مشروع —','— Select project —','— Choisir un projet —')}</option>
         ${visibleProjects().map(p=>`<option value="${p.id}" ${String(record.projectId||'')===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
-      </select>${ctMod(moduleKey)?`<div id="ct_hint" class="section-note">${ctHint(record.projectId,moduleKey)}</div>`:''}
+      </select>
     </div>`;
   }
 
@@ -4682,7 +4656,7 @@ function modalHTML(){
       } else {
         _opts=(f.name==='specialty'||f.name==='discipline'?specialtyList():f.options).map(_optHTML).join('');
       }
-      input = `<select id="f_${f.name}" ${!editable?'disabled':''}>
+      input = `<select id="f_${f.name}" ${f.name==='contractType'?`onchange="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')"`:''} ${!editable?'disabled':''}>
         <option value="">—</option>
         ${_opts}
       </select>`;
@@ -4691,7 +4665,7 @@ function modalHTML(){
     } else {
       input = `<input type="${f.type}" id="f_${f.name}" value="${escapeHtml(val)}" ${!editable?'disabled':''}>`;
     }
-    return (f.name==='clauses'&&ctMod(moduleKey)&&editable?ctTools(moduleKey):'')+`<div class="field ${isFull?'full':''}"><label>${fieldLabel(f.label)}${f.required?' *':''}</label>${input}</div>`;
+    return `<div class="field ${isFull?'full':''}"><label>${fieldLabel(f.label)}${f.required?' *':''}</label>${input}</div>`;
   }).join('');
 
   return `
@@ -4703,6 +4677,8 @@ function modalHTML(){
       <div class="form-grid">
         ${projField}
         ${fieldsHTML}
+        ${moduleKey==='projects'&&!isNew&&canView('projectResources')?`<div class="field full"><button type="button" class="btn btn-ghost" onclick="window.__epmsPrefillProjectId='${record.id}';modalState=null;currentRoute='projectResources';openNew('projectResources')">إضافة مهندسين / عمالة / معدات لهذا المشروع</button></div>`:''}
+        ${['contracts','salesContracts'].includes(moduleKey)?`<div class="field full" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" onclick="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')">اقتراح بنود حسب نوع العقد</button><button type="button" class="btn btn-primary" onclick="printCurrentContract()">طباعة العقد / حفظ PDF</button></div>`:''}
         <div class="field full">
           <label>${t('المرفقات — يمكن إضافة أكثر من ملف','Attachments — multiple files allowed','Pièces jointes — plusieurs fichiers autorisés')}</label>
           ${editable ? `<input type="file" id="f_attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">` : ''}
@@ -4721,7 +4697,7 @@ function modalHTML(){
 async function saveRecord(){
   const {moduleKey, record, isNew} = modalState;
   const mod = MODULES[moduleKey];
-  if(!canEdit(mod.permKey)){ alert('ليس لديك صلاحية تعديل هذا القسم. صلاحية الاعتماد تسمح بالمشاهدة والاعتماد فقط.'); return; }
+  if(!canEdit(mod.permKey)||!routeActionAllowed(isNew?'add':'edit',moduleKey)){ alert('ليس لديك صلاحية تنفيذ هذه العملية في هذا البند.'); return; }
 
   for(const f of mod.fields){
     const el = document.getElementById('f_'+f.name);
@@ -4805,10 +4781,10 @@ async function saveRecord(){
   }
 
   // ربط تلقائي ثنائي الاتجاه: أي مسودة منشأة من فرصة بيع تحفظ مرجعها في سجل المبيعات.
-  if(['contracts','salesContracts','invoices','customerService'].includes(moduleKey) && record.sourceSalesId){
+  if(['contracts','invoices','customerService'].includes(moduleKey) && record.sourceSalesId){
     const sr=(STATE.sales||[]).find(x=>String(x.id)===String(record.sourceSalesId));
     if(sr){
-      if(moduleKey==='contracts'||moduleKey==='salesContracts'){sr.linkedContractId=record.id;sr.contractNo=record.contractNumber||sr.contractNo||'';}
+      if(moduleKey==='contracts'){sr.linkedContractId=record.id;sr.contractNo=record.contractNumber||sr.contractNo||'';}
       if(moduleKey==='invoices'){sr.linkedInvoiceId=record.id;sr.invoiceNo=record.number||sr.invoiceNo||'';}
       if(moduleKey==='customerService'){sr.linkedTicketId=record.id;}
       sr.updatedAt=new Date().toISOString();sr.updatedBy=currentUser.username;sr.updatedByName=currentUser.name;
@@ -4843,6 +4819,7 @@ async function downloadAttachment(moduleKey,id,attId){
 }
 
 async function deleteRecord(moduleKey, id){
+  if(!canEdit((MODULES[moduleKey]||{}).permKey||moduleKey)||!routeActionAllowed('delete',moduleKey)){alert('ليس لديك صلاحية حذف السجلات في هذا البند.');return;}
   const target=(STATE[moduleKey]||[]).find(r=>r.id===id);
   if(target && !canAccessProject(target.projectId)){ alert('هذا المشروع غير ضمن المشاريع المسموح بها لهذا المستخدم.'); return; }
   if(!confirm('هل تريد حذف هذا السجل؟')) return;
@@ -4935,35 +4912,22 @@ function setAllPermissions(level){
   });
 }
 function menuPermissionRoutes(){
-  const seen=new Set(), out=[];
-  (Array.isArray(NAV)?NAV:[]).forEach(item=>{
-    if(!item||!item.key||seen.has(item.key)||item.key==='admin'||item.adminOnly) return;
-    seen.add(item.key);
-    const title=item.label||((item.module&&MODULES[item.module]&&MODULES[item.module].title)||item.key);
-    out.push({key:item.key,label:title});
-  });
-  // ضمان تضمين المبيعات وخدمة العملاء واللوحة المرتبطة.
-  [['sales','إدارة المبيعات'],['customerService','خدمة العملاء'],['salesDashboard','مؤشرات المبيعات والتحصيل']].forEach(([key,label])=>{
-    if(!seen.has(key)){seen.add(key);out.push({key,label});}
-  });
-  return out;
+ const out=[],seen=new Set();
+ (Array.isArray(MENU_SECTIONS)?MENU_SECTIONS:[]).forEach(sec=>{(sec.items||[]).forEach(([key,label])=>{if(!key||seen.has(key)||['admin','approvalSettings','activityLog','backup','brandingSettings','systemManagement','listManagement'].includes(key))return;seen.add(key);out.push({key,label,section:sec.label});});});
+ (Array.isArray(NAV)?NAV:[]).forEach(item=>{if(item&&item.key&&!seen.has(item.key)&&!item.adminOnly){seen.add(item.key);out.push({key:item.key,label:item.label||item.key,section:'بنود أخرى'});}});
+ return out;
 }
-function menuPermissionRowsHTML(record){
-  const map=(record.permissions&&record.permissions.__menuItems)||{};
-  return menuPermissionRoutes().map(item=>{
-    const level=Object.prototype.hasOwnProperty.call(map,item.key)?map[item.key]:'inherit';
-    return `<tr><td>${escapeHtml(item.label)} <small style="color:var(--ink-soft)">(${escapeHtml(item.key)})</small></td><td><select id="menuperm_${item.key}" ${record.isAdmin?'disabled':''}>
-      <option value="inherit" ${level==='inherit'?'selected':''}>استخدام صلاحية القسم</option>
-      <option value="none" ${level==='none'?'selected':''}>حجب هذا البند</option>
-      <option value="view" ${level==='view'?'selected':''}>مشاهدة</option>
-      <option value="edit" ${level==='edit'?'selected':''}>تعديل</option>
-      <option value="approve" ${level==='approve'?'selected':''}>اعتماد</option>
-    </select></td></tr>`;
-  }).join('');
+function unifiedPermissionRowsHTML(record){
+ const perms=(record.permissions&&record.permissions.__menuItems)||{}, acts=(record.permissions&&record.permissions.__menuActions)||{};
+ let last='';let html='';
+ menuPermissionRoutes().forEach(item=>{
+  if(item.section!==last){last=item.section;html+=`<tr><td colspan="8" style="background:#eef4fa;font-weight:800;color:#163c66">${escapeHtml(last)}</td></tr>`;}
+  const raw=perms[item.key],mode=(acts[item.key]&&acts[item.key].mode)||'whole',level=raw||'inherit',a=acts[item.key]||{};
+  html+=`<tr><td>${escapeHtml(item.label)}</td><td><select id="umode_${item.key}" onchange="toggleUnifiedRow('${item.key}')" ${record.isAdmin?'disabled':''}><option value="whole" ${mode==='whole'?'selected':''}>صلاحية البند بالكامل</option><option value="detail" ${mode==='detail'?'selected':''}>تفصيلي</option></select></td><td><select id="menuperm_${item.key}" ${record.isAdmin?'disabled':''} ${mode==='detail'?'disabled':''}><option value="inherit" ${level==='inherit'?'selected':''}>صلاحية القسم</option><option value="none" ${level==='none'?'selected':''}>لا أحد</option><option value="view" ${level==='view'?'selected':''}>مشاهدة</option><option value="edit" ${level==='edit'?'selected':''}>تعديل</option><option value="approve" ${level==='approve'?'selected':''}>اعتماد</option></select></td>${['view','add','edit','delete','approve'].map(act=>`<td><input type="checkbox" id="uact_${item.key}_${act}" ${a[act]?'checked':''} ${record.isAdmin||mode!=='detail'?'disabled':''} aria-label="${act}"></td>`).join('')}</tr>`;
+ });return html;
 }
-function setAllMenuPermissions(level){
-  menuPermissionRoutes().forEach(item=>{const el=document.getElementById('menuperm_'+item.key);if(el&&!el.disabled)el.value=level;});
-}
+function toggleUnifiedRow(key){const mode=document.getElementById('umode_'+key)?.value;const lp=document.getElementById('menuperm_'+key);if(lp)lp.disabled=mode==='detail'||!!(document.getElementById('u_isAdmin')&&document.getElementById('u_isAdmin').value==='1');['view','add','edit','delete','approve'].forEach(a=>{const el=document.getElementById('uact_'+key+'_'+a);if(el)el.disabled=mode!=='detail'||!!(document.getElementById('u_isAdmin')&&document.getElementById('u_isAdmin').value==='1');});}
+function setAllUnifiedPermissions(level){menuPermissionRoutes().forEach(item=>{const mode=document.getElementById('umode_'+item.key),perm=document.getElementById('menuperm_'+item.key);if(mode)mode.value='whole';if(perm){perm.value=level;perm.disabled=!!(document.getElementById('u_isAdmin')&&document.getElementById('u_isAdmin').value==='1');}['view','add','edit','delete','approve'].forEach(a=>{const el=document.getElementById('uact_'+item.key+'_'+a);if(el){el.checked=false;el.disabled=true;}});});}
 function userModalHTML(){
   const {record, isNew} = modalState;
   const permRows = PERM_KEYS.map(pk=>{
@@ -5019,15 +4983,15 @@ function userModalHTML(){
           <thead><tr><th style="text-align:right;">القسم</th><th>المستوى</th></tr></thead>
           <tbody id="permBody">${permRows}</tbody>
         </table>
-        <div class="section-note" style="margin:12px 0 8px"><b>صلاحيات البنود الفرعية والقوائم</b><br>تسمح بتقييد كل صفحة فرعية بشكل مستقل. «استخدام صلاحية القسم» تعني الرجوع إلى صلاحية القسم الرئيسية. هذه الصلاحيات لا تمنح حق الوصول إذا كانت صلاحية القسم الرئيسية «لا أحد».</div>
+        <div class="section-note" style="margin:12px 0 8px"><b>صلاحيات القائمة الموحدة</b><br>الترتيب مطابق للقائمة الجانبية. اختر «صلاحية البند بالكامل» لتطبيق مستوى واحد، أو «تفصيلي» لتحديد المشاهدة والإضافة والتعديل والحذف والاعتماد بشكل مستقل. إعداد البند الرئيسي لا يتجاوز صلاحية القسم الأساسية.</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllMenuPermissions('inherit')" ${record.isAdmin?'disabled':''}>كل البنود: صلاحية القسم</button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllMenuPermissions('none')" ${record.isAdmin?'disabled':''}>حجب كل البنود</button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllMenuPermissions('view')" ${record.isAdmin?'disabled':''}>مشاهدة كل البنود</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllUnifiedPermissions('inherit')" ${record.isAdmin?'disabled':''}>استخدام صلاحية القسم للجميع</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllUnifiedPermissions('none')" ${record.isAdmin?'disabled':''}>حجب الجميع</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllUnifiedPermissions('view')" ${record.isAdmin?'disabled':''}>مشاهدة الجميع</button>
         </div>
-        <div style="max-height:300px;overflow:auto;border:1px solid var(--epms-line);border-radius:8px">
-          <table class="perm-table"><thead><tr><th style="text-align:right">البند الفرعي / الصفحة</th><th>صلاحية الصفحة</th></tr></thead><tbody>
-          ${menuPermissionRowsHTML(record)}
+        <div style="max-height:430px;overflow:auto;border:1px solid var(--epms-line);border-radius:8px">
+          <table class="perm-table"><thead><tr><th style="text-align:right">البند حسب ترتيب القائمة</th><th>النمط</th><th>المستوى الكامل</th><th>مشاهدة</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>اعتماد</th></tr></thead><tbody>
+          ${unifiedPermissionRowsHTML(record)}
           </tbody></table>
         </div>
       </div>
@@ -5045,7 +5009,7 @@ function toggleAdminPreview(val){
     const el = document.getElementById('perm_'+pk);
     if(el) el.disabled = disabled;
   });
-  menuPermissionRoutes().forEach(item=>{const el=document.getElementById('menuperm_'+item.key);if(el)el.disabled=disabled;});
+  menuPermissionRoutes().forEach(item=>{toggleUnifiedRow(item.key);const el=document.getElementById('menuperm_'+item.key);if(el)el.disabled=disabled;['view','add','edit','delete','approve'].forEach(a=>{const x=document.getElementById('uact_'+item.key+'_'+a);if(x)x.disabled=disabled||document.getElementById('umode_'+item.key)?.value!=='detail';});});
 }
 
 async function saveUser(){
@@ -5065,12 +5029,14 @@ async function saveUser(){
     const el = document.getElementById('perm_'+pk);
     permissions[pk] = el ? el.value : 'none';
   });
-  const menuItems={};
+  const menuItems={}, menuActions={};
   menuPermissionRoutes().forEach(item=>{
+    const mode=document.getElementById('umode_'+item.key)?.value||'whole';
     const el=document.getElementById('menuperm_'+item.key);
-    if(el && el.value!=='inherit') menuItems[item.key]=el.value;
+    if(mode==='whole'){if(el && el.value!=='inherit')menuItems[item.key]=el.value;}
+    else {menuActions[item.key]={mode:'detail'};['view','add','edit','delete','approve'].forEach(a=>{const x=document.getElementById('uact_'+item.key+'_'+a);menuActions[item.key][a]=!!(x&&x.checked);});}
   });
-  permissions.__menuItems=menuItems;
+  permissions.__menuItems=menuItems;permissions.__menuActions=menuActions;
   const scopeMode=document.getElementById('u_projectScopeMode')?.value||'all';
   const scopeIds=[...document.querySelectorAll('.project-scope-check:checked')].map(x=>x.value);
   if(!isAdmin && scopeMode!=='all' && scopeIds.length===0){ alert('حدد مشروعاً واحداً على الأقل أو اختر كافة المشاريع.'); return; }
