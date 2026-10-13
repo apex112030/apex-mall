@@ -402,7 +402,7 @@ const PERM_KEYS = [ 'salesContracts','projectResources','sales','customerService
   'techoffice','boq','purchases','suppliers','deliveries','warehouse','warehousesLoc','contracts','extracts',
   'invoices','finance','accounting','qaqc','hse','handoverRequests','documents','correspondence','changeOrders','claims','risks','handover','reports','siteIncidents',
   'consultantExtracts','consultantDirectives','contractorRequests','jobTasks',
-  'hrEmployees','hrOrganization','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit',
+  'hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit',
   'ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests',
   'projectMgrDirectives','projectMgrApprovalRequests',
   'adminMgrDirectives','adminMgrApprovalRequests',
@@ -516,6 +516,11 @@ function applyDocumentLang(){
   }
 }
 const NAV_LABEL_EN = {
+  hrEmployees:'HR — Employees', hrOrganization:'HR — Organization', hrRecruitment:'HR — Recruitment',
+  hrAttendance:'HR — Attendance', hrLeaves:'HR — Leaves', hrTraining:'HR — Training',
+  hrEvaluations:'HR — Evaluations', hrPayroll:'HR — Payroll', hrProjectAssignments:'HR — Project Assignments',
+  hrDisciplinary:'HR — Disciplinary', hrExit:'HR — Exit / Clearance',
+
   dashboard:'Home', executiveDashboard:'Executive Dashboard', projects:'Projects', phases:'Project Details',
   planning:'Planning & Schedule', scheduleAdvanced:'Advanced Schedule (Gantt)', siteExecution:'Site Execution', siteIncidents:'Site Incidents & Emergencies',
   contracts:'Construction Contracts', salesContracts:'Sales Contracts', projectResources:'Project Resources', changeOrders:'Change Orders', claims:'Claims', purchases:'Purchases',
@@ -579,6 +584,7 @@ const SECTION_LABEL_EN = {
   'المهام الوظيفية':'Job Tasks',
   'المحاسبية':'Accounting',
   'العمالة':'Labor & Resources',
+  'الموارد البشرية':'Human Resources',
   'المراسلات':'Correspondence',
   'المخاطر':'Risks',
   'إدارة المشاريع':'Project Management',
@@ -588,6 +594,11 @@ const SECTION_LABEL_EN = {
   'إدارة النظام':'System Management',
 };
 const NAV_LABEL_FR = {
+  hrEmployees:'RH — Employés', hrOrganization:'RH — Organisation', hrRecruitment:'RH — Recrutement',
+  hrAttendance:'RH — Présence', hrLeaves:'RH — Congés', hrTraining:'RH — Formation',
+  hrEvaluations:'RH — Évaluations', hrPayroll:'RH — Paie', hrProjectAssignments:'RH — Affectations projets',
+  hrDisciplinary:'RH — Discipline', hrExit:'RH — Sortie',
+
   'dashboard':'Accueil',
   'executiveDashboard':'Tableau de bord exécutif',
   'projects':'Projets',
@@ -724,6 +735,7 @@ const SECTION_LABEL_FR = {
   'المهام الوظيفية':'Tâches métier',
   'المحاسبية':'Comptabilité',
   'العمالة':'Main-d\'œuvre',
+  'الموارد البشرية':'Ressources humaines',
   'المراسلات':'Correspondance',
   'المخاطر':'Risques',
   'إدارة المشاريع':'Gestion de projets',
@@ -3563,6 +3575,19 @@ const MENU_SECTIONS = [
   {key:'jobTasksMgmt',label:'المهام الوظيفية',icon:'📋',items:[['jobTasks','إدارة المهام الوظيفية']]},
   {key:'accounting',label:'المحاسبية',icon:'▤',items:[['finance','الماليات'],['accounting','المحاسبة']]},
   {key:'labor',label:'العمالة',icon:'♙',items:[['labor','العمالة'],['engineersList','المهندسون'],['equipment','المعدات']]},
+  {key:'hr',label:'الموارد البشرية',icon:'👥',items:[
+    ['hrEmployees','ملف العاملين والموظفين'],
+    ['hrOrganization','الهيكل الوظيفي والفروع'],
+    ['hrRecruitment','التوظيف والتعيين'],
+    ['hrAttendance','الحضور والانصراف والورديات'],
+    ['hrLeaves','الإجازات والأذونات'],
+    ['hrTraining','التدريب والتطوير'],
+    ['hrEvaluations','تقييم الأداء'],
+    ['hrPayroll','الرواتب والمستحقات'],
+    ['hrProjectAssignments','توزيع العمالة على المشاريع'],
+    ['hrDisciplinary','الجزاءات والتحقيقات'],
+    ['hrExit','إنهاء الخدمة وإخلاء الطرف']
+  ]},
   {key:'correspondence',label:'المراسلات',icon:'✉',items:[['correspondence','المراسلات والخطابات']]},
   {key:'risks',label:'المخاطر',icon:'⚠',items:[['risks','المخاطر'],['hse','HSE والسلامة'],['qaqc','QA/QC والجودة']]},
   {key:'projectManagement',label:'إدارة المشاريع',icon:'⚙',items:[['company','الشركة والفروع'],['projectManagement','مركز إدارة المشاريع'],['engineersList','سجل المهندسين']]},
