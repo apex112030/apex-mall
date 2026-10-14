@@ -205,9 +205,10 @@ tbody tr:hover{background:#f7fbff;}
 /* Permissions table */
 .perm-table{width:100%;border-collapse:collapse;margin-top:6px;}
 .perm-table th{font-size:11.5px;color:var(--ink-soft);text-align:center;padding:6px 4px;font-weight:700;}
-.perm-table td{padding:6px 4px;font-size:12.5px;text-align:center;border-top:1px solid var(--line);}
-.perm-table td:first-child{text-align:right;font-weight:700;color:var(--ink);}
+.perm-table td{padding:6px 4px;font-size:12.5px;text-align:center;border-top:1px solid var(--line);vertical-align:middle;}
+.perm-table td:first-child{text-align:right;font-weight:700;color:var(--ink);min-width:150px;max-width:280px;white-space:normal;line-height:1.35;}
 .perm-table select{width:100%;padding:5px 4px;font-size:12px;border:1px solid var(--line);border-radius:3px;}
+.perm-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line,#e5eef6);border-radius:8px;}
 .section-note{font-size:12.5px;color:var(--ink-soft);background:#eef7ff;border:1px dashed var(--epms-line);padding:10px 12px;border-radius:9px;margin-bottom:16px;}
 
 /* ---------- Hero ---------- */
@@ -302,11 +303,13 @@ tbody tr:hover{background:#f7fbff;}
 @media(max-width:1250px){.cards-row.reference-stats{grid-template-columns:repeat(3,1fr);}.dashboard-sections{grid-template-columns:1fr 1fr;}}
 @media(max-width:1050px){.dashboard-grid{grid-template-columns:1fr 1fr;}.sidebar{width:285px;}}
 @media(max-width:820px){
-  .sidebar{position:fixed;right:0;top:0;width:292px;transform:translateX(105%);transition:transform .2s ease;z-index:40;box-shadow:-6px 0 20px rgba(0,0,0,0.3);}
+  .sidebar{position:fixed;right:0;top:0;width:min(292px,88vw);transform:translateX(105%);transition:transform .2s ease;z-index:40;box-shadow:-6px 0 20px rgba(0,0,0,0.3);}
   .sidebar.open{transform:translateX(0);}
   .topbar{min-height:64px;padding:0 12px;}
   .topbar h2{font-size:17px;}
-  .content{padding:12px 10px 35px;}
+  .topbar-actions{gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+  .top-action.has-label{font-size:11px;padding:6px 8px;}
+  .content{padding:12px 10px 35px;overflow-x:hidden;}
   .form-grid{grid-template-columns:1fr;}
   .hero{min-height:112px;padding:18px;}
   .hero h1{font-size:21px;}
@@ -315,6 +318,29 @@ tbody tr:hover{background:#f7fbff;}
   .cards-row.reference-stats{grid-template-columns:repeat(2,1fr);}
   .dashboard-sections{grid-template-columns:1fr;}
   .donut-wrap{flex-direction:column;}
+  /* نوافذ ومودال */
+  .overlay{padding:10px 8px;align-items:flex-start;}
+  .modal{max-width:100%!important;width:100%;padding:14px 12px 12px;border-radius:10px;margin:0;box-sizing:border-box;}
+  .modal h3{font-size:15px;margin-bottom:12px;}
+  .modal-actions{flex-wrap:wrap;justify-content:stretch;gap:8px;}
+  .modal-actions .btn{flex:1 1 120px;text-align:center;}
+  /* جداول الصلاحيات: تمرير أفقي + عمود الاسم ثابت */
+  .perm-table-wrap, .modal .field.full > div[style*="overflow"]{ -webkit-overflow-scrolling:touch; }
+  .perm-table{min-width:620px;font-size:11.5px;}
+  .perm-table th,.perm-table td{padding:5px 3px;font-size:11px;white-space:nowrap;}
+  .perm-table td:first-child,.perm-table th:first-child{
+    position:sticky;right:0;z-index:2;background:#fff;min-width:140px;max-width:46vw;
+    white-space:normal;word-break:break-word;text-align:right;box-shadow:-4px 0 8px rgba(0,0,0,.04);
+  }
+  .perm-table thead th:first-child{background:#edf3f7;z-index:3;}
+  .perm-table tr td[colspan]{position:sticky;right:0;z-index:1;white-space:normal;background:#eef4fa;}
+  .perm-table select{font-size:11px;min-width:88px;max-width:120px;padding:4px 2px;}
+  /* الشريط الجانبي — موارد بشرية وبنود فرعية */
+  .nav-section-title{padding:10px 12px;font-size:13px;}
+  .nav-child{padding:9px 14px 9px 10px;font-size:12.5px;line-height:1.35;}
+  .nav-children{max-height:none;}
+  table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .panel{padding:12px;overflow-x:auto;}
 }
 .menu-btn{display:none;background:none;border:1.5px solid rgba(255,255,255,.3);border-radius:3px;padding:7px 10px;cursor:pointer;font-size:16px;color:#fff;}
 @media(max-width:820px){.menu-btn{display:inline-flex !important;}}
@@ -402,7 +428,9 @@ const PERM_KEYS = [ 'salesContracts','projectResources','sales','customerService
   'techoffice','boq','purchases','suppliers','deliveries','warehouse','warehousesLoc','contracts','extracts',
   'invoices','finance','accounting','qaqc','hse','handoverRequests','documents','correspondence','changeOrders','claims','risks','handover','reports','siteIncidents',
   'consultantExtracts','consultantDirectives','contractorRequests','jobTasks',
-  'hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit',
+  'hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim',
+  'procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons',
+  'engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim',
   'ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests',
   'projectMgrDirectives','projectMgrApprovalRequests',
   'adminMgrDirectives','adminMgrApprovalRequests',
@@ -418,7 +446,7 @@ const PERM_LABELS = { sales:'إدارة المبيعات', customerService:'خد
   risks:'المخاطر', handover:'التسليم والصيانة بعد التسليم', reports:'التقارير التنفيذية', siteIncidents:'المستحدثات والطارئ بالموقع',
   consultantExtracts:'الاستشاري — مستخلص الاستشاري', consultantDirectives:'الاستشاري — توجيهات الاستشاري',
   contractorRequests:'الاستشاري — طلبات المقاول من الاستشاري', jobTasks:'المهام الوظيفية',
-  hrEmployees:'الموارد البشرية — ملف العاملين والموظفين', hrOrganization:'الموارد البشرية — الهيكل الوظيفي والفروع', hrRecruitment:'الموارد البشرية — التوظيف والتعيين', hrAttendance:'الموارد البشرية — الحضور والانصراف والورديات', hrLeaves:'الموارد البشرية — الإجازات والأذونات', hrTraining:'الموارد البشرية — التدريب والتطوير', hrEvaluations:'الموارد البشرية — تقييم الأداء', hrPayroll:'الموارد البشرية — الرواتب والمستحقات', hrProjectAssignments:'الموارد البشرية — توزيع العمالة على المشاريع', hrDisciplinary:'الموارد البشرية — الجزاءات والتحقيقات', hrExit:'الموارد البشرية — إنهاء الخدمة وإخلاء الطرف',
+  hrEmployees:'الموارد البشرية — ملف العاملين والموظفين', hrOrganization:'الموارد البشرية — الهيكل الوظيفي والفروع', hrRecruitment:'الموارد البشرية — التوظيف والتعيين', hrAttendance:'الموارد البشرية — الحضور والانصراف والورديات', hrLeaves:'الموارد البشرية — الإجازات والأذونات', hrTraining:'الموارد البشرية — التدريب والتطوير', hrEvaluations:'الموارد البشرية — تقييم الأداء', hrPayroll:'الموارد البشرية — الرواتب والمستحقات', hrProjectAssignments:'الموارد البشرية — توزيع العمالة على المشاريع', hrDisciplinary:'الموارد البشرية — الجزاءات والتحقيقات', hrExit:'الموارد البشرية — إنهاء الخدمة وإخلاء الطرف', engArchDesign:'التصميمات الهندسية — التصميم المعماري', engStructDesign:'التصميمات الهندسية — التصميم الإنشائي', engElecDesign:'التصميمات الهندسية — التصميم الكهربائي', engMechDesign:'التصميمات الهندسية — التصميم الميكانيكي والتكييف', engPlumbingDesign:'التصميمات الهندسية — التصميم الصحي والحريق', engCivilInfraDesign:'التصميمات الهندسية — التصميم المدني والبنية التحتية', engLandscapeDesign:'التصميمات الهندسية — تنسيق المواقع واللاندسكيب', engInteriorDesign:'التصميمات الهندسية — التصميم الداخلي', engShopDrawings:'التصميمات الهندسية — الشوب دروينج والرسومات التنفيذية', engAsBuilt:'التصميمات الهندسية — رسومات As-Built المنفذة', engDesignReview:'التصميمات الهندسية — مراجعة واعتماد التصميمات', engDesignRfi:'التصميمات الهندسية — استفسارات وتعديلات التصميم (RFI)', engSpecs:'التصميمات الهندسية — المواصفات الفنية للتصميم', engBim:'التصميمات الهندسية — نمذجة المعلومات BIM / 3D', procSopLibrary:'إجراءات العمل — مكتبة إجراءات العمل القياسية (SOP)', procWorkStart:'إجراءات العمل — تصريح / إذن بدء العمل', procPreStart:'إجراءات العمل — قوائم التحقق قبل البدء', procMethodStatement:'إجراءات العمل — بيان طريقة التنفيذ (Method Statement)', procSiteReception:'إجراءات العمل — استلام الموقع والأعمال الميدانية', procDesignHandover:'إجراءات العمل — تسليم واستلام حزم التصميم', procSupervisionStart:'إجراءات العمل — بدء الإشراف والمتابعة الفنية', procDisciplineReceive:'إجراءات العمل — استلام الأعمال حسب التخصص/القسم', procStageGate:'إجراءات العمل — بوابات المراجعة قبل الانتقال للمرحلة التالية', procPartialHandover:'إجراءات العمل — الاستلام الجزئي والمراحل', procSnagClose:'إجراءات العمل — قائمة الملاحظات وإغلاق البنود (Snag/Punch)', procLessons:'إجراءات العمل — دروس مستفادة وتحسين الإجراءات',
   ownerDirectives:'توجيهات صاحب الشركة', ownerApprovalRequests:'طلب اعتماد من صاحب الشركة',
   pmDirectives:'توجيهات مدير المشروعات', pmApprovalRequests:'طلب اعتماد مدير المشروعات',
   projectMgrDirectives:'توجيهات مدير المشروع', projectMgrApprovalRequests:'طلب اعتماد مدير المشروع',
@@ -435,7 +463,7 @@ let STATE = {
   accounting:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
   claims:[], risks:[], specialties:[], handoverRequests:[], handoverInspections:[], handoverPunchList:[], handoverApprovals:[], handoverCloseouts:[], finalHandover:[], postHandoverMaint:[], execReports:[], approvalPolicies:[], approvalWorkflows:[],
   consultantExtracts:[], consultantDirectives:[], contractorRequests:[], jobTasks:[],
-  hrEmployees:[], hrOrganization:[], hrRecruitment:[], hrAttendance:[], hrLeaves:[], hrTraining:[], hrEvaluations:[], hrPayroll:[], hrProjectAssignments:[], hrDisciplinary:[], hrExit:[],
+  hrEmployees:[], hrOrganization:[], hrRecruitment:[], hrAttendance:[], hrLeaves:[], hrTraining:[], hrEvaluations:[], hrPayroll:[], hrProjectAssignments:[], hrDisciplinary:[], hrExit:[], engArchDesign:[], engStructDesign:[], engElecDesign:[], engMechDesign:[], engPlumbingDesign:[], engCivilInfraDesign:[], engLandscapeDesign:[], engInteriorDesign:[], engShopDrawings:[], engAsBuilt:[], engDesignReview:[], engDesignRfi:[], engSpecs:[], engBim:[], procSopLibrary:[], procWorkStart:[], procPreStart:[], procMethodStatement:[], procSiteReception:[], procDesignHandover:[], procSupervisionStart:[], procDisciplineReceive:[], procStageGate:[], procPartialHandover:[], procSnagClose:[], procLessons:[],
   ownerDirectives:[], ownerApprovalRequests:[], pmDirectives:[], pmApprovalRequests:[],
   projectMgrDirectives:[], projectMgrApprovalRequests:[],
   adminMgrDirectives:[], adminMgrApprovalRequests:[],
@@ -520,6 +548,8 @@ const NAV_LABEL_EN = {
   hrAttendance:'HR — Attendance', hrLeaves:'HR — Leaves', hrTraining:'HR — Training',
   hrEvaluations:'HR — Evaluations', hrPayroll:'HR — Payroll', hrProjectAssignments:'HR — Project Assignments',
   hrDisciplinary:'HR — Disciplinary', hrExit:'HR — Exit / Clearance',
+  engArchDesign:'Eng. Designs — Architectural Design', engStructDesign:'Eng. Designs — Structural Design', engElecDesign:'Eng. Designs — Electrical Design', engMechDesign:'Eng. Designs — Mechanical / HVAC Design', engPlumbingDesign:'Eng. Designs — Plumbing & Fire Design', engCivilInfraDesign:'Eng. Designs — Civil & Infrastructure Design', engLandscapeDesign:'Eng. Designs — Landscape Design', engInteriorDesign:'Eng. Designs — Interior Design', engShopDrawings:'Eng. Designs — Shop Drawings', engAsBuilt:'Eng. Designs — As-Built Drawings', engDesignReview:'Eng. Designs — Design Review & Approval', engDesignRfi:'Eng. Designs — Design RFI / Changes', engSpecs:'Eng. Designs — Design Specifications', engBim:'Eng. Designs — BIM / 3D Modeling',
+
 
   dashboard:'Home', executiveDashboard:'Executive Dashboard', projects:'Projects', phases:'Project Details',
   planning:'Planning & Schedule', scheduleAdvanced:'Advanced Schedule (Gantt)', siteExecution:'Site Execution', siteIncidents:'Site Incidents & Emergencies',
@@ -585,6 +615,8 @@ const SECTION_LABEL_EN = {
   'المحاسبية':'Accounting',
   'العمالة':'Labor & Resources',
   'الموارد البشرية':'Human Resources',
+  'التصميمات الهندسية':'Engineering Designs',
+  'إجراءات العمل والاستلام والبدء':'Work Procedures & Reception',
   'المراسلات':'Correspondence',
   'المخاطر':'Risks',
   'إدارة المشاريع':'Project Management',
@@ -598,6 +630,8 @@ const NAV_LABEL_FR = {
   hrAttendance:'RH — Présence', hrLeaves:'RH — Congés', hrTraining:'RH — Formation',
   hrEvaluations:'RH — Évaluations', hrPayroll:'RH — Paie', hrProjectAssignments:'RH — Affectations projets',
   hrDisciplinary:'RH — Discipline', hrExit:'RH — Sortie',
+  engArchDesign:'Conceptions — التصميم المعماري', engStructDesign:'Conceptions — التصميم الإنشائي', engElecDesign:'Conceptions — التصميم الكهربائي', engMechDesign:'Conceptions — التصميم الميكانيكي والتكييف', engPlumbingDesign:'Conceptions — التصميم الصحي والحريق', engCivilInfraDesign:'Conceptions — التصميم المدني والبنية التحتية', engLandscapeDesign:'Conceptions — تنسيق المواقع واللاندسكيب', engInteriorDesign:'Conceptions — التصميم الداخلي', engShopDrawings:'Conceptions — الشوب دروينج والرسومات التنفيذية', engAsBuilt:'Conceptions — رسومات As-Built المنفذة', engDesignReview:'Conceptions — مراجعة واعتماد التصميمات', engDesignRfi:'Conceptions — استفسارات وتعديلات التصميم (RFI)', engSpecs:'Conceptions — المواصفات الفنية للتصميم', engBim:'Conceptions — نمذجة المعلومات BIM / 3D',
+
 
   'dashboard':'Accueil',
   'executiveDashboard':'Tableau de bord exécutif',
@@ -736,6 +770,8 @@ const SECTION_LABEL_FR = {
   'المحاسبية':'Comptabilité',
   'العمالة':'Main-d\'œuvre',
   'الموارد البشرية':'Ressources humaines',
+  'التصميمات الهندسية':'Conceptions techniques',
+  'إجراءات العمل والاستلام والبدء':'Procédures et réception des travaux',
   'المراسلات':'Correspondance',
   'المخاطر':'Risques',
   'إدارة المشاريع':'Gestion de projets',
@@ -2622,6 +2658,475 @@ const MODULES = {
     {name:'shift',label:'الوردية',type:'select',options:['صباحية','مسائية','ليلية','24 ساعة','حسب الحاجة']},{name:'operator',label:'المشغل / المسؤول',type:'text'},
     {name:'dailyRate',label:'التكلفة اليومية / سعر الوحدة',type:'number'},{name:'status',label:'الحالة',type:'select',options:['مطلوب','مقترح','محجوز','تم التخصيص','موجود بالموقع','متوقف','تم الإخلاء','ملغي']},{name:'notes',label:'ملاحظات',type:'textarea'}],
     columns:[['resourceType','النوع'],['resourceName','المورد'],['specialty','التخصص'],['quantity','الكمية'],['fromDate','من'],['toDate','إلى'],['status','الحالة']]},
+  engArchDesign:{
+    title:'التصميمات الهندسية — التصميم المعماري', permKey:'engArchDesign', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engStructDesign:{
+    title:'التصميمات الهندسية — التصميم الإنشائي', permKey:'engStructDesign', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engElecDesign:{
+    title:'التصميمات الهندسية — التصميم الكهربائي', permKey:'engElecDesign', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engMechDesign:{
+    title:'التصميمات الهندسية — التصميم الميكانيكي والتكييف', permKey:'engMechDesign', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engPlumbingDesign:{
+    title:'التصميمات الهندسية — التصميم الصحي والحريق', permKey:'engPlumbingDesign', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engCivilInfraDesign:{
+    title:'التصميمات الهندسية — التصميم المدني والبنية التحتية', permKey:'engCivilInfraDesign', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engLandscapeDesign:{
+    title:'التصميمات الهندسية — تنسيق المواقع واللاندسكيب', permKey:'engLandscapeDesign', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engInteriorDesign:{
+    title:'التصميمات الهندسية — التصميم الداخلي', permKey:'engInteriorDesign', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engShopDrawings:{
+    title:'التصميمات الهندسية — الشوب دروينج والرسومات التنفيذية', permKey:'engShopDrawings', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engAsBuilt:{
+    title:'التصميمات الهندسية — رسومات As-Built المنفذة', permKey:'engAsBuilt', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engDesignReview:{
+    title:'التصميمات الهندسية — مراجعة واعتماد التصميمات', permKey:'engDesignReview', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engDesignRfi:{
+    title:'التصميمات الهندسية — استفسارات وتعديلات التصميم (RFI)', permKey:'engDesignRfi', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engSpecs:{
+    title:'التصميمات الهندسية — المواصفات الفنية للتصميم', permKey:'engSpecs', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  engBim:{
+    title:'التصميمات الهندسية — نمذجة المعلومات BIM / 3D', permKey:'engBim', hasProject:true,
+    fields:[
+      {name:'docNo',label:'رقم المستند / اللوحة',type:'text',required:true},
+      {name:'title',label:'عنوان التصميم / المستند',type:'text',required:true},
+      {name:'discipline',label:'التخصص',type:'text'},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['مفهومي','تمهيدي','تفصيلي','تنفيذي','تعديل أثناء التنفيذ','منفذ']},
+      {name:'revision',label:'رقم المراجعة',type:'text'},
+      {name:'scale',label:'المقياس',type:'text'},
+      {name:'designer',label:'المصمم / المكتب',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الإعداد','قيد المراجعة','معتمد','مرفوض','ملغى']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['docNo','الرقم'],['title','العنوان'],['revision','المراجعة'],['status','الحالة'],['date','التاريخ']]
+  },
+  procSopLibrary:{
+    title:'إجراءات العمل — مكتبة إجراءات العمل القياسية (SOP)', permKey:'procSopLibrary', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'version',label:'الإصدار',type:'text'},
+      {name:'scope',label:'نطاق التطبيق',type:'textarea'},
+      {name:'steps',label:'خطوات الإجراء (مرقمة)',type:'textarea'},
+      {name:'responsibles',label:'المسؤولون (RACI مختصر)',type:'textarea'},
+      {name:'inputs',label:'المدخلات المطلوبة',type:'textarea'},
+      {name:'outputs',label:'المخرجات / النماذج',type:'textarea'},
+      {name:'relatedForms',label:'النماذج المرتبطة',type:'text'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','معتمد للعمل','قيد المراجعة','موقوف']},
+      {name:'notes',label:'ملاحظات / تحديثات السوق',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procWorkStart:{
+    title:'إجراءات العمل — تصريح / إذن بدء العمل', permKey:'procWorkStart', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'permitType',label:'نوع التصريح',type:'select',options:['بدء مشروع','بدء مرحلة','بدء بند أعمال','أعمال حفر','أعمال ساخنة','أعمال كهرباء حية','عمل ليلي','عمل في ارتفاع','أخرى']},
+      {name:'requestedBy',label:'مقدم الطلب',type:'text'},
+      {name:'startDate',label:'تاريخ البدء المقترح',type:'date'},
+      {name:'prerequisites',label:'الشروط المسبقة المكتملة',type:'textarea'},
+      {name:'hseClearance',label:'إخلاء طرف سلامة',type:'select',options:['لم يُطلب','قيد المراجعة','معتمد','مرفوض']},
+      {name:'techClearance',label:'إخلاء طرف فني / تصميم',type:'select',options:['لم يُطلب','قيد المراجعة','معتمد','مرفوض']},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد الاعتماد','معتمد للبدء','مرفوض','منتهي']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procPreStart:{
+    title:'إجراءات العمل — قوائم التحقق قبل البدء', permKey:'procPreStart', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'checklistType',label:'نوع القائمة',type:'select',options:['عام موقع','حفر','خرسانة','حدادة','شدات','كهرباء','ميكانيكا','تشطيبات','استلام تصميم','بدء إشراف']},
+      {name:'itemsChecked',label:'بنود التحقق (✓/✗ مع ملاحظات)',type:'textarea'},
+      {name:'blockers',label:'معوقات تمنع البدء',type:'textarea'},
+      {name:'readyToStart',label:'جاهز للبدء؟',type:'select',options:['لا','نعم بشروط','نعم']},
+      {name:'checkedBy',label:'من قام بالتحقق',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['جاري','مكتمل','مرفوض']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procMethodStatement:{
+    title:'إجراءات العمل — بيان طريقة التنفيذ (Method Statement)', permKey:'procMethodStatement', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'activity',label:'النشاط / البند',type:'text',required:true},
+      {name:'method',label:'طريقة التنفيذ خطوة بخطوة',type:'textarea'},
+      {name:'resources',label:'الموارد (عمالة/معدات/مواد)',type:'textarea'},
+      {name:'risks',label:'المخاطر وإجراءات التحكم',type:'textarea'},
+      {name:'qualityChecks',label:'نقاط فحص الجودة',type:'textarea'},
+      {name:'references',label:'المراجع (رسومات/مواصفات/كود)',type:'textarea'},
+      {name:'status',label:'الحالة',type:'select',options:['مسودة','قيد مراجعة الاستشاري','معتمد','مرفوض']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procSiteReception:{
+    title:'إجراءات العمل — استلام الموقع والأعمال الميدانية', permKey:'procSiteReception', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'workItem',label:'بند الأعمال المستلم',type:'textarea',required:true},
+      {name:'fromParty',label:'من (جهة التسليم)',type:'text'},
+      {name:'toParty',label:'إلى (جهة الاستلام)',type:'text'},
+      {name:'inspectionDate',label:'تاريخ المعاينة',type:'date'},
+      {name:'result',label:'نتيجة الاستلام',type:'select',options:['مطابق','مطابق مع ملاحظات','غير مطابق','استلام جزئي','مؤجل']},
+      {name:'defects',label:'الملاحظات / العيوب',type:'textarea'},
+      {name:'reinspectionDate',label:'موعد إعادة المعاينة',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مجدول','تم الاستلام','مرفوض','مغلق']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procDesignHandover:{
+    title:'إجراءات العمل — تسليم واستلام حزم التصميم', permKey:'procDesignHandover', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'packageName',label:'اسم حزمة التصميم',type:'text',required:true},
+      {name:'discipline',label:'التخصص التصميمي',type:'select',options:['معماري','إنشائي','كهرباء','ميكانيكا','صحي','مدني','لاندسكيب','داخلي','متكامل']},
+      {name:'revision',label:'رقم الإصدار',type:'text'},
+      {name:'fromTeam',label:'من فريق التصميم',type:'text'},
+      {name:'toTeam',label:'إلى (موقع/إشراف/مقاول)',type:'text'},
+      {name:'contents',label:'محتويات الحزمة',type:'textarea'},
+      {name:'openIssues',label:'نقاط مفتوحة / RFI',type:'textarea'},
+      {name:'status',label:'الحالة',type:'select',options:['جاهز للتسليم','تم التسليم','مستلم مع تحفظ','مرفوض']},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procSupervisionStart:{
+    title:'إجراءات العمل — بدء الإشراف والمتابعة الفنية', permKey:'procSupervisionStart', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'scope',label:'نطاق الإشراف',type:'textarea'},
+      {name:'team',label:'فريق الإشراف',type:'textarea'},
+      {name:'holdPoints',label:'نقاط التوقف الإلزامية (Hold Points)',type:'textarea'},
+      {name:'reportingCycle',label:'دورة التقارير',type:'select',options:['يومي','أسبوعي','مرحلي','حسب البند']},
+      {name:'startDate',label:'تاريخ بدء الإشراف',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['تخطيط','جارٍ','موقوف','مكتمل']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procDisciplineReceive:{
+    title:'إجراءات العمل — استلام الأعمال حسب التخصص/القسم', permKey:'procDisciplineReceive', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'workItem',label:'بند الأعمال المستلم',type:'textarea',required:true},
+      {name:'fromParty',label:'من (جهة التسليم)',type:'text'},
+      {name:'toParty',label:'إلى (جهة الاستلام)',type:'text'},
+      {name:'inspectionDate',label:'تاريخ المعاينة',type:'date'},
+      {name:'result',label:'نتيجة الاستلام',type:'select',options:['مطابق','مطابق مع ملاحظات','غير مطابق','استلام جزئي','مؤجل']},
+      {name:'defects',label:'الملاحظات / العيوب',type:'textarea'},
+      {name:'reinspectionDate',label:'موعد إعادة المعاينة',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مجدول','تم الاستلام','مرفوض','مغلق']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procStageGate:{
+    title:'إجراءات العمل — بوابات المراجعة قبل الانتقال للمرحلة التالية', permKey:'procStageGate', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'gateName',label:'اسم البوابة',type:'select',options:['G0 اعتماد الفكرة','G1 اعتماد التصميم التمهيدي','G2 اعتماد التصميم التفصيلي','G3 جاهزية الموقع للبدء','G4 بدء التنفيذ','G5 استلام مرحلة','G6 تسليم ابتدائي','G7 تسليم نهائي']},
+      {name:'criteria',label:'معايير الاجتياز',type:'textarea'},
+      {name:'evidence',label:'الأدلة المرفقة / المراجع',type:'textarea'},
+      {name:'decision',label:'القرار',type:'select',options:['لم يُعرض','اجتياز','اجتياز بشروط','إعادة عمل','إيقاف']},
+      {name:'committee',label:'اللجنة / المعتمدون',type:'text'},
+      {name:'date',label:'تاريخ المراجعة',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مجدول','منعقد','مغلق']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procPartialHandover:{
+    title:'إجراءات العمل — الاستلام الجزئي والمراحل', permKey:'procPartialHandover', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'workItem',label:'بند الأعمال المستلم',type:'textarea',required:true},
+      {name:'fromParty',label:'من (جهة التسليم)',type:'text'},
+      {name:'toParty',label:'إلى (جهة الاستلام)',type:'text'},
+      {name:'inspectionDate',label:'تاريخ المعاينة',type:'date'},
+      {name:'result',label:'نتيجة الاستلام',type:'select',options:['مطابق','مطابق مع ملاحظات','غير مطابق','استلام جزئي','مؤجل']},
+      {name:'defects',label:'الملاحظات / العيوب',type:'textarea'},
+      {name:'reinspectionDate',label:'موعد إعادة المعاينة',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مجدول','تم الاستلام','مرفوض','مغلق']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procSnagClose:{
+    title:'إجراءات العمل — قائمة الملاحظات وإغلاق البنود (Snag/Punch)', permKey:'procSnagClose', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'snagNo',label:'رقم الملاحظة',type:'text',required:true},
+      {name:'location',label:'الموقع / المحور',type:'text'},
+      {name:'description',label:'وصف الملاحظة',type:'textarea',required:true},
+      {name:'priority',label:'الأولوية',type:'select',options:['حرج','عالي','متوسط','منخفض']},
+      {name:'responsible',label:'المسؤول عن الإغلاق',type:'text'},
+      {name:'dueDate',label:'تاريخ الاستحقاق',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['مفتوح','قيد المعالجة','مغلق','ملغى']},
+      {name:'closeDate',label:'تاريخ الإغلاق',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
+  procLessons:{
+    title:'إجراءات العمل — دروس مستفادة وتحسين الإجراءات', permKey:'procLessons', hasProject:true,
+    fields:[
+      {name:'code',label:'كود الإجراء / النموذج',type:'text',required:true},
+      {name:'title',label:'عنوان الإجراء / المعاملة',type:'text',required:true},
+      {name:'department',label:'القسم / التخصص',type:'select',options:['عام','موقع','إشراف','تصميم معماري','تصميم إنشائي','كهرباء','ميكانيكا','صحي وحريق','مدني وبنية تحتية','مكتب فني','جودة QA/QC','سلامة HSE','مشتريات','مخازن','موارد بشرية','مالية','عقود','تشطيبات فندقية','تشطيبات عامة','FF&E','Housekeeping / تشغيل']},
+      {name:'projectPhase',label:'مرحلة المشروع',type:'select',options:['ما قبل البدء','تجهيز الموقع','أساسات','هيكل','أنظمة','تشطيبات','تشطيبات فندقية — غرف','تشطيبات فندقية — FOH','تشطيبات فندقية — BOH','FF&E','Pre-opening','تسليم','صيانة']},
+
+      {name:'source',label:'مصدر الدرس (مشروع/حادث/تدقيق)',type:'text'},
+      {name:'whatHappened',label:'ماذا حدث',type:'textarea'},
+      {name:'rootCause',label:'السبب الجذري',type:'textarea'},
+      {name:'action',label:'التحسين على الإجراء',type:'textarea'},
+      {name:'sopUpdate',label:'تحديث مطلوب على SOP؟',type:'select',options:['لا','نعم']},
+      {name:'status',label:'الحالة',type:'select',options:['مسجل','قيد التطبيق','مُغلق']},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+
+    ],
+    columns:[['code','الكود'],['title','العنوان'],['department','القسم'],['status','الحالة']]
+  },
   customModuleBuilder:{title:'مولّد الأقسام الرئيسية',permKey:'customModuleBuilder',fields:[],columns:[]},
 };
 
@@ -2663,6 +3168,32 @@ const NAV = [
   {key:'hrProjectAssignments',label:'الموارد البشرية — توزيع العمالة على المشاريع',module:'hrProjectAssignments'},
   {key:'hrDisciplinary',label:'الموارد البشرية — الجزاءات والتحقيقات',module:'hrDisciplinary'},
   {key:'hrExit',label:'الموارد البشرية — إنهاء الخدمة وإخلاء الطرف',module:'hrExit'},
+  {key:'engArchDesign',label:'التصميمات الهندسية — التصميم المعماري',module:'engArchDesign'},
+  {key:'engStructDesign',label:'التصميمات الهندسية — التصميم الإنشائي',module:'engStructDesign'},
+  {key:'engElecDesign',label:'التصميمات الهندسية — التصميم الكهربائي',module:'engElecDesign'},
+  {key:'engMechDesign',label:'التصميمات الهندسية — التصميم الميكانيكي والتكييف',module:'engMechDesign'},
+  {key:'engPlumbingDesign',label:'التصميمات الهندسية — التصميم الصحي والحريق',module:'engPlumbingDesign'},
+  {key:'engCivilInfraDesign',label:'التصميمات الهندسية — التصميم المدني والبنية التحتية',module:'engCivilInfraDesign'},
+  {key:'engLandscapeDesign',label:'التصميمات الهندسية — تنسيق المواقع واللاندسكيب',module:'engLandscapeDesign'},
+  {key:'engInteriorDesign',label:'التصميمات الهندسية — التصميم الداخلي',module:'engInteriorDesign'},
+  {key:'engShopDrawings',label:'التصميمات الهندسية — الشوب دروينج والرسومات التنفيذية',module:'engShopDrawings'},
+  {key:'engAsBuilt',label:'التصميمات الهندسية — رسومات As-Built المنفذة',module:'engAsBuilt'},
+  {key:'engDesignReview',label:'التصميمات الهندسية — مراجعة واعتماد التصميمات',module:'engDesignReview'},
+  {key:'engDesignRfi',label:'التصميمات الهندسية — استفسارات وتعديلات التصميم (RFI)',module:'engDesignRfi'},
+  {key:'engSpecs',label:'التصميمات الهندسية — المواصفات الفنية للتصميم',module:'engSpecs'},
+  {key:'engBim',label:'التصميمات الهندسية — نمذجة المعلومات BIM / 3D',module:'engBim'},
+  {key:'procSopLibrary',label:'إجراءات العمل — مكتبة إجراءات العمل القياسية (SOP)',module:'procSopLibrary'},
+  {key:'procWorkStart',label:'إجراءات العمل — تصريح / إذن بدء العمل',module:'procWorkStart'},
+  {key:'procPreStart',label:'إجراءات العمل — قوائم التحقق قبل البدء',module:'procPreStart'},
+  {key:'procMethodStatement',label:'إجراءات العمل — بيان طريقة التنفيذ (Method Statement)',module:'procMethodStatement'},
+  {key:'procSiteReception',label:'إجراءات العمل — استلام الموقع والأعمال الميدانية',module:'procSiteReception'},
+  {key:'procDesignHandover',label:'إجراءات العمل — تسليم واستلام حزم التصميم',module:'procDesignHandover'},
+  {key:'procSupervisionStart',label:'إجراءات العمل — بدء الإشراف والمتابعة الفنية',module:'procSupervisionStart'},
+  {key:'procDisciplineReceive',label:'إجراءات العمل — استلام الأعمال حسب التخصص/القسم',module:'procDisciplineReceive'},
+  {key:'procStageGate',label:'إجراءات العمل — بوابات المراجعة قبل الانتقال للمرحلة التالية',module:'procStageGate'},
+  {key:'procPartialHandover',label:'إجراءات العمل — الاستلام الجزئي والمراحل',module:'procPartialHandover'},
+  {key:'procSnagClose',label:'إجراءات العمل — قائمة الملاحظات وإغلاق البنود (Snag/Punch)',module:'procSnagClose'},
+  {key:'procLessons',label:'إجراءات العمل — دروس مستفادة وتحسين الإجراءات',module:'procLessons'},
   {key:'equipment',label:'المعدات',module:'equipment'},
   {key:'engineersList',label:'المهندسون',module:'engineersList'},
   {key:'correspondence',label:'المراسلات والخطابات',module:'correspondence'},
@@ -2867,7 +3398,21 @@ async function ensureCentralApprovalWorkflows(){
       hrPayroll:[['مراجعة الموارد البشرية','hrPayroll'],['مراجعة المالية','finance'],['اعتماد مدير المشروعات','pmApprovalRequests'],['اعتماد صاحب الشركة','ownerApprovalRequests']],
       hrProjectAssignments:[['مراجعة الموارد البشرية','hrProjectAssignments'],['اعتماد مدير المشروع','projectMgrApprovalRequests'],['اعتماد مدير المشروعات','pmApprovalRequests']],
       hrDisciplinary:[['التحقيق / الموارد البشرية','hrDisciplinary'],['اعتماد مدير المشروع','projectMgrApprovalRequests'],['اعتماد الإدارة العليا','ownerApprovalRequests']],
-      hrExit:[['مراجعة الموارد البشرية','hrExit'],['مراجعة المالية / المستحقات','finance'],['اعتماد مدير المشروع','projectMgrApprovalRequests'],['اعتماد الإدارة العليا','ownerApprovalRequests']]
+      hrExit:[['مراجعة الموارد البشرية','hrExit'],['مراجعة المالية / المستحقات','finance'],['اعتماد مدير المشروع','projectMgrApprovalRequests'],['اعتماد الإدارة العليا','ownerApprovalRequests']],
+      engArchDesign:[['مراجعة التصميم — التصميم المعماري','engArchDesign'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engStructDesign:[['مراجعة التصميم — التصميم الإنشائي','engStructDesign'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engElecDesign:[['مراجعة التصميم — التصميم الكهربائي','engElecDesign'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engMechDesign:[['مراجعة التصميم — التصميم الميكانيكي والتكييف','engMechDesign'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engPlumbingDesign:[['مراجعة التصميم — التصميم الصحي والحريق','engPlumbingDesign'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engCivilInfraDesign:[['مراجعة التصميم — التصميم المدني والبنية التحتية','engCivilInfraDesign'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engLandscapeDesign:[['مراجعة التصميم — تنسيق المواقع واللاندسكيب','engLandscapeDesign'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engInteriorDesign:[['مراجعة التصميم — التصميم الداخلي','engInteriorDesign'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engShopDrawings:[['مراجعة التصميم — الشوب دروينج والرسومات التنفيذية','engShopDrawings'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engAsBuilt:[['مراجعة التصميم — رسومات As-Built المنفذة','engAsBuilt'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engDesignReview:[['مراجعة التصميم — مراجعة واعتماد التصميمات','engDesignReview'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engDesignRfi:[['مراجعة التصميم — استفسارات وتعديلات التصميم (RFI)','engDesignRfi'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engSpecs:[['مراجعة التصميم — المواصفات الفنية للتصميم','engSpecs'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']],
+      engBim:[['مراجعة التصميم — نمذجة المعلومات BIM / 3D','engBim'],['اعتماد المكتب الفني','techoffice'],['اعتماد مدير المشروع','projectMgrApprovalRequests']]
     };
     const stages=(hrStages[k]||[]).map((x,i)=>({level:i+1,label:x[0],permissionKey:x[1],approverIds:[],approverSpecialties:[]}));
     STATE.approvalWorkflows.push({moduleKey:k,enabled:true,requireSequential:true,stages:stages.length?stages:[{level:1,label:p.label||('اعتماد '+(mod.title||k)),permissionKey:p.permissionKey||mod.permKey||'',approverIds:(p.approverIds||[]).slice(),approverSpecialties:(p.approverSpecialties||[]).slice()}]});
@@ -2951,7 +3496,8 @@ const NATIVE_APPROVAL_MODULES=[
   'ownerDirectives','pmDirectives','projectMgrDirectives','adminMgrDirectives',
   'consultantDirectives','contractorRequests','consultantExtracts',
   'changeOrders','claims','contracts','extracts','purchases','deliveries',
-  'handoverRequests','siteIncidents','techOffice','documents'
+  'handoverRequests','siteIncidents','techOffice','documents','procWorkStart','procMethodStatement','procSiteReception','procDesignHandover','procStageGate','procDisciplineReceive',
+  'engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim'
 ];
 function isNativeApprovalModule(moduleKey){
   return NATIVE_APPROVAL_MODULES.includes(moduleKey);
@@ -3079,6 +3625,425 @@ const DEFAULT_APPROVAL_MODULES=[
   'projectMgrApprovalRequests','projectMgrDirectives',
   'adminMgrApprovalRequests','adminMgrDirectives'
 ];
+
+function ensureDefaultWorkProcedures(){
+  if(!Array.isArray(STATE.procSopLibrary)) STATE.procSopLibrary=[];
+  if(!Array.isArray(STATE.procMethodStatement)) STATE.procMethodStatement=[];
+  if(!Array.isArray(STATE.procPreStart)) STATE.procPreStart=[];
+  if(!Array.isArray(STATE.procDisciplineReceive)) STATE.procDisciplineReceive=[];
+  const today=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);
+  const gid=()=> (typeof genId==='function'?genId():('ID-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)));
+  const base=(o)=>({id:gid(), version:'1.0', projectPhase:o.projectPhase||'تشطيبات', status:o.status||'معتمد للعمل',
+    notes:(o.notes||'')+' | قالب احترافي — يمكن التعديل والإضافة. مبني على ممارسات فنادق ومقاولي fit-out الكبار (Mock-up · Zone handover · FF&E · Wet areas · Snag zero-critical).',
+    createdAt:new Date().toISOString(), createdBy:'system', createdByName:'قوالب النظام', ...o});
+
+  // —— مكتبة SOP العامة + تشطيبات فندقية ——
+  if(!STATE.procSopLibrary.length){
+    const sop=(code,title,department,scope,steps,responsibles,inputs,outputs,phase)=>base({
+      code,title,department,scope,steps,responsibles,inputs,outputs,relatedForms:code,projectPhase:phase||'تشطيبات'
+    });
+    STATE.procSopLibrary.push(
+      sop('SOP-WS-001','تصريح بدء العمل في الموقع','موقع','أي نشاط ميداني جديد أو مرحلة تنفيذ قبل دخول المعدات/العمالة.',
+        '1) طلب تصريح بدء\n2) رسومات معتمدة\n3) إخلاء طرف HSE\n4) إخلاء طرف فني/تصميم\n5) Checklist قبل البدء\n6) اعتماد مدير المشروع\n7) إخطار الإشراف\n8) تسجيل ساعة البدء',
+        'مهندس موقع → HSE + مكتب فني → مدير مشروع','رسومات · MS · مخاطر · برنامج زمني','تصريح بدء · سجل بدء','ما قبل البدء'),
+      sop('SOP-DS-001','تسليم حزمة تصميم للتنفيذ','تصميم','نقل حزمة تصميم معتمدة إلى الموقع/الإشراف/المقاول.',
+        '1) اكتمال حسب بوابة G2/G3\n2) Transmittal\n3) تنسيق Clash\n4) اجتماع تسليم\n5) RFIs مفتوحة\n6) توقيع استلام\n7) أرشفة',
+        'تصميم → مكتب فني → موقع/إشراف','رسومات · جداول · مواصفات','محضر تسليم · سجل إصدارات','ما قبل البدء'),
+      sop('SOP-SV-001','بدء أعمال الإشراف الفني','إشراف','تفعيل الإشراف عند جاهزية التصميم والموقع.',
+        '1) نطاق Hold Points\n2) توزيع الفريق\n3) نماذج تقارير\n4) ربط استلام جزئي\n5) Kick-off\n6) تفعيل Snag',
+        'مدير إشراف + تخصصات','عقد إشراف · حزم تصميم · خطة جودة','محضر Kick-off · Hold Points','ما قبل البدء'),
+      sop('SOP-RC-001','استلام أعمال حسب التخصص','جودة QA/QC','استلام بند/مرحلة مقاول→إشراف→مالك.',
+        '1) إخطار جاهزية\n2) مراجعة اختبارات\n3) معاينة\n4) نتيجة الاستلام\n5) Punch List\n6) إعادة معاينة\n7) اعتماد وربط مستخلص',
+        'مقاول · إشراف/QA · مدير مشروع','طلب استلام · اختبارات','محضر استلام · Punch','تشطيبات'),
+      sop('SOP-MS-001','إعداد واعتماد Method Statement','موقع','أنشطة عالية المخاطر أو بنود معقدة.',
+        '1) وصف النشاط\n2) تسلسل وموارد\n3) مخاطر HSE\n4) نقاط جودة\n5) مراجع\n6) مراجعة فنية+سلامة\n7) اعتماد إشراف\n8) Toolbox Talk',
+        'مقاول/موقع → فني+HSE → إشراف','رسومات · مخاطر · معدات','MS معتمد · إحاطة','ما قبل البدء'),
+      sop('SOP-GT-001','بوابة مراجعة مرحلة Stage Gate','عام','منع الانتقال دون استيفاء معايير البوابة.',
+        '1) تحديد G0–G7\n2) أدلة\n3) لجنة\n4) قرار\n5) شروط\n6) تحديث برنامج',
+        'PMO + تصميم+موقع+إشراف+جودة','تقارير جاهزية','محضر بوابة','ما قبل البدء'),
+      sop('SOP-PH-001','الاستلام الجزئي وربط المستخلص','موقع','استلام أجزاء لتمكين المستخلص.',
+        '1) نطاق على المخطط\n2) معاينة حرجة\n3) محضر جزئي\n4) إخطار مالية\n5) Punch غير حرج للمتابعة',
+        'موقع+إشراف+مالية','برنامج · كميات','محضر جزئي · مستخلص','تشطيبات'),
+      sop('SOP-SN-001','إدارة الملاحظات وإغلاق Punch','جودة QA/QC','تتبع الملاحظات حتى صفر حرج قبل التسليم.',
+        '1) تسجيل برقم وموقع\n2) أولوية ومسؤول\n3) معالجة\n4) إعادة فحص\n5) إغلاق\n6) جاهزية تسليم',
+        'إشراف/QA · مقاول','محاضر · صور','سجل مغلق · شهادة جاهزية','تسليم'),
+
+      // ===== تشطيبات فندقية شاملة =====
+      sop('SOP-HTL-000','إطار حوكمة تشطيبات فندقية (Fit-out Governance)',
+        'تشطيبات فندقية','إطار عام لمشروع فندق/منتجع: Mock-up، تقسيم مناطق، تنسيق MEPE مع التشطيب، استلام طبقي/جناحي، FF&E، Pre-opening.',
+        '1) اعتماد برنامج التشطيبات ومناطق العمل (Guestroom / Corridor / BOH / FOH / Wet / Landscape)\n2) اعتماد غرفة نموذج Mock-up Room قبل التعميم\n3) تجميد رسومات Shop + مواصفات مواد (FF&E matrix)\n4) تنسيق Clash تشطيبات×كهرباء×ميكانيكا×صحي\n5) تصاريح بدء لكل Zone\n6) استلام مرحلي: هيكل جاهز للتشطيب → تحت الأرضيات → أسقف → تشطيبات ظاهرة → FF&E → Snag → Pre-opening\n7) سجل عينات معتمدة Sample Board\n8) منع إغلاق أي منطقة قبل Hold Points الجودة والسلامة',
+        'مدير مشروع · مدير تشطيبات · إشراف · جودة · مشغّل الفندق (إن وُجد)','برنامج زمني · مصفوفة FF&E · Shop drawings','محاضر بوابات · Mock-up معتمد','تشطيبات'),
+
+      sop('SOP-HTL-001','اعتماد الغرفة النموذجية Mock-up Room',
+        'تشطيبات فندقية','إلزامي قبل تعميم تشطيب غرف النزلاء — ممارسة سلاسل الفنادق العالمية.',
+        '1) اختيار غرفة/جناح ممثل للنوع (Standard / Suite)\n2) تنفيذ كامل: أرضيات، حوائط، سقف، إضاءة، حمام، نجارة، دهانات، إكسسوارات\n3) مطابقة Sample Board والـ BOQ\n4) معاينة مشغّل الفندق/المالك/الاستشاري\n5) قائمة ملاحظات Mock-up\n6) اعتماد كتابي للتعميم أو تعديل المواصفة\n7) توثيق الصور والقياسات كمرجع للمقاولين',
+        'مقاول تشطيبات → إشراف/جودة → مشغّل/مالك','رسومات غرف · عينات · FF&E','محضر اعتماد Mock-up · مرجع صور','تشطيبات'),
+
+      sop('SOP-HTL-002','بدء تشطيبات غرف النزلاء (Guest Rooms)',
+        'تشطيبات فندقية','تسلسل بدء تشطيب الغرف بعد جاهزية الهيكل والأنظمة المخفية.',
+        '1) تصريح بدء Zone الغرف\n2) تحقق: محارة/جبسوم بورد جاهز، عزل صوتي، تمديدات MEPE مختبرة\n3) حماية الأرضيات والممرات\n4) تسلسل: إطار أبواب → أرضيات → دهانات أولية → أسقف → إضاءة → تشطيب نهائي → نجارة → إكسسوارات\n5) منع تداخل المقاولين دون جدول Interface\n6) Toolbox + حماية أعمال منتهية',
+        'مدير تشطيبات · مقاولي باطن · HSE','MS لكل نشاط · اختبارات ضغط/عزل','تصريح Zone · سجل حماية أعمال','تشطيبات'),
+
+      sop('SOP-HTL-003','تشطيبات الحمامات والمناطق الرطبة (Wet Areas)',
+        'تشطيبات فندقية','حرج في الفنادق: عزل، ميول، سيراميك/رخام، لياسة صحية، إكسسوارات.',
+        '1) اختبار العزل المائي (Flood / Electronic leak) قبل البلاط\n2) تحقق الميول نحو الصرف\n3) اعتماد تفصيل التقاء الأرضية/الحائط\n4) تركيب السيراميك/الرخام حسب نمط الغرفة النموذج\n5) سيليكون وفلزات مضادة للعفن\n6) تركيب الأدوات الصحية بعد حماية\n7) استلام: عزل + بلاط + صحي + إكسسوارات كحزمة\n8) منع الاستلام الجزئي للعزل وحده دون توثيق',
+        'مقاول رطب + صحي → QA → إشراف','تقارير عزل · Shop حمامات','محضر عزل · محضر حمام مكتمل','تشطيبات'),
+
+      sop('SOP-HTL-004','الممرات واللوبي والمناطق العامة (FOH)',
+        'تشطيبات فندقية','المناطق الظاهرة للنزيل: ممرات، لوبي، مصاعد، مطاعم، قاعات.',
+        '1) تقسيم Zones وساعات عمل ليلية إن لزم\n2) تنسيق أرضيات رخام/بورسلين واسعة (قواطع تمدد)\n3) أسقف مستعارة وإضاءة معتمدة\n4) تكسيات حوائط وديكور\n5) حماية مستمرة حتى Pre-opening\n6) استلام بصري + مستوي + نظافة عميقة\n7) موافقة مشغّل الفندق على المظهر النهائي',
+        'تشطيبات + إضاءة + ديكور + مشغّل','رسومات FOH · عينات','محضر استلام منطقة عامة','تشطيبات'),
+
+      sop('SOP-HTL-005','مناطق خلفية الخدمة BOH (مطابخ، مغاسل، مخازن)',
+        'تشطيبات فندقية','تشطيبات صحية متينة سهلة التنظيف وفق اشتراطات التشغيل الفندقي.',
+        '1) أرضيات Epoxy/مقاومة انزلاق\n2) حوائط قابلة للغسل حتى ارتفاع محدد\n3) تصريف ودهاليز صحية\n4) أبواب مقاومة حريق حيث يلزم\n5) تداخل معدات المطبخ مع التشطيب (Services coordination)\n6) استلام مع مشغّل المطبخ/الـ Facility',
+        'مقاول BOH · ميكانيكا مطبخ · مشغّل','مخططات معدات · مواصفات صحية','محضر استلام BOH','تشطيبات'),
+
+      sop('SOP-HTL-006','النجارة والأبواب الفندقية (Joinery & Doors)',
+        'تشطيبات فندقية','أبواب غرف، دواليب، وحدات تلفزيون، مكاتب — مطابقة Mock-up ومقاومة حريق.',
+        '1) اعتماد Shop drawings نجارة\n2) عينات خشب/قشرة/إكسسوار\n3) إطارات قبل الأرضيات النهائية عند الحاجة\n4) أبواب حريق: شهادات وتجهيزات إغلاق\n5) ضبط ضفّة وهواء وختم صوت\n6) حماية حتى التسليم\n7) استلام: بُعد، مستوى، إكسسوار، رقم غرفة',
+        'نجار باطن → إشراف → مشغّل','Shop نجارة · شهادات حريق','محضر نجارة/أبواب','تشطيبات'),
+
+      sop('SOP-HTL-007','الدهانات والطلاءات والورق الجداري',
+        'تشطيبات فندقية','طبقات دهان فندقية، مقاومة رطوبة في الحمامات، ورق جداري في الممرات/الغرف.',
+        '1) تجهيز السطح وقبول المحارة/الجبس\n2) طبقات تأسيس حسب المواصفة\n3) ألوان معتمدة من Sample/Mock-up\n4) ورق جداري: لاصق ودرزات\n5) حماية الزوايا\n6) استلام تحت إضاءة ممثلة للتشغيل\n7) لمسات Touch-up بعد FF&E',
+        'مقاول دهانات → جودة','مواصفات دهان · ألوان معتمدة','محضر دهانات','تشطيبات'),
+
+      sop('SOP-HTL-008','الأرضيات الفندقية (رخام · بورسلين · سجاد · Vinyl)',
+        'تشطيبات فندقية','تسلسل وتركيب واستلام أرضيات متعددة الأنواع حسب المنطقة.',
+        '1) قبول سطح التأسيس والرطوبة\n2) محاور ومناسيب\n3) رخام/بورسلين: توزع العروق والفواصل\n4) سجاد: تثبيت وعزل صوتي تحتية\n5) Vinyl/LVT في الغرف حسب المواصفة\n6) عتبات وانتقالات بين المواد\n7) حماية حتى الافتتاح\n8) استلام مستوي + نظافة + خلو من الكسور',
+        'مقاول أرضيات → إشراف','مخطط تفريش · عينات','محضر أرضيات','تشطيبات'),
+
+      sop('SOP-HTL-009','الأسقف المستعارة والإضاءة المدمجة',
+        'تشطيبات فندقية','جبسوم بورد، أسقف معدنية، إضاءة مخفية، حساسات، سماعات.',
+        '1) تنسيق خدمات فوق السقف (Coordination drawing)\n2) هيكل وتعليق معتمد\n3) فتحات إنارة وتكييف ورشاشات\n4) عزل صوتي حيث يلزم\n5) إضاءة تجريبية قبل الإغلاق النهائي\n6) استلام منسوب ومستوى وفتحات',
+        'سقف + كهرباء + ميكانيكا','مخطط سقف مركب','محضر أسقف/إنارة','تشطيبات'),
+
+      sop('SOP-HTL-010','تركيب FF&E والأثاث والتجهيزات',
+        'تشطيبات فندقية','Furniture, Fixtures & Equipment بعد جاهزية التشطيبات الظاهرة.',
+        '1) Freeze لقائمة FF&E ومواضع التركيب\n2) جاهزية الغرفة (تشطيب + كهرباء + نظافة)\n3) جدول توريد وتركيب حسب الطوابق\n4) حماية الأرضيات أثناء المناولة\n5) تثبيت آمن وضبط مستوى\n6) ربط أجهزة (تلفزيون، ميني بار) واختبار\n7) استلام مشغّل الفندق لكل غرفة/منطقة\n8) تسجيل الأضرار أثناء التركيب',
+        'مورد FF&E · تشطيبات · مشغّل','مصفوفة FF&E · مخططات فرش','محضر استلام FF&E لكل غرفة','تشطيبات'),
+
+      sop('SOP-HTL-011','استلام طابق / جناح فندقي (Floor / Wing Handover)',
+        'تشطيبات فندقية','استلام مجمع لغرف الممر + الغرف + خزائن الخدمة على طابق واحد.',
+        '1) اكتمال تشطيب الطابق حسب Mock-up\n2) جولة مشتركة مقاول+إشراف+جودة(+مشغّل)\n3) تصنيف الملاحظات: حرج / عالي / عادي\n4) منع تسليم الطابق إن وُجد حرج مفتوح\n5) محضر استلام طابق + نسب\n6) تحرير الطابق للـ FF&E أو Housekeeping\n7) تحديث البرنامج والمستخلص',
+        'مدير تشطيبات · إشراف · مشغّل','سجلات غرف · Punch','محضر استلام طابق','تسليم'),
+
+      sop('SOP-HTL-012','Snagging فندقي ما قبل الافتتاح (Pre-opening Snag)',
+        'تشطيبات فندقية','حملة ملاحظات مكثفة بأولوية تشغيل النزيل — معيار السلاسل الكبرى.',
+        '1) إغلاق المناطق تباعاً للجولة\n2) فرق متخصصة: غرف، حمامات، ممرات، FOH، BOH\n3) تطبيق معايير العلامة التجارية إن وُجدت\n4) حرج = يمنع تسليم الغرفة للتشغيل\n5) إعادة فحص خلال مهلة محددة\n6) شهادة Zero Critical قبل Soft Opening\n7) تسليم مفاتيح/كروت للمشغّل',
+        'جودة · إشراف · مشغّل · مقاول','قوائم فحص فندقية','تقرير Zero Critical · محضر Pre-opening','تسليم'),
+
+      sop('SOP-HTL-013','حماية الأعمال المنتهية في الفندق',
+        'تشطيبات فندقية','حماية الرخام، الأبواب، الأحواض، الزجاج خلال تداخل المقاولين.',
+        '1) خطة حماية لكل Zone\n2) مواد حماية معتمدة (بدون تلف للتشطيب)\n3) مسارات مناولة FF&E\n4) تفتيش يومي للحماية\n5) إزالة الحماية فقط قبل الاستلام النهائي/التنظيف العميق\n6) تسجيل أضرار ومسؤولية المقاول المتسبب',
+        'HSE + مدير تشطيبات + مقاولين','خطة حماية','سجلات أضرار · أوامر إصلاح','تشطيبات'),
+
+      sop('SOP-HTL-014','التنظيف العميق وتسليم Housekeeping',
+        'تشطيبات فندقية','بعد إغلاق الـ Snag وقبل التشغيل التجريبي.',
+        '1) تنظيف عميق للغرف والحمامات والممرات\n2) إزالة آثار سيليكون/دهان\n3) تلميع أرضيات حسب النوع\n4) استلام Housekeeping/مشغّل\n5) تزويد الغرفة بالليني والتشغيل التجريبي\n6) محضر تسليم للتشغيل',
+        'مقاول نظافة · Housekeeping · مشغّل','محاضر Snag مغلقة','محضر تسليم تشغيل','تسليم'),
+
+      sop('SOP-HTL-015','تنسيق التشطيبات مع الأنظمة (MEP–Finish Interface)',
+        'تشطيبات فندقية','منع تضارب التكييف، الرشاشات، الإنذارات، الوحدات مع الأسقف والتشطيب.',
+        '1) اجتماع تنسيق أسبوعي Interface\n2) اعتماد سقف مركب قبل التنفيذ\n3) Hold Point قبل إغلاق السقف\n4) اختبارات الأنظمة قبل التغطية\n5) تعديل فتحات حسب الواقع المعتمد\n6) توثيق As-built للفتحات',
+        'مكتب فني · ميكانيكا · كهرباء · تشطيبات','مخططات مركبة','محاضر تنسيق · Hold Point سقف','تشطيبات')
+    );
+    try{ if(typeof dbSet==='function') dbSet('procSopLibrary', STATE.procSopLibrary); }catch(e){}
+  } else {
+    // إن وُجدت مكتبة: أضف قوالب فندقية الناقصة فقط دون مسح تعديلات المستخدم
+    const have=new Set(STATE.procSopLibrary.map(x=>String(x.code||'')));
+    const add=STATE.procSopLibrary;
+    const need=[
+      ['SOP-HTL-000','إطار حوكمة تشطيبات فندقية (Fit-out Governance)'],
+      ['SOP-HTL-001','اعتماد الغرفة النموذجية Mock-up Room'],
+      ['SOP-HTL-002','بدء تشطيبات غرف النزلاء (Guest Rooms)'],
+      ['SOP-HTL-003','تشطيبات الحمامات والمناطق الرطبة (Wet Areas)'],
+      ['SOP-HTL-004','الممرات واللوبي والمناطق العامة (FOH)'],
+      ['SOP-HTL-005','مناطق خلفية الخدمة BOH (مطابخ، مغاسل، مخازن)'],
+      ['SOP-HTL-006','النجارة والأبواب الفندقية (Joinery & Doors)'],
+      ['SOP-HTL-007','الدهانات والطلاءات والورق الجداري'],
+      ['SOP-HTL-008','الأرضيات الفندقية (رخام · بورسلين · سجاد · Vinyl)'],
+      ['SOP-HTL-009','الأسقف المستعارة والإضاءة المدمجة'],
+      ['SOP-HTL-010','تركيب FF&E والأثاث والتجهيزات'],
+      ['SOP-HTL-011','استلام طابق / جناح فندقي (Floor / Wing Handover)'],
+      ['SOP-HTL-012','Snagging فندقي ما قبل الافتتاح (Pre-opening Snag)'],
+      ['SOP-HTL-013','حماية الأعمال المنتهية في الفندق'],
+      ['SOP-HTL-014','التنظيف العميق وتسليم Housekeeping'],
+      ['SOP-HTL-015','تنسيق التشطيبات مع الأنظمة (MEP–Finish Interface)']
+    ];
+    // تفاصيل مختصرة للإضافة التكميلية
+    const brief={
+      'SOP-HTL-000':'إطار Mock-up والمناطق وبوابات التشطيب الفندقي',
+      'SOP-HTL-001':'اعتماد غرفة نموذج قبل التعميم',
+      'SOP-HTL-002':'تسلسل بدء تشطيب غرف النزلاء',
+      'SOP-HTL-003':'عزل وميول واستلام حمامات',
+      'SOP-HTL-004':'FOH ممرات ولوبي',
+      'SOP-HTL-005':'تشطيبات BOH صحية',
+      'SOP-HTL-006':'نجارة وأبواب فندقية',
+      'SOP-HTL-007':'دهانات وورق جداري',
+      'SOP-HTL-008':'أرضيات متعددة الأنواع',
+      'SOP-HTL-009':'أسقف وإضاءة مدمجة',
+      'SOP-HTL-010':'تركيب واستلام FF&E',
+      'SOP-HTL-011':'استلام طابق/جناح',
+      'SOP-HTL-012':'Pre-opening snag صفر حرج',
+      'SOP-HTL-013':'حماية الأعمال المنتهية',
+      'SOP-HTL-014':'تنظيف عميق وتسليم تشغيل',
+      'SOP-HTL-015':'تنسيق MEP مع التشطيب'
+    };
+    let n=0;
+    need.forEach(([code,title])=>{
+      if(have.has(code)) return;
+      add.push(base({code,title,department:'تشطيبات فندقية',scope:brief[code]||title,
+        steps:'راجع القالب الكامل في دليل التشطيبات الفندقية وحدّث الخطوات حسب المشروع.',
+        responsibles:'مدير تشطيبات · إشراف · جودة · مشغّل الفندق',
+        inputs:'رسومات · عينات · Mock-up','outputs':'محاضر استلام · سجلات جودة',relatedForms:code}));
+      n++;
+    });
+    if(n && typeof dbSet==='function'){ try{ dbSet('procSopLibrary', STATE.procSopLibrary); }catch(e){} }
+  }
+
+  // —— Method Statements جاهزة للتشطيبات الفندقية ——
+  if(!STATE.procMethodStatement.length){
+    const ms=(code,title,activity,method,resources,risks,qualityChecks)=>base({
+      code,title,department:'تشطيبات فندقية',activity,method,resources,risks,qualityChecks,
+      references:'مواصفات المشروع · Mock-up · Shop drawings · كود الحريق والسلامة',
+      status:'مسودة'
+    });
+    STATE.procMethodStatement.push(
+      ms('MS-HTL-WET','MS — عزل وتركيب حمامات فندقية','عزل وبلط حمامات غرف',
+        '1) تنظيف السطح\n2) عمل زاوية وتقوية\n3) تطبيق العزل بطبقات\n4) اختبار غمر/إلكتروني\n5) حماية العزل\n6) مصطبات وميول\n7) تركيب البلاط من المحاور\n8) ترويبة وسيليكون صحي',
+        'فني عزل · مبلط · مساعدون · مواد عزل معتمدة · أدوات ليزر',
+        'انزلاق · أبخرة · إتلاف عزل — تهوية، حماية، منع مرور عشوائي',
+        'تقرير اختبار عزل · ميول · تطابق نمط Mock-up · خلو تجويف'),
+      ms('MS-HTL-RM','MS — تشطيب غرفة نزيل كاملة','تشطيب Guest Room',
+        '1) قبول المحارة/الجبس\n2) إطارات أبواب\n3) تأسيس كهرباء وإضاءة\n4) أرضيات\n5) دهانات\n6) أسقف\n7) نجارة\n8) إكسسوارات\n9) تنظيف وحماية',
+        'فرق نجارة · دهان · أرضيات · كهرباء',
+        'تداخل مقاولين · تلف تشطيب — جدول Interface وحماية',
+        'مطابقة Mock-up · قياسات أبواب · إضاءة تجريبية'),
+      ms('MS-HTL-MRB','MS — توريد وتركيب رخام/بورسلين مناطق عامة','أرضيات FOH',
+        '1) قبول تأسيس\n2) تفريش جاف\n3) لواصق حسب النوع\n4) قص وفتحات\n5) ترويبة\n6) تلميع إن لزم\n7) حماية كاملة',
+        'مبلطون متخصصون · رافعات مناولة · مواد حماية',
+        'كسر ألواح · غبار — مناولة عمودية آمنة وتهوية',
+        'مستوي · فواصل · تطابق عروق · خلو كسور'),
+      ms('MS-HTL-FFE','MS — مناولة وتركيب FF&E',
+        'تركيب أثاث وتجهيزات غرف',
+        '1) مسار مناولة محمي\n2) مصاعد خدمة فقط\n3) فك تغليف داخل الغرفة\n4) تثبيت حسب المواصفة\n5) اختبار كهرباء الأجهزة\n6) إزالة مخلفات فورية',
+        'فريق FF&E · عمال مناولة · أدوات تثبيت',
+        'إصابة ظهر · خدش أرضيات — تدريب وحماية زوايا',
+        'قائمة غرفة مكتملة · لا خدوش · أجهزة تعمل')
+    );
+    try{ if(typeof dbSet==='function') dbSet('procMethodStatement', STATE.procMethodStatement); }catch(e){}
+  }
+
+  // —— قوائم تحقق قبل بدء تشطيبات فندقية ——
+  if(!STATE.procPreStart.length){
+    const chk=(code,title,checklistType,items)=>base({
+      code,title,department:'تشطيبات فندقية',checklistType,itemsChecked:items,
+      blockers:'',readyToStart:'لا',checkedBy:'',date:today,status:'جاري'
+    });
+    STATE.procPreStart.push(
+      chk('CHK-HTL-ROOM','قبل بدء تشطيب غرف طابق','تشطيبات',
+        '☐ الهيكل والبياض جاهز\n☐ اختبارات سباكة وكهرباء للغرف تمت\n☐ عزل صوتي حوائط إن لزم\n☐ Mock-up معتمد\n☐ مواد الطابق متوفرة\n☐ حماية الممرات\n☐ تصريح بدء Zone\n☐ جدول مقاولي الباطن معتمد'),
+      chk('CHK-HTL-WET','قبل بلط الحمامات','تشطيبات',
+        '☐ مواسير مختبرة ضغط\n☐ عزل مكتمل ومختبر\n☐ ميول محققة\n☐ زاوية الحمام معتمدة\n☐ عينة بلاط معتمدة\n☐ إضاءة مؤقتة كافية\n☐ منع تداخل أعمال أخرى'),
+      chk('CHK-HTL-FFE','قبل دخول FF&E للطابق','تشطيبات',
+        '☐ استلام تشطيب الطابق دون حرج\n☐ أرضيات محمية\n☐ مصاعد خدمة جاهزة\n☐ كهرباء نقاط التشغيل جاهزة\n☐ جدول تركيب غرفة بغرفة\n☐ فريق الاستلام من المشغّل محدد')
+    );
+    try{ if(typeof dbSet==='function') dbSet('procPreStart', STATE.procPreStart); }catch(e){}
+  }
+
+  // —— نماذج استلام تخصص تشطيبات فندقية ——
+  if(!STATE.procDisciplineReceive.length){
+    const rec=(code,title,workItem)=>base({
+      code,title,department:'تشطيبات فندقية',workItem,
+      fromParty:'مقاول التشطيبات',toParty:'الإشراف / الجودة',
+      inspectionDate:today,result:'',defects:'',reinspectionDate:'',status:'مجدول'
+    });
+    STATE.procDisciplineReceive.push(
+      rec('RCV-HTL-MOCK','استلام اعتماد Mock-up','غرفة نموذجية كاملة — مرجع التعميم'),
+      rec('RCV-HTL-WET','استلام حمامات طابق','عزل + بلاط + صحي + إكسسوارات'),
+      rec('RCV-HTL-FLR','استلام تشطيب طابق غرف','غرف + ممر + خزائن خدمة — بدون حرج'),
+      rec('RCV-HTL-FOH','استلام منطقة عامة FOH','لوبي/ممرات عامة/مصاعد — مظهر نهائي'),
+      rec('RCV-HTL-FFE','استلام FF&E غرف','أثاث وتجهيزات حسب المصفوفة — تشغيل أجهزة')
+    );
+    try{ if(typeof dbSet==='function') dbSet('procDisciplineReceive', STATE.procDisciplineReceive); }catch(e){}
+  }
+  // —— QA / QC / HSE / السلامة وأمن المواقع ——
+  (function seedQualitySafety(){
+    const base=(o)=>({id:(typeof genId==='function'?genId():('ID-'+Date.now()+'-'+Math.random().toString(36).slice(2,7))),
+      version:'1.0', status:o.status||'معتمد للعمل',
+      notes:(o.notes||'')+' | قالب جودة/سلامة — قابل للتعديل. مستند إلى ISO 9001 / ISO 45001 وممارسات المواقع الكبرى.',
+      createdAt:new Date().toISOString(), createdBy:'system', createdByName:'قوالب النظام', ...o});
+    const today=(typeof todayISO==='function')?todayISO():new Date().toISOString().slice(0,10);
+    if(!Array.isArray(STATE.procSopLibrary)) STATE.procSopLibrary=[];
+    const have=new Set(STATE.procSopLibrary.map(x=>String(x.code||'')));
+    const pushSop=(code,title,department,scope,steps,responsibles,inputs,outputs,phase)=>{
+      if(have.has(code)) return;
+      STATE.procSopLibrary.push(base({code,title,department,scope,steps,responsibles,inputs,outputs,relatedForms:code,projectPhase:phase||'عام'}));
+      have.add(code);
+    };
+
+    pushSop('SOP-QA-001','خطة الجودة للمشروع (PQP / Quality Plan)','جودة QA/QC','إعداد واعتماد خطة جودة المشروع وربطها بالعقد ونقاط التوقف.',
+      '1) متطلبات العقد والمواصفات\n2) مصفوفة ITP\n3) Hold/Witness/Review Points\n4) نماذج الفحص والمعايرة\n5) إدارة NCR\n6) تدقيق داخلي\n7) اعتماد وتوزيع\n8) تدريب الفرق',
+      'مدير جودة · مدير مشروع · إشراف','عقد · مواصفات · برنامج','PQP · مصفوفة ITP','ما قبل البدء');
+    pushSop('SOP-QA-002','إدارة عدم المطابقة NCR والتصحيح','جودة QA/QC','تسجيل ومعالجة وإغلاق عدم المطابقة ومنع التكرار.',
+      '1) تسجيل NCR\n2) تصنيف الخطورة\n3) عزل البند إن لزم\n4) سبب جذري\n5) CAPA\n6) إعادة فحص\n7) إغلاق\n8) دروس مستفادة',
+      'مراقب جودة · مقاول · إشراف','نماذج NCR · صور','NCR مغلق · CAPA','عام');
+    pushSop('SOP-QA-003','ضبط الوثائق والسجلات الجودة','جودة QA/QC','التحكم في الإصدارات والنماذج المعتمدة وسجلات الفحص.',
+      '1) قائمة وثائق خاضعة للضبط\n2) ترقيم وإصدارات\n3) منع نماذج ملغاة\n4) أرشفة سجلات\n5) تتبع للتدقيق\n6) مراجعة دورية',
+      'مراقب وثائق جودة','PQP · نماذج','سجل وثائق مضبوط','عام');
+    pushSop('SOP-QA-004','تدقيق الجودة الداخلي للمشروع','جودة QA/QC','تدقيق دوري على تطبيق خطة الجودة والمقاولين الباطن.',
+      '1) برنامج تدقيق\n2) قائمة تحقق\n3) تنفيذ ميداني/مكتبي\n4) تقرير ملاحظات\n5) خطة تصحيح\n6) متابعة إغلاق\n7) إبلاغ الإدارة',
+      'مدقق جودة · مدير مشروع','PQP · ITP · سجلات','تقرير تدقيق','عام');
+
+    pushSop('SOP-QC-001','خطة التفتيش والاختبار ITP','جودة QA/QC','ITP لكل بند: خرسانة، حديد، عزل، تشطيبات، أنظمة.',
+      '1) تفكيك النشاط\n2) معايير القبول\n3) Hold/Witness/Surveillance/Review\n4) الجهات\n5) نموذج النتيجة\n6) اعتماد قبل التنفيذ\n7) تحديث عند التغير',
+      'مهندس QC · إشراف','مواصفات · رسومات','ITP معتمدة','ما قبل البدء');
+    pushSop('SOP-QC-002','فحص المواد عند التوريد (Material Receiving)','جودة QA/QC','فحص المواد عند الاستلام قبل التخزين/الاستخدام.',
+      '1) مطابقة PO والمواصفة\n2) شهادات COA/ quant\n3) فحص ظاهري وأبعاد\n4) قبول/رفض/مشروط\n5) بطاقة حالة\n6) تخزين\n7) سجل استلام',
+      'QC مواد · مخازن · مشتريات','PO · شهادات','محضر استلام مواد','عام');
+    pushSop('SOP-QC-003','اختبارات الخرسانة والمواد الإنشائية','جودة QA/QC','ضبط خرسانة طازجة ومتصلبة وحديد وتربة.',
+      '1) اعتماد Mix Design\n2) هبوط/هواء/حرارة\n3) عينات\n4) كسر أعمار\n5) شهادات حديد\n6) رفض غير المطابق\n7) ربط بالعنصر',
+      'مختبر · QC · إشراف','Mix design · جداول صب','تقارير مختبر','هيكل');
+    pushSop('SOP-QC-004','فحص الأعمال قبل الإخفاء (Before Covering)','جودة QA/QC','Hold Point قبل صب/ردم/إغلاق سقف/بلط على عزل.',
+      '1) إخطار جاهزية\n2) مطابقة\n3) صور وقياسات\n4) توقيع Hold\n5) سماح أو رفض\n6) أرشفة',
+      'QC · إشراف · مقاول','ITP · رسومات','نموذج Hold Point','عام');
+    pushSop('SOP-QC-005','معايرة أجهزة القياس والمختبر','جودة QA/QC','صلاحية أجهزة القياس المستخدمة في الفحص.',
+      '1) قائمة أجهزة\n2) جدول معايرة\n3) شهادات سارية\n4) ملصق حالة\n5) سحب المنتهي\n6) سجل',
+      'مسؤول مختبر/QC','شهادات معايرة','سجل أجهزة','عام');
+    pushSop('SOP-QC-006','فحص التشطيبات والمظهر النهائي','جودة QA/QC','معايير بصرية ومستوية قبل الاستلام.',
+      '1) إضاءة فحص\n2) مستوي وميول\n3) لون ونسيج\n4) فواصل\n5) عيوب\n6) Punch\n7) إعادة فحص',
+      'QC تشطيبات · إشراف','Mock-up · مواصفات','قائمة فحص تشطيبات','تشطيبات');
+    pushSop('SOP-QC-007','ضبط جودة اللحام والحديد الإنشائي','جودة QA/QC','لحامات، ترابط، مطابقة رسومات حديد.',
+      '1) مؤهلات اللحامين WPS/PQR\n2) فحص لحام بصري\n3) NDT عند الاشتراط\n4) مطابقة أقطار وتباعد\n5) توثيق',
+      'QC إنشائي · إشراف','WPS · رسومات حديد','تقارير لحام/حديد','هيكل');
+    pushSop('SOP-QC-008','اختبارات الأنظمة (كهرباء · ميكانيكا · صحي)','جودة QA/QC','اختبارات قبل التشغيل والتسليم.',
+      '1) ITP للأنظمة\n2) اختبارات عزل/ضغط/تشغيل\n3) موازنة تكييف إن لزم\n4) لوحات وإنذارات\n5) سجلات نتائج\n6) جاهزية للتشغيل',
+      'QC أنظمة · تخصصات · إشراف','مواصفات أنظمة','تقارير اختبار أنظمة','أنظمة');
+
+    pushSop('SOP-HSE-001','خطة السلامة والصحة المهنية (HSE Plan)','سلامة HSE','خطة HSE معتمدة قبل البدء.',
+      '1) سياسة وأهداف\n2) مسؤوليات\n3) تقييم مخاطر عام\n4) تصاريح عمل\n5) تدريب\n6) PPE\n7) تفتيش وحوادث\n8) طوارئ\n9) اعتماد وتوزيع',
+      'مدير HSE · مدير مشروع','عقد · مخاطر','خطة HSE معتمدة','ما قبل البدء');
+    pushSop('SOP-HSE-002','تصريح العمل الآمن (PTW)','سلامة HSE','أعمال ساخنة، حفر، كهرباء حية، أماكن مغلقة، ارتفاع، رفع.',
+      '1) طلب تصريح\n2) تقييم مخاطر خاص\n3) عزل طاقة LOTO\n4) فحص منطقة ومعدات\n5) اعتماد HSE+مشرف\n6) إحاطة\n7) مراقبة\n8) إغلاق تصريح',
+      'طالب التصريح · مشرف · HSE','تقييم مخاطر · MS','تصريح PTW','عام');
+    pushSop('SOP-HSE-003','تقييم المخاطر وMS الآمن (RA + MS)','سلامة HSE','ربط طريقة التنفيذ بمخاطر متبقية مقبولة.',
+      '1) خطوات العمل\n2) مخاطر\n3) هرم التحكم\n4) متبقي\n5) PPE\n6) اعتماد فني+HSE\n7) Toolbox',
+      'معد MS · HSE · مشرف','رسومات · معدات','RA/MS معتمد','ما قبل البدء');
+    pushSop('SOP-HSE-004','الإحاطة اليومية Toolbox Talk','سلامة HSE','إحاطة قبل الوردية أو نشاط جديد.',
+      '1) موضوع اليوم\n2) مخاطر وضوابط\n3) حوادث وشيكة ذات صلة\n4) توقيع حضور\n5) PPE\n6) أرشفة',
+      'مشرف · HSE','تصاريح اليوم','سجل Toolbox','عام');
+    pushSop('SOP-HSE-005','التفتيش الدوري للسلامة','سلامة HSE','جولات مجدولة وعشوائية.',
+      '1) قائمة تحقق\n2) ملاحظات\n3) تصنيف خطورة\n4) أوامر تصحيحية\n5) إيقاف عند خطر وشيك\n6) متابعة\n7) مؤشرات',
+      'مفتش HSE · مشرف','خطة HSE','تقرير تفتيش','عام');
+    pushSop('SOP-HSE-006','الإبلاغ عن الحوادث والتحقيق','سلامة HSE','بلاغ وتحقيق ومنع تكرار بما فيها Near Miss.',
+      '1) تأمين المنطقة والمصاب\n2) إبلاغ فوري\n3) تقرير أولي 24س\n4) سبب جذري\n5) تصحيحي\n6) مشاركة درس\n7) إغلاق',
+      'HSE · مشرف · إدارة','نماذج بلاغ','تقرير تحقيق','عام');
+    pushSop('SOP-HSE-007','العمل في الارتفاع والسقالات','سلامة HSE','سقالات ومنصات وأحزمة وفتحات.',
+      '1) فحص سقالة مختص\n2) بطاقة حمراء/خضراء\n3) نقاط تثبيت\n4) منع رمي أدوات\n5) حماية فتحات\n6) تصريح ارتفاع\n7) تفتيش يومي',
+      'مشرف سقالات · HSE','شهادات · PPE','تصريح · بطاقة سقالة','عام');
+    pushSop('SOP-HSE-008','الحفر والحفر العميق','سلامة HSE','حفر ودعامات ومرافق مدفونة.',
+      '1) تصريح وكشف مرافق\n2) تقييم انهيار\n3) سند وميول\n4) حواجز\n5) غازات إن لزم\n6) طوارئ\n7) بعد أمطار',
+      'مشرف حفر · HSE · مساح','مخطط مرافق','تصريح حفر','تجهيز الموقع');
+    pushSop('SOP-HSE-009','الأعمال الساخنة والكهرباء','سلامة HSE','لحام وقطع ولوحات.',
+      '1) تصريح ساخن\n2) إزالة مشتعلات\n3) طفاية ومراقب حريق\n4) LOTO\n5) أدوات معزولة\n6) إغلاق بعد تبريد',
+      'منفذ · مراقب حريق · HSE','تصريح · إطفاء','تصريح مغلق','عام');
+    pushSop('SOP-HSE-010','الطوارئ والإخلاء والإسعاف','سلامة HSE','خطة طوارئ وتمارين.',
+      '1) خرائط ونقاط تجمع\n2) أرقام طوارئ\n3) إسعاف أولي\n4) تمرين إخلاء\n5) معدات مفحوصة\n6) تنسيق دفاع مدني',
+      'HSE · إدارة الموقع','خطة طوارئ','سجل تمارين','ما قبل البدء');
+    pushSop('SOP-HSE-011','الصحة المهنية والمواد الخطرة','سلامة HSE','SDS وتخزين كيماويات وضوضاء وغبار.',
+      '1) قائمة مواد وSDS\n2) تخزين وفصل\n3) تهوية وPPE\n4) مراقبة تعرض\n5) إسعاف كيميائي\n6) تدريب',
+      'HSE · مخازن','SDS','سجل مواد خطرة','عام');
+    pushSop('SOP-HSE-012','أمن الموقع والتحكم في الدخول','سلامة HSE','بوابات وبطاقات وزوار وحراسة.',
+      '1) نقاط دخول\n2) تسجيل عمال\n3) بطاقات\n4) تفتيش مركبات\n5) منع غير مصرح\n6) بلاغ سرقة/أمن\n7) حراسة',
+      'أمن موقع · HSE','سجل دخول','تقارير أمن','تجهيز الموقع');
+    pushSop('SOP-HSE-013','البيئة وإدارة النفايات','سلامة HSE','فرز نفايات ومنع سكب وغبار.',
+      '1) خطة نفايات\n2) حاويات فرز\n3) منع سكب\n4) رش غبار\n5) نقل مرخص\n6) سجل تخلص\n7) بلاغ بيئي',
+      'HSE بيئة · مشرف','خطة بيئة','سجلات تخلص','عام');
+    pushSop('SOP-HSE-014','معدات الوقاية الشخصية PPE','سلامة HSE','PPE حسب المنطقة والنشاط.',
+      '1) مصفوفة PPE\n2) صرف وتسجيل\n3) تدريب\n4) استبدال تالف\n5) منع دخول بدون\n6) تفتيش التزام',
+      'HSE · مشرفين','مصفوفة PPE','سجل صرف','عام');
+    pushSop('SOP-HSE-015','إيقاف العمل الآمن (Stop Work Authority)','سلامة HSE','حق إيقاف العمل عند خطر وشيك.',
+      '1) توعية بالحق\n2) إشارة إيقاف\n3) تأمين\n4) إبلاغ\n5) تقييم قبل استئناف\n6) توثيق',
+      'جميع العاملين · مشرف · HSE','خطة HSE','سجل إيقاف عمل','عام');
+    pushSop('SOP-HSE-016','الرفع الثقيل والرافعات','سلامة HSE','رافعات وحمولات وخطط رفع.',
+      '1) خطة رفع\n2) فحص رافعة وشهادات\n3) مشغل مؤهل\n4) منطقة عزل\n5) إشارات\n6) منع المرور تحت الحمل',
+      'مشغل رافعة · مشرف رفع · HSE','شهادات رافعة · خطة رفع','تصريح رفع','عام');
+    pushSop('SOP-HSE-017','الأماكن المغلقة Confined Space','سلامة HSE','دخول خزانات/حفر مغلقة.',
+      '1) تصريح أماكن مغلقة\n2) قياس غازات\n3) تهوية\n4) مراقب خارجي\n5) إنقاذ جاهز\n6) إغلاق تصريح',
+      'فريق دخول · مراقب · HSE','أجهزة قياس غاز','تصريح مغلق','عام');
+
+    try{ if(typeof dbSet==='function') dbSet('procSopLibrary', STATE.procSopLibrary); }catch(e){}
+
+    if(!Array.isArray(STATE.procMethodStatement)) STATE.procMethodStatement=[];
+    const msHave=new Set(STATE.procMethodStatement.map(x=>String(x.code||'')));
+    const pushMs=(code,title,activity,method,resources,risks,qualityChecks,dept)=>{
+      if(msHave.has(code)) return;
+      STATE.procMethodStatement.push(base({code,title,department:dept||'سلامة HSE',activity,method,resources,risks,qualityChecks,
+        references:'خطة HSE · ITP · مواصفات · PTW',status:'مسودة'}));
+      msHave.add(code);
+    };
+    pushMs('MS-HSE-HOT','MS — أعمال ساخنة','لحام/قطع',
+      '1) تصريح ساخن\n2) تأمين المنطقة\n3) مراقب حريق\n4) تنفيذ\n5) Fire watch\n6) إغلاق',
+      'لحام · مراقب · طفايات','حريق · أبخرة','تصريح مغلق');
+    pushMs('MS-HSE-HGT','MS — عمل في الارتفاع','سقالات/منصات',
+      '1) فحص سقالة\n2) PPE سقوط\n3) أدوات مربوطة\n4) تصريح\n5) تنفيذ\n6) تفتيش ختام',
+      'فريق ارتفاع · مشرف سقالات','سقوط','بطاقة خضراء');
+    pushMs('MS-HSE-LFT','MS — رفع ثقيل','رافعات',
+      '1) خطة رفع\n2) فحص رافعة\n3) عزل منطقة\n4) إشارات\n5) رفع\n6) تأمين الحمولة',
+      'مشغل · مشرف رفع','سقوط حمل','خطة معتمدة');
+    pushMs('MS-QC-CONC','MS — صب مع ضبط جودة','صب خرسانة',
+      '1) Hold تسليح\n2) فحص طازج\n3) صب\n4) عينات\n5) معالجة\n6) فك فورم',
+      'طاقم صب · مختبر','انهيار فورم','هبوط وعينات','جودة QA/QC');
+    pushMs('MS-QC-INSP','MS — فحص قبل الإخفاء','Hold Point',
+      '1) إخطار\n2) مطابقة\n3) قياس وصور\n4) توقيع\n5) أرشفة',
+      'QC · إشراف','عيب مخفي','Hold موقع','جودة QA/QC');
+    try{ if(typeof dbSet==='function') dbSet('procMethodStatement', STATE.procMethodStatement); }catch(e){}
+
+    if(!Array.isArray(STATE.procPreStart)) STATE.procPreStart=[];
+    const chkHave=new Set(STATE.procPreStart.map(x=>String(x.code||'')));
+    const pushChk=(code,title,checklistType,items,dept,phase)=>{
+      if(chkHave.has(code)) return;
+      STATE.procPreStart.push(base({code,title,department:dept||'سلامة HSE',checklistType,itemsChecked:items,
+        blockers:'',readyToStart:'لا',checkedBy:'',date:today,status:'جاري',projectPhase:phase||'عام'}));
+      chkHave.add(code);
+    };
+    pushChk('CHK-HSE-DAY','تفتيش سلامة يومي للموقع','عام',
+      '☐ مداخل آمنة\n☐ PPE\n☐ سقالات ببطاقات\n☐ حواجز فتحات\n☐ كهرباء موقع\n☐ طفايات\n☐ مسارات\n☐ تصاريح اليوم\n☐ لا خطر وشيك');
+    pushChk('CHK-HSE-PTW','قبل إصدار تصريح عمل','عام',
+      '☐ تقييم مخاطر\n☐ عزل طاقة\n☐ معدات مفحوصة\n☐ فريق مدرّب\n☐ PPE خاص\n☐ طوارئ\n☐ تنسيق أعمال مجاورة');
+    pushChk('CHK-HSE-SCAF','تفتيش سقالة قبل الاستخدام','عام',
+      '☐ مختص تركيب\n☐ قاعدة ثابتة\n☐ حواجز\n☐ منصة كاملة\n☐ بطاقة خضراء\n☐ بلا تحميل زائد');
+    pushChk('CHK-HSE-EXC','قبل الحفر','تجهيز الموقع',
+      '☐ تصريح حفر\n☐ كشف مرافق\n☐ سند/ميول\n☐ حواجز\n☐ مخارج طوارئ\n☐ معدات غاز إن لزم');
+    pushChk('CHK-QC-POUR','قبل صب خرسانة','هيكل',
+      '☐ Hold تسليح\n☐ فورم مستقر\n☐ غطاء\n☐ مختبر جاهز\n☐ طريق ضخ آمن\n☐ تصريح صب','جودة QA/QC','هيكل');
+    pushChk('CHK-QC-MAT','استلام مواد بالموقع','عام',
+      '☐ مطابقة PO\n☐ شهادات\n☐ فحص ظاهري\n☐ تخزين\n☐ بطاقة حالة\n☐ سجل','جودة QA/QC');
+    pushChk('CHK-QC-COV','قبل إخفاء الأعمال','عام',
+      '☐ إخطار\n☐ مطابقة رسومات\n☐ صور\n☐ توقيع Hold\n☐ لا ملاحظات حرجة','جودة QA/QC');
+    try{ if(typeof dbSet==='function') dbSet('procPreStart', STATE.procPreStart); }catch(e){}
+
+    if(!Array.isArray(STATE.procDisciplineReceive)) STATE.procDisciplineReceive=[];
+    const rHave=new Set(STATE.procDisciplineReceive.map(x=>String(x.code||'')));
+    const pushRec=(code,title,workItem,dept)=>{
+      if(rHave.has(code)) return;
+      STATE.procDisciplineReceive.push(base({code,title,department:dept||'جودة QA/QC',workItem,
+        fromParty:'المقاول',toParty:'QC / الإشراف / HSE',inspectionDate:today,result:'',defects:'',status:'مجدول'}));
+      rHave.add(code);
+    };
+    pushRec('RCV-QC-MAT','فحص استلام مواد','مواد حسب PO والشهادات');
+    pushRec('RCV-QC-HOLD','اعتماد Hold Point قبل إخفاء','تسليح/عزل/تمديدات قبل التغطية');
+    pushRec('RCV-QC-STR','فحص عنصر إنشائي','خرسانة/حديد بعد التنفيذ');
+    pushRec('RCV-QC-SYS','فحص اختبارات أنظمة','ضغط/عزل/تشغيل أنظمة');
+    pushRec('RCV-HSE-SCAF','اعتماد سقالة للاستخدام','سقالة ببطاقة خضراء','سلامة HSE');
+    pushRec('RCV-HSE-PTW','إغلاق تصريح عمل','نشاط منتهٍ ومنطقة آمنة','سلامة HSE');
+    try{ if(typeof dbSet==='function') dbSet('procDisciplineReceive', STATE.procDisciplineReceive); }catch(e){}
+  })();
+
+}
+
 function ensureDefaultApprovalPolicies(){
   if(!Array.isArray(STATE.approvalPolicies)) STATE.approvalPolicies=[];
   // الموارد البشرية مرتبطة افتراضياً بمحرك الاعتماد المركزي للمعاملات التي تتطلب قراراً.
@@ -3088,6 +4053,13 @@ function ensureDefaultApprovalPolicies(){
     let p=STATE.approvalPolicies.find(x=>x.moduleKey===k);
     if(!p){ STATE.approvalPolicies.push({moduleKey:k,enabled:true,permissionKey:k,requiredLevel:'approve',approverIds:[],approverSpecialties:[],requireAll:false,label:hrLabels[k]||'اعتماد الموارد البشرية'}); }
     else { p.enabled=true; p.permissionKey=p.permissionKey||k; p.requiredLevel=p.requiredLevel||'approve'; p.label=p.label||hrLabels[k]||'اعتماد الموارد البشرية'; }
+  });
+  const engDesignKeys=['engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim'];
+  engDesignKeys.forEach(k=>{
+    let p=STATE.approvalPolicies.find(x=>x.moduleKey===k);
+    const lab=(MODULES[k]&&MODULES[k].title)||('اعتماد '+k);
+    if(!p){ STATE.approvalPolicies.push({moduleKey:k,enabled:true,permissionKey:k,requiredLevel:'approve',approverIds:[],approverSpecialties:[],requireAll:false,label:'اعتماد — '+lab}); }
+    else { p.enabled=true; p.permissionKey=p.permissionKey||k; p.requiredLevel=p.requiredLevel||'approve'; p.label=p.label||('اعتماد — '+lab); }
   });
   // لا نفرض التفعيل تلقائياً؛ فقط نضمن أن الحقول الجديدة موجودة في السياسات المحفوظة
   STATE.approvalPolicies=STATE.approvalPolicies.map(p=>({
@@ -3442,7 +4414,7 @@ async function loadAllData(){
     if(DB_LOAD_FAILED.has(key)) return STATE[key]||[];   // فشلت القراءة: نُبقي ما هو موجود ولا نكتب فوقه
     DB_LOADED.add(key); return v;
   };
-  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
+  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
   keys.forEach(k=>DB_GUARDED.add(k));
   DB_LOADING=true;
   try{
@@ -3453,6 +4425,7 @@ async function loadAllData(){
   }
   } finally { DB_LOADING=false; }
   ensureDefaultApprovalPolicies();
+  try{ ensureDefaultWorkProcedures(); }catch(e){ console.warn(e); }
   if(!STATE.menuVisibility || typeof STATE.menuVisibility!=='object') STATE.menuVisibility={sections:{},items:{}};
   if(!STATE.branding || typeof STATE.branding!=='object') STATE.branding=Object.assign({}, DEFAULT_BRANDING);
   else STATE.branding=Object.assign({}, DEFAULT_BRANDING, STATE.branding);
@@ -3592,6 +4565,38 @@ const MENU_SECTIONS = [
   {key:'risks',label:'المخاطر',icon:'⚠',items:[['risks','المخاطر'],['hse','HSE والسلامة'],['qaqc','QA/QC والجودة']]},
   {key:'projectManagement',label:'إدارة المشاريع',icon:'⚙',items:[['company','الشركة والفروع'],['projectManagement','مركز إدارة المشاريع'],['engineersList','سجل المهندسين']]},
   {key:'technical',label:'المكتب الفني',icon:'⌘',items:[['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','إدارة المستندات والرسومات']]},
+  {key:'engDesigns',label:'التصميمات الهندسية',icon:'📐',items:[
+    ['engArchDesign','التصميم المعماري'],
+    ['engStructDesign','التصميم الإنشائي'],
+    ['engElecDesign','التصميم الكهربائي'],
+    ['engMechDesign','التصميم الميكانيكي والتكييف'],
+    ['engPlumbingDesign','التصميم الصحي والحريق'],
+    ['engCivilInfraDesign','التصميم المدني والبنية التحتية'],
+    ['engLandscapeDesign','تنسيق المواقع واللاندسكيب'],
+    ['engInteriorDesign','التصميم الداخلي'],
+    ['engShopDrawings','الشوب دروينج والرسومات التنفيذية'],
+    ['engAsBuilt','رسومات As-Built المنفذة'],
+    ['engDesignReview','مراجعة واعتماد التصميمات'],
+    ['engDesignRfi','استفسارات وتعديلات التصميم (RFI)'],
+    ['engSpecs','المواصفات الفنية للتصميم'],
+    ['engBim','نمذجة المعلومات BIM / 3D'],
+    ['techOffice','المكتب الفني — رسومات ومستندات'],['documents','إدارة المستندات والرسومات'],['linksDrawings','الترابط والرسومات'],['boq','الكميات / BOQ']
+  ]},
+  {key:'workProcedures',label:'إجراءات العمل والاستلام والبدء',icon:'📋',items:[
+    ['procSopLibrary','مكتبة إجراءات العمل القياسية (SOP)'],
+    ['procWorkStart','تصريح / إذن بدء العمل'],
+    ['procPreStart','قوائم التحقق قبل البدء'],
+    ['procMethodStatement','بيان طريقة التنفيذ (Method Statement)'],
+    ['procSiteReception','استلام الموقع والأعمال الميدانية'],
+    ['procDesignHandover','تسليم واستلام حزم التصميم'],
+    ['procSupervisionStart','بدء الإشراف والمتابعة الفنية'],
+    ['procDisciplineReceive','استلام الأعمال حسب التخصص/القسم'],
+    ['procStageGate','بوابات المراجعة قبل الانتقال للمرحلة التالية'],
+    ['procPartialHandover','الاستلام الجزئي والمراحل'],
+    ['procSnagClose','قائمة الملاحظات وإغلاق البنود (Snag/Punch)'],
+    ['procLessons','دروس مستفادة وتحسين الإجراءات'],
+    ['handoverRequests','طلبات الاستلام والتسليم (تشغيلي)'],['handoverCenter','مركز دورة الاستلام']
+  ]},
   {key:'links',label:'الترابط والرسومات',icon:'⌗',items:[['linksDrawings','الترابط والرسومات'],['documents','المستندات والإصدارات'],['techOffice','المراجعات الفنية']]},
   {key:'reports',label:'التقارير والإحصائيات',icon:'▥',items:[['reportsStats','التقارير والإحصائيات'],['projectSummaries','ملخصات المشاريع والتخصصات'],['execReports','التقارير التنفيذية'],['activityLog','سجل العمليات']]},
   {key:'salesMenu',label:'المبيعات والعملاء',icon:'📈',items:[['salesDashboard','مؤشرات المبيعات والتحصيل'],['sales','إدارة المبيعات'],['customerService','خدمة العملاء']]},
@@ -4955,22 +5960,9 @@ function toggleUnifiedRow(key){const mode=document.getElementById('umode_'+key)?
 function setAllUnifiedPermissions(level){menuPermissionRoutes().forEach(item=>{const mode=document.getElementById('umode_'+item.key),perm=document.getElementById('menuperm_'+item.key);if(mode)mode.value='whole';if(perm){perm.value=level;perm.disabled=!!(document.getElementById('u_isAdmin')&&document.getElementById('u_isAdmin').value==='1');}['view','add','edit','delete','approve'].forEach(a=>{const el=document.getElementById('uact_'+item.key+'_'+a);if(el){el.checked=false;el.disabled=true;}});});}
 function userModalHTML(){
   const {record, isNew} = modalState;
-  const permRows = PERM_KEYS.map(pk=>{
-    const level = (record.permissions && record.permissions[pk]) || 'none';
-    return `<tr>
-      <td>${PERM_LABELS[pk]}</td>
-      <td><select id="perm_${pk}" ${record.isAdmin?'disabled':''}>
-        <option value="none" ${level==='none'?'selected':''}>لا أحد</option>
-        <option value="view" ${level==='view'?'selected':''}>مشاهدة</option>
-        <option value="edit" ${level==='edit'?'selected':''}>تعديل</option>
-        <option value="approve" ${level==='approve'?'selected':''}>اعتماد</option>
-      </select></td>
-    </tr>`;
-  }).join('');
-
   return `
   <div class="overlay" onclick="if(event.target===this) closeModal()">
-    <div class="modal" style="max-width:720px;">
+    <div class="modal" style="max-width:860px;">
       <h3>${isNew?'إضافة مستخدم جديد':'تعديل بيانات المستخدم'}</h3>
       <div class="form-grid">
         <div class="field"><label>الاسم الكامل *</label><input id="u_name" value="${escapeHtml(record.name||'')}"></div>
@@ -4996,25 +5988,21 @@ function userModalHTML(){
         ${projectScopeEditorHTML(record)}
       </div>
       <div class="field full" style="margin-top:14px;">
-        <label>صلاحيات الأقسام</label>
-        <div class="section-note" style="margin-bottom:8px">المستويات: <b>لا أحد</b> · <b>مشاهدة</b> (عرض فقط) · <b>تعديل</b> (إضافة/تعديل/حذف) · <b>اعتماد</b> (مشاهدة الطلب + اعتماد/رفض بدون تعديل)</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllPermissions('none')" ${record.isAdmin?'disabled':''}>إلغاء الكل (لا أحد)</button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllPermissions('view')" ${record.isAdmin?'disabled':''}>اختيار الكل كمشاهدة</button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllPermissions('edit')" ${record.isAdmin?'disabled':''}>اختيار الكل كتعديل</button>
-          <button type="button" class="btn btn-amber btn-sm" onclick="setAllPermissions('approve')" ${record.isAdmin?'disabled':''}>اختيار الكل كاعتماد</button>
+        <label>توجيه الصلاحيات (حسب القائمة الجانبية)</label>
+        <div class="section-note" style="margin-bottom:8px">
+          شاشة واحدة لتوجيه كل الصلاحيات. الترتيب مطابق للقائمة الجانبية.
+          <br>• <b>صلاحية البند بالكامل</b>: مستوى واحد (لا أحد / مشاهدة / تعديل / اعتماد) أو «صلاحية القسم».
+          <br>• <b>تفصيلي</b>: تحديد المشاهدة والإضافة والتعديل والحذف والاعتماد بشكل مستقل.
+          <br>صلاحيات الأقسام الأساسية تُحدَّث تلقائياً من إعدادات البنود عند الحفظ.
         </div>
-        <table class="perm-table">
-          <thead><tr><th style="text-align:right;">القسم</th><th>المستوى</th></tr></thead>
-          <tbody id="permBody">${permRows}</tbody>
-        </table>
-        <div class="section-note" style="margin:12px 0 8px"><b>صلاحيات القائمة الموحدة</b><br>الترتيب مطابق للقائمة الجانبية. اختر «صلاحية البند بالكامل» لتطبيق مستوى واحد، أو «تفصيلي» لتحديد المشاهدة والإضافة والتعديل والحذف والاعتماد بشكل مستقل. إعداد البند الرئيسي لا يتجاوز صلاحية القسم الأساسية.</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
           <button type="button" class="btn btn-ghost btn-sm" onclick="setAllUnifiedPermissions('inherit')" ${record.isAdmin?'disabled':''}>استخدام صلاحية القسم للجميع</button>
           <button type="button" class="btn btn-ghost btn-sm" onclick="setAllUnifiedPermissions('none')" ${record.isAdmin?'disabled':''}>حجب الجميع</button>
           <button type="button" class="btn btn-ghost btn-sm" onclick="setAllUnifiedPermissions('view')" ${record.isAdmin?'disabled':''}>مشاهدة الجميع</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllUnifiedPermissions('edit')" ${record.isAdmin?'disabled':''}>تعديل الجميع</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="setAllUnifiedPermissions('approve')" ${record.isAdmin?'disabled':''}>اعتماد الجميع</button>
         </div>
-        <div style="max-height:430px;overflow:auto;border:1px solid var(--epms-line);border-radius:8px">
+        <div class="perm-table-wrap" style="max-height:min(58vh,480px);overflow:auto;border:1px solid var(--epms-line,#e5eef6);border-radius:8px">
           <table class="perm-table"><thead><tr><th style="text-align:right">البند حسب ترتيب القائمة</th><th>النمط</th><th>المستوى الكامل</th><th>مشاهدة</th><th>إضافة</th><th>تعديل</th><th>حذف</th><th>اعتماد</th></tr></thead><tbody>
           ${unifiedPermissionRowsHTML(record)}
           </tbody></table>
@@ -5050,16 +6038,40 @@ async function saveUser(){
   if(dup){ alert('اسم المستخدم مستخدم بالفعل'); return; }
 
   const permissions = {};
-  PERM_KEYS.forEach(pk=>{
-    const el = document.getElementById('perm_'+pk);
-    permissions[pk] = el ? el.value : 'none';
-  });
   const menuItems={}, menuActions={};
+  const rank={none:0,inherit:0,view:1,edit:2,approve:3};
+  const fromRank=n=>n>=3?'approve':n>=2?'edit':n>=1?'view':'none';
+  const pkRank={};
+  PERM_KEYS.forEach(pk=>{ pkRank[pk]=0; });
   menuPermissionRoutes().forEach(item=>{
     const mode=document.getElementById('umode_'+item.key)?.value||'whole';
     const el=document.getElementById('menuperm_'+item.key);
-    if(mode==='whole'){if(el && el.value!=='inherit')menuItems[item.key]=el.value;}
-    else {menuActions[item.key]={mode:'detail'};['view','add','edit','delete','approve'].forEach(a=>{const x=document.getElementById('uact_'+item.key+'_'+a);menuActions[item.key][a]=!!(x&&x.checked);});}
+    let itemLevel='none';
+    if(mode==='whole'){
+      if(el && el.value && el.value!=='inherit'){ menuItems[item.key]=el.value; itemLevel=el.value; }
+      else itemLevel='inherit';
+    } else {
+      menuActions[item.key]={mode:'detail'};
+      ['view','add','edit','delete','approve'].forEach(a=>{const x=document.getElementById('uact_'+item.key+'_'+a);menuActions[item.key][a]=!!(x&&x.checked);});
+      const a=menuActions[item.key];
+      if(a.approve) itemLevel='approve';
+      else if(a.add||a.edit||a.delete) itemLevel='edit';
+      else if(a.view) itemLevel='view';
+      else itemLevel='none';
+    }
+    // ربط البند بصلاحية القسم الأساسي (permKey)
+    const nav=NAV.find(x=>x.key===item.key);
+    const modKey=nav&&nav.module?nav.module:item.key;
+    const mod=MODULES[modKey];
+    const pk=mod&&mod.permKey?mod.permKey:(PERM_KEYS.includes(item.key)?item.key:null);
+    if(pk && PERM_KEYS.includes(pk) && itemLevel!=='inherit'){
+      pkRank[pk]=Math.max(pkRank[pk]||0, rank[itemLevel]||0);
+    }
+  });
+  PERM_KEYS.forEach(pk=>{
+    const el=document.getElementById('perm_'+pk);
+    if(el) permissions[pk]=el.value;
+    else permissions[pk]=fromRank(pkRank[pk]||0);
   });
   permissions.__menuItems=menuItems;permissions.__menuActions=menuActions;
   const scopeMode=document.getElementById('u_projectScopeMode')?.value||'all';
