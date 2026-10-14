@@ -63,7 +63,7 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 }
 .sidebar .brand{padding:16px 18px 13px;text-align:right;border-bottom:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(9,76,143,.72),rgba(4,39,76,.72));}
 .brand-top{display:flex;align-items:center;gap:10px;}
-.brand-logo{font-size:22px;font-weight:900;color:#fff;letter-spacing:0.5px;background:linear-gradient(135deg,#49c8ff,#0b63d8);width:48px;height:48px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;}
+.brand-logo{font-size:22px;font-weight:900;color:#fff;letter-spacing:0.5px;background:linear-gradient(135deg,#49c8ff,#0b63d8);width:48px;height:48px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;}.brand-logo-img{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;border:1px solid rgba(255,255,255,.25);flex-shrink:0;}
 .brand-title b{display:block;color:#fff;font-size:15px;line-height:1.3;}
 .brand-title small{display:block;color:#9edbff;font-size:11px;letter-spacing:.2px;margin-top:2px;}
 .brand-sub{color:#e6f5ff;font-size:10.5px;margin-top:9px;font-weight:700;line-height:1.4;}
@@ -480,6 +480,7 @@ const DEFAULT_BRANDING = {
   taglineAr: 'للمقاولات متعددة المهام',
   taglineEn: 'Multi-Task Contracting',
   logoText: 'BM',
+  logoImage: '',
   loginSubtitleAr: 'تسجيل الدخول — نظام إدارة مشاريع المقاولات',
   loginSubtitleEn: 'Sign in — Construction project management',
   loginSubtitleFr: 'Connexion — Gestion de projets de construction',
@@ -4674,7 +4675,7 @@ function sidebarHTML(){
   return `
   <aside class="sidebar ${sidebarOpen?'open':''}" id="sidebar">
     <div class="brand">
-      <div class="brand-top"><div class="brand-logo">${escapeHtml(getBranding().logoText||'BM')}</div><div class="brand-title"><b>${escapeHtml(getBranding().shortAr||'بناة مصر')}</b><small>${escapeHtml(getBranding().taglineAr||'للمقاولات متعددة المهام')}</small></div></div>
+      <div class="brand-top">${(getBranding().logoImage)?`<img class="brand-logo-img" src="${escapeHtml(getBranding().logoImage)}" alt="logo">`:`<div class="brand-logo">${escapeHtml(getBranding().logoText||'BM')}</div>`}<div class="brand-title"><b>${escapeHtml(getBranding().shortAr||'بناة مصر')}</b><small>${escapeHtml(getBranding().taglineAr||'للمقاولات متعددة المهام')}</small></div></div>
       <div class="brand-sub">${escapeHtml(brandName())}</div>
     </div>
     <div class="sidebar-header-user">
@@ -5530,32 +5531,276 @@ function printAnyRecord(key,id){
   const r=(STATE[key]||[]).find(x=>x.id===id); if(!r)return;
   printRecordsBatch(key,[r]);
 }
+function printFieldLabel(key, fieldName, mod){
+  if(mod && Array.isArray(mod.fields)){
+    const f=mod.fields.find(x=>x && x.name===fieldName);
+    if(f && f.label) return f.label;
+  }
+  if(mod && Array.isArray(mod.columns)){
+    const c=mod.columns.find(x=>x && x[0]===fieldName);
+    if(c && c[1]) return c[1];
+  }
+  const map={
+    id:'رقم السجل', projectId:'المشروع', code:'الكود', title:'العنوان',
+    department:'القسم / التخصص', projectPhase:'مرحلة المشروع', version:'الإصدار',
+    scope:'نطاق التطبيق', steps:'خطوات الإجراء', responsibles:'المسؤولون',
+    inputs:'المدخلات المطلوبة', outputs:'المخرجات / النماذج', relatedForms:'النماذج المرتبطة',
+    status:'الحالة', notes:'ملاحظات', activity:'النشاط', method:'طريقة التنفيذ',
+    resources:'الموارد', risks:'المخاطر والضوابط', qualityChecks:'نقاط فحص الجودة',
+    references:'المراجع', checklistType:'نوع القائمة', itemsChecked:'بنود التحقق',
+    blockers:'المعوقات', readyToStart:'جاهز للبدء؟', checkedBy:'من قام بالتحقق',
+    date:'التاريخ', workItem:'بند الأعمال', fromParty:'من (جهة التسليم)', toParty:'إلى (جهة الاستلام)',
+    inspectionDate:'تاريخ المعاينة', result:'نتيجة الاستلام', defects:'الملاحظات / العيوب',
+    reinspectionDate:'موعد إعادة المعاينة', permitType:'نوع التصريح', requestedBy:'مقدم الطلب',
+    startDate:'تاريخ البدء', prerequisites:'الشروط المسبقة', hseClearance:'إخلاء طرف سلامة',
+    techClearance:'إخلاء طرف فني', packageName:'اسم حزمة التصميم', discipline:'التخصص',
+    revision:'رقم الإصدار', fromTeam:'من فريق', toTeam:'إلى فريق', contents:'المحتويات',
+    openIssues:'نقاط مفتوحة', gateName:'اسم البوابة', criteria:'معايير الاجتياز',
+    evidence:'الأدلة', decision:'القرار', committee:'اللجنة', snagNo:'رقم الملاحظة',
+    location:'الموقع', description:'الوصف', priority:'الأولوية', responsible:'المسؤول',
+    dueDate:'تاريخ الاستحقاق', closeDate:'تاريخ الإغلاق', source:'المصدر',
+    whatHappened:'ماذا حدث', rootCause:'السبب الجذري', action:'التحسين', sopUpdate:'تحديث SOP؟',
+    createdAt:'تاريخ الإنشاء', createdBy:'أُنشئ بواسطة', createdByName:'اسم المنشئ',
+    updatedAt:'آخر تحديث', updatedBy:'عُدّل بواسطة', updatedByName:'اسم المعدّل',
+    approvalStatus:'حالة الاعتماد', approvedAt:'تاريخ الاعتماد', approvedBy:'المعتمد',
+    approvedByName:'اسم المعتمد', rejectedAt:'تاريخ الرفض', rejectedByName:'اسم الرافض',
+    rejectionReason:'سبب الرفض', currentStage:'المرحلة الحالية', attachmentNames:'المرفقات',
+    approvalStage:'مرحلة الاعتماد', approvalDecision:'قرار الاعتماد'
+  };
+  return map[fieldName] || fieldName;
+}
+function printFormatValue(val){
+  if(val==null || val==='') return '—';
+  if(Array.isArray(val)) return val.map(v=>typeof v==='object'?JSON.stringify(v):String(v)).join('، ');
+  if(typeof val==='object'){
+    try{ return JSON.stringify(val,null,2); }catch(e){ return String(val); }
+  }
+  return String(val);
+}
+function printCompanyName(){
+  try{
+    const b=(typeof getBranding==='function')?getBranding():(STATE && STATE.branding);
+    if(b && (b.nameAr||b.companyName||b.name)) return b.nameAr||b.companyName||b.name;
+  }catch(e){}
+  return 'شركة بناة مصر للمقاولات متعددة المهام';
+}
+function printCompanyLogoHtml(){
+  try{
+    const b=(typeof getBranding==='function')?getBranding():(STATE && STATE.branding)||{};
+    if(b.logoImage){
+      return `<img class="print-logo" src="${String(b.logoImage).replace(/"/g,'&quot;')}" alt="شعار الشركة">`;
+    }
+    const t=escapeHtml(b.logoText||'BM');
+    return `<div class="print-logo-text">${t}</div>`;
+  }catch(e){
+    return `<div class="print-logo-text">BM</div>`;
+  }
+}
+function printDateTime(iso){
+  if(!iso) return '—';
+  const s=String(iso);
+  return s.slice(0,19).replace('T',' ');
+}
 function printRecordsBatch(key,records){
   if(!records.length)return;
   const mod=MODULES[key] || {title:key,fields:[]};
   const title=`${mod.title||key} — طباعة`;
+  const company=printCompanyName();
+  const skipKeys=new Set(['password','pass','token','session']);
+  const longFields=new Set(['steps','method','scope','notes','resources','risks','qualityChecks','references','itemsChecked','prerequisites','contents','openIssues','defects','criteria','evidence','whatHappened','rootCause','action','description','workItem','blockers','inputs','outputs','responsibles']);
+
   const blocks=records.map((r,i)=>{
-    const project=mod.hasProject?`<div><b>المشروع:</b> ${escapeHtml(projectName(r.projectId))}</div>`:'';
-    const rows=(mod.columns||Object.keys(r).map(k=>[k,k])).map(([f,l])=>`<tr><th>${escapeHtml(l)}</th><td>${escapeHtml(r[f]??'')}</td></tr>`).join('');
-    return `<section class="print-document ${i<records.length-1?'page-break':''}"><h1>${escapeHtml(mod.title||key)}</h1><div class="doc-meta">${project}<div><b>رقم السجل:</b> ${escapeHtml(r.id||'')}</div></div><table>${rows}</table><div class="signatures"><div>المعتمد<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div>المسؤول<br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></section>`;
+    const projName=mod.hasProject?(projectName(r.projectId)||'—'):'';
+    const ordered=[];
+    const seen=new Set();
+    if(Array.isArray(mod.fields)){
+      mod.fields.forEach(f=>{
+        if(!f||!f.name||skipKeys.has(f.name)) return;
+        ordered.push(f.name); seen.add(f.name);
+      });
+    }
+    if(Array.isArray(mod.columns)){
+      mod.columns.forEach(c=>{
+        const n=c&&c[0]; if(!n||seen.has(n)||skipKeys.has(n)) return;
+        ordered.push(n); seen.add(n);
+      });
+    }
+    ['approvalStatus','approvalStage','approvalDecision','approvedByName','approvedAt','rejectedByName','rejectedAt','rejectionReason','currentStage','createdByName','createdAt','updatedByName','updatedAt'].forEach(n=>{
+      if(r[n]!=null && r[n]!=='' && !seen.has(n)){ ordered.push(n); seen.add(n); }
+    });
+    Object.keys(r||{}).forEach(k=>{
+      if(seen.has(k)||skipKeys.has(k)||k==='id'||k==='projectId') return;
+      if(r[k]==null || r[k]==='') return;
+      ordered.push(k); seen.add(k);
+    });
+
+    // تقسيم: حقول أساسية vs نصوص طويلة
+    const metaFields=[];
+    const detailFields=[];
+    ordered.forEach(f=>{
+      const raw=r[f];
+      const isLong=longFields.has(f) || (typeof raw==='string' && (raw.length>100 || String(raw).indexOf('\n')>=0));
+      if(isLong) detailFields.push(f); else metaFields.push(f);
+    });
+
+    const metaRows=metaFields.map(f=>{
+      let raw=r[f];
+      if(f==='projectId') raw=projectName(raw)||raw;
+      const val=printFormatValue(raw);
+      return `<div class="meta-item"><span class="meta-label">${escapeHtml(printFieldLabel(key,f,mod))}</span><span class="meta-val">${escapeHtml(val)}</span></div>`;
+    }).join('');
+
+    const detailBlocks=detailFields.map(f=>{
+      const raw=r[f];
+      const val=printFormatValue(raw);
+      const html=escapeHtml(val).replace(/\n/g,'<br>');
+      return `<div class="detail-block"><div class="detail-title">${escapeHtml(printFieldLabel(key,f,mod))}</div><div class="detail-body">${html}</div></div>`;
+    }).join('');
+
+    const appr=String(r.approvalStatus||r.status||'');
+    const isApproved=/معتمد|approved|مغلق|مكتمل|مقبول/i.test(appr);
+    const isRejected=/مرفوض|rejected/i.test(appr);
+    const statusClass=isApproved?'st-ok':(isRejected?'st-no':'st-wait');
+    const statusText=appr||'—';
+
+    const codeLine=r.code?`<span class="badge">${escapeHtml(String(r.code))}</span>`:'';
+    const titleLine=escapeHtml(r.title||r.activity||r.workItem||mod.title||key);
+
+    const sigApproved=isApproved
+      ? `<div class="sig-box"><div class="sig-role">المعتمد</div><div class="sig-line">الاسم: <b>${escapeHtml(r.approvedByName||r.updatedByName||'—')}</b></div><div class="sig-line">التاريخ: <b>${escapeHtml(r.approvedAt?printDateTime(r.approvedAt).slice(0,10):'—')}</b></div><div class="sig-sign">التوقيع: ____________________</div></div>`
+      : `<div class="sig-box"><div class="sig-role">المعتمد</div><div class="sig-line">الاسم: ____________________</div><div class="sig-line">التاريخ: ____________________</div><div class="sig-sign">التوقيع: ____________________</div></div>`;
+    const sigOwner=`<div class="sig-box"><div class="sig-role">معد السجل / المسؤول</div><div class="sig-line">الاسم: <b>${escapeHtml(r.createdByName||r.updatedByName||'—')}</b></div><div class="sig-line">التاريخ: <b>${escapeHtml(r.createdAt?printDateTime(r.createdAt).slice(0,10):'—')}</b></div><div class="sig-sign">التوقيع: ____________________</div></div>`;
+
+    return `<section class="sheet ${i<records.length-1?'page-break':''}">
+      <header class="sheet-head">
+        <div class="brand">
+          ${printCompanyLogoHtml()}
+          <div class="brand-text">
+            <div class="company">${escapeHtml(company)}</div>
+            <div class="doc-type">${escapeHtml(mod.title||key)}</div>
+          </div>
+        </div>
+        <div class="head-meta">
+          <div>رقم السجل: <b>${escapeHtml(r.id||'—')}</b></div>
+          ${mod.hasProject?`<div>المشروع: <b>${escapeHtml(projName)}</b></div>`:''}
+          <div>تاريخ الطباعة: <b>${escapeHtml(printDateTime(new Date().toISOString()))}</b></div>
+        </div>
+      </header>
+      <div class="title-bar">
+        <div class="main-title">${codeLine} ${titleLine}</div>
+        <div class="status ${statusClass}">${escapeHtml(statusText)}</div>
+      </div>
+      ${metaRows?`<div class="meta-grid">${metaRows}</div>`:''}
+      ${detailBlocks?`<div class="details">${detailBlocks}</div>`:''}
+      <div class="signatures">${sigApproved}${sigOwner}</div>
+      <footer class="sheet-foot">
+        <span>${escapeHtml(company)}</span>
+        <span>وثيقة نظام إدارة المشاريع — ${escapeHtml(mod.title||key)}</span>
+      </footer>
+    </section>`;
   }).join('');
-  const w=window.open('','_blank'); if(!w)return;
-  w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{background:#eee;font-family:Arial;margin:0}.print-document{background:#fff;color:#111;max-width:900px;margin:20px auto;padding:30px;line-height:1.8}.doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #bbb;padding:12px;margin-bottom:15px}.print-document table{width:100%;border-collapse:collapse}.print-document th,.print-document td{border:1px solid #999;padding:7px;text-align:right}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center}.page-break{page-break-after:always}@media print{body{background:#fff}.print-document{margin:0;max-width:none}.page-break{page-break-after:always}}</style></head><body>${blocks}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`); w.document.close();
-}
-function setProjectFilter(key, val){ projectFilter[key] = val; render(); }
-function setSupplierFilter(kind,val){
-  projectFilter['suppliers_'+kind]=val;
-  if(kind==='group') projectFilter.suppliers_type='';
-  if(kind==='q'){
-    render();
-    const el=document.querySelector('input[type=search][oninput*="setSupplierFilter"]');
-    if(el){ el.focus(); const l=el.value.length; try{el.setSelectionRange(l,l);}catch(e){} }
-    return;
+
+  const w=window.open('','_blank');
+  if(!w){ alert('اسمح بالنوافذ المنبثقة للطباعة'); return; }
+  w.document.write(`<!doctype html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(title)}</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#dfe6ee;font-family:Tahoma,"Segoe UI",Arial,sans-serif;color:#1a1a1a}
+  .sheet{
+    background:#fff;max-width:920px;margin:18px auto;padding:0 0 12px;
+    border:1px solid #c5ced8;box-shadow:0 2px 10px rgba(0,0,0,.08);
   }
-  render();
+  .sheet-head{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+    padding:18px 22px 14px;border-bottom:3px solid #0b63d8;background:linear-gradient(180deg,#f7faff 0%,#fff 100%);
+  }
+  .brand{display:flex;align-items:center;gap:14px;text-align:right}
+  .print-logo{width:72px;height:72px;object-fit:contain;border-radius:10px;border:1px solid #d0d7e0;background:#fff;padding:4px}
+  .print-logo-text{
+    width:72px;height:72px;border-radius:10px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#49c8ff,#0b63d8);color:#fff;font-weight:900;font-size:22px;
+  }
+  .brand-text{display:flex;flex-direction:column;justify-content:center}
+  .company{font-size:16px;font-weight:700;color:#0a2744}
+  .doc-type{font-size:13px;color:#0b63d8;margin-top:4px}
+  .head-meta{text-align:left;font-size:12px;color:#334;line-height:1.7;direction:ltr}
+  .head-meta b{color:#111}
+  .title-bar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:14px 22px;background:#0a2744;color:#fff;
+  }
+  .main-title{font-size:17px;font-weight:700;line-height:1.5}
+  .badge{
+    display:inline-block;background:#0b63d8;color:#fff;padding:2px 10px;
+    border-radius:4px;font-size:12px;margin-left:8px;font-weight:700;
+  }
+  .status{
+    flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;
+    background:#fff;color:#0a2744;
+  }
+  .st-ok{background:#d1fae5;color:#065f46}
+  .st-no{background:#fee2e2;color:#991b1b}
+  .st-wait{background:#fef3c7;color:#92400e}
+  .meta-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:0;
+    border:1px solid #d0d7e0;margin:16px 22px 8px;border-radius:6px;overflow:hidden;
+  }
+  .meta-item{
+    display:flex;gap:8px;padding:9px 12px;border-bottom:1px solid #e6ebf0;border-left:1px solid #e6ebf0;
+    font-size:13px;align-items:flex-start;
+  }
+  .meta-item:nth-last-child(1),.meta-item:nth-last-child(2){border-bottom:none}
+  .meta-label{min-width:38%;color:#4b5563;font-weight:700}
+  .meta-val{flex:1;color:#111;text-align:right;word-break:break-word}
+  .details{padding:4px 22px 8px}
+  .detail-block{
+    border:1px solid #d0d7e0;border-radius:6px;margin:10px 0;overflow:hidden;
+  }
+  .detail-title{
+    background:#eef4fa;color:#0a2744;font-weight:700;font-size:13px;
+    padding:8px 12px;border-bottom:1px solid #d0d7e0;
+  }
+  .detail-body{
+    padding:12px 14px;font-size:13.5px;line-height:1.9;white-space:normal;text-align:right;
+  }
+  .signatures{
+    display:grid;grid-template-columns:1fr 1fr;gap:24px;
+    padding:20px 22px 10px;margin-top:8px;
+  }
+  .sig-box{
+    border:1px dashed #9aa7b5;border-radius:8px;padding:14px 12px;text-align:center;min-height:130px;
+  }
+  .sig-role{font-weight:700;color:#0a2744;margin-bottom:12px;font-size:14px}
+  .sig-line{font-size:13px;margin:8px 0;color:#333}
+  .sig-sign{margin-top:18px;font-size:13px;color:#555}
+  .sheet-foot{
+    display:flex;justify-content:space-between;gap:12px;
+    margin:16px 22px 8px;padding-top:10px;border-top:1px solid #d0d7e0;
+    font-size:11px;color:#6b7280;
+  }
+  .page-break{page-break-after:always}
+  @media print{
+    body{background:#fff}
+    .sheet{margin:0;border:none;box-shadow:none;max-width:none}
+    .page-break{page-break-after:always}
+  }
+  @media (max-width:700px){
+    .meta-grid,.signatures{grid-template-columns:1fr}
+    .sheet-head{flex-direction:column}
+    .head-meta{text-align:right;direction:rtl}
+  }
+</style>
+</head>
+<body>${blocks}
+<script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script>
+</body></html>`);
+  w.document.close();
 }
-function setSort(key,val){ projectFilter[key+'_sortField']=val; render(); }
-function setSortDir(key,val){ projectFilter[key+'_sortDir']=val; render(); }
+
 function printDocument(key,id){
   const r=(STATE[key]||[]).find(x=>x.id===id); if(!r)return;
   const title=key==='contracts'?'عقد مقاولة بين المالك والمقاول':'مستخلص أعمال بين المالك والمقاول';
@@ -6408,8 +6653,17 @@ function brandingSettingsHTML(){
       <div class="field"><label>Nom (Français)</label>
         <input id="br_nameFr" type="text" value="${escapeHtml(b.nameFr||'')}">
       </div>
-      <div class="field"><label>نص الشعار (حرفان–٣)</label>
+      <div class="field"><label>نص الشعار (حرفان–٣) إن لم ترفع صورة</label>
         <input id="br_logoText" type="text" maxlength="4" value="${escapeHtml(b.logoText||'BM')}">
+      </div>
+      <div class="field full"><label>شعار الشركة (صورة) — يظهر في الطباعة والواجهة</label>
+        <input id="br_logoUrl" type="text" placeholder="رابط صورة الشعار أو ارفع ملفاً" value="${escapeHtml((b.logoImage&&!String(b.logoImage).startsWith('data:'))?b.logoImage:'')}">
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input type="file" id="br_logoFile" accept="image/*" onchange="previewBrandImage(this,'br_logoPreview','br_logoData')">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="clearCompanyLogo()">مسح الشعار</button>
+        </div>
+        <input type="hidden" id="br_logoData" value="${escapeHtml((b.logoImage&&String(b.logoImage).startsWith('data:'))?b.logoImage:'')}">
+        <div id="br_logoPreview" style="margin-top:10px;width:120px;height:120px;border-radius:12px;background-size:contain;background-repeat:no-repeat;background-position:center;border:1px solid var(--epms-line);background-color:#fff;${(b.logoImage)?("background-image:url('"+escapeHtml(b.logoImage)+"')"):''}"></div>
       </div>
       <div class="field full"><label>نص تحت عنوان الدخول (عربي)</label>
         <input id="br_loginSubAr" type="text" value="${escapeHtml(b.loginSubtitleAr||'')}">
@@ -6493,6 +6747,12 @@ function previewBrandImage(input, previewId, hiddenId){
   };
   reader.readAsDataURL(file);
 }
+function clearCompanyLogo(){
+  const h=document.getElementById('br_logoData'); if(h) h.value='';
+  const u=document.getElementById('br_logoUrl'); if(u) u.value='';
+  const p=document.getElementById('br_logoPreview'); if(p) p.style.backgroundImage='';
+  const f=document.getElementById('br_logoFile'); if(f) f.value='';
+}
 function clearBrandImage(which){
   if(which==='login'){
     const h=document.getElementById('br_loginBgData'); if(h) h.value='';
@@ -6520,6 +6780,7 @@ function collectBrandingFromForm(){
     taglineAr: (document.getElementById('br_taglineAr').value||'').trim(),
     taglineEn: (document.getElementById('br_taglineEn').value||'').trim(),
     logoText: (document.getElementById('br_logoText').value||'BM').trim().slice(0,4),
+    logoImage: ((document.getElementById('br_logoData')||{}).value || (document.getElementById('br_logoUrl')||{}).value || '').trim(),
     loginSubtitleAr: (document.getElementById('br_loginSubAr').value||'').trim(),
     loginSubtitleEn: (document.getElementById('br_loginSubEn').value||'').trim(),
     loginSubtitleFr: (document.getElementById('br_loginSubFr').value||'').trim(),
