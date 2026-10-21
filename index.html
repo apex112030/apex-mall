@@ -431,6 +431,304 @@ async function dbSet(key, value){
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 
+/* ===================== Demo Project: Tast ali ===================== */
+const DEMO_PROJECT_NAME = 'Tast ali';
+const DEMO_PROJECT_ID_KEY = 'demoProjectId_TastAli';
+
+function getDemoProjectId(){
+  try{ return localStorage.getItem(DEMO_PROJECT_ID_KEY) || ''; }catch(e){ return ''; }
+}
+function setDemoProjectId(id){
+  try{ if(id) localStorage.setItem(DEMO_PROJECT_ID_KEY, id); else localStorage.removeItem(DEMO_PROJECT_ID_KEY); }catch(e){}
+}
+
+function sampleValueForField(f, idx, projectName){
+  const n = (f.name||'').toLowerCase();
+  const label = (f.label||'').toLowerCase();
+  if(f.type==='number'){
+    if(n.includes('percent') || n.includes('نسبة') || label.includes('%')) return idx===0 ? 35 : 70;
+    if(n.includes('budget') || n.includes('amount') || n.includes('value') || n.includes('cost') || n.includes('price')) return idx===0 ? 1500000 : 850000;
+    if(n.includes('count') || n.includes('qty') || n.includes('quantity') || n.includes('labor')) return idx===0 ? 12 : 25;
+    return idx===0 ? 10 : 25;
+  }
+  if(f.type==='date'){
+    const d = new Date();
+    if(n.includes('end') || n.includes('finish') || label.includes('انتهاء')) d.setMonth(d.getMonth()+6);
+    else if(n.includes('start') || label.includes('بدء')) d.setMonth(d.getMonth()-1);
+    else d.setDate(d.getDate() - (idx*3));
+    return d.toISOString().slice(0,10);
+  }
+  if(f.type==='select' && Array.isArray(f.options) && f.options.length){
+    return f.options[Math.min(idx, f.options.length-1)];
+  }
+  if(f.type==='multiselect' && Array.isArray(f.options) && f.options.length){
+    return [f.options[0]];
+  }
+  if(f.type==='textarea'){
+    return `بيانات تجريبية لمشروع ${projectName} — ${f.label||f.name} (سجل ${idx+1}). للتحقق من الربط والاعتمادات.`;
+  }
+  // text and others
+  if(n.includes('name') || n==='title' || n==='phase' || n==='activity' || n==='item' || n==='itemname'){
+    return `${f.label||'بند'} تجريبي ${idx+1} — ${projectName}`;
+  }
+  if(n.includes('number') || n.includes('no') || n.endsWith('no') || n.includes('code') || n.includes('docno') || n.includes('requestno') || n.includes('contractnumber')){
+    return `TA-${(f.name||'X').slice(0,4).toUpperCase()}-${1000+idx}`;
+  }
+  if(n.includes('client') || n.includes('owner')) return 'عميل تجريبي — Tast Ali';
+  if(n.includes('location') || n.includes('site')) return 'موقع تجريبي — القاهرة الجديدة';
+  if(n.includes('engineer') || n.includes('manager') || n.includes('responsible')) return 'مهندس تجريبي';
+  if(n.includes('status')) return idx===0 ? 'قيد التنفيذ' : 'معتمد';
+  if(n.includes('notes') || n.includes('description') || n.includes('remarks')){
+    return `ملاحظة تجريبية لمشروع ${projectName}`;
+  }
+  return `${f.label||f.name} — ${projectName} #${idx+1}`;
+}
+
+function buildSampleRecord(moduleKey, mod, projectId, projectName, idx, approvalMode){
+  const rec = {
+    id: genId(),
+    projectId: projectId,
+    createdBy: (currentUser&&currentUser.username)||'admin',
+    createdByName: (currentUser&&currentUser.name)||'مدير النظام',
+    createdAt: new Date().toISOString(),
+    isDemo: true,
+    demoProject: DEMO_PROJECT_NAME
+  };
+  (mod.fields||[]).forEach(f=>{
+    if(f.name==='projectId') return;
+    rec[f.name] = sampleValueForField(f, idx, projectName);
+  });
+  // Approval cycle variety
+  if(typeof moduleSupportsApproval==='function' && moduleSupportsApproval(moduleKey)){
+    if(approvalMode==='pending'){
+      rec.approvalStatus = 'قيد الاعتماد';
+      rec.approvalStageNumber = 1;
+      rec.approvalStage = 'مراجعة مسؤول القسم';
+    }else if(approvalMode==='approved'){
+      rec.approvalStatus = 'معتمد';
+      rec.approvedBy = (currentUser&&currentUser.username)||'admin';
+      rec.approvedByName = (currentUser&&currentUser.name)||'مدير النظام';
+      rec.approvedAt = new Date().toISOString();
+      rec.approvalDecision = 'اعتماد تجريبي';
+    }else if(approvalMode==='rejected'){
+      rec.approvalStatus = 'مرفوض';
+      rec.approvedBy = (currentUser&&currentUser.username)||'admin';
+      rec.approvedByName = (currentUser&&currentUser.name)||'مدير النظام';
+      rec.approvedAt = new Date().toISOString();
+      rec.approvalDecision = 'رفض تجريبي للاختبار';
+    }else{
+      rec.approvalStatus = 'بدون اعتماد';
+    }
+  }
+  return rec;
+}
+
+async function createDemoProjectTastAli(){
+  if(!currentUser || !currentUser.isAdmin){
+    alert('هذه العملية للمدير فقط.');
+    return;
+  }
+  if(!confirm('إنشاء مشروع تجريبي كامل باسم «Tast ali» لجميع الأقسام المرتبطة بالمشاريع مع عينات للاعتمادات؟\nيمكن حذفه لاحقاً بالكامل.')) return;
+
+  const existingId = getDemoProjectId();
+  let project = (STATE.projects||[]).find(p=>p.id===existingId || p.name===DEMO_PROJECT_NAME || p.isDemo);
+  if(project){
+    if(!confirm('يوجد مشروع تجريبي Tast ali بالفعل. هل تريد إعادة تعبئة البيانات المرتبطة به (بدون حذف القديم إلا عند التأكيد)؟')) return;
+  }else{
+    project = {
+      id: genId(),
+      name: DEMO_PROJECT_NAME,
+      client: 'عميل تجريبي — Tast Ali Holdings',
+      location: 'القاهرة الجديدة — التجمع الخامس',
+      projectType: 'أعمال متكاملة متعددة التخصصات',
+      projectSubtype: 'مشروع تجريبي شامل لاختبار الربط والاعتمادات',
+      resourceSummary: 'مهندسون: 8 | عمالة: 45 | معدات: 6',
+      status: 'قيد التنفيذ',
+      budget: 12500000,
+      startDate: todayISO(),
+      endDate: (()=>{ const d=new Date(); d.setMonth(d.getMonth()+8); return d.toISOString().slice(0,10); })(),
+      notes: 'مشروع تجريبي تلقائي — يغطي جميع أقسام القائمة الرئيسية. قابل للحذف أو الإخفاء من إدارة النظام.',
+      isDemo: true,
+      createdBy: currentUser.username,
+      createdByName: currentUser.name,
+      createdAt: new Date().toISOString(),
+      percentComplete: 28,
+      percent: 28
+    };
+    if(!Array.isArray(STATE.projects)) STATE.projects=[];
+    STATE.projects.push(project);
+    await dbSet('projects', STATE.projects);
+  }
+  setDemoProjectId(project.id);
+  const pid = project.id;
+  const pname = DEMO_PROJECT_NAME;
+
+  const modes = ['pending','approved','rejected','none'];
+  let modulesTouched = 0;
+  let recordsCreated = 0;
+  const errors = [];
+
+  for(const [moduleKey, mod] of Object.entries(MODULES)){
+    if(!mod || !mod.hasProject) continue;
+    if(!Array.isArray(STATE[moduleKey])) STATE[moduleKey]=[];
+    // Skip if already has demo records for this project (unless user chose recreate - we still add if few)
+    const existingDemo = STATE[moduleKey].filter(r=>r.projectId===pid && (r.isDemo || r.demoProject===DEMO_PROJECT_NAME));
+    if(existingDemo.length >= 2) continue;
+
+    const toAdd = [];
+    // 2 records with different approval states
+    for(let i=0;i<2;i++){
+      const mode = modes[i % modes.length];
+      const rec = buildSampleRecord(moduleKey, mod, pid, pname, i, mode);
+      toAdd.push(rec);
+    }
+    STATE[moduleKey].push(...toAdd);
+    try{
+      const ok = await dbSet(moduleKey, STATE[moduleKey]);
+      if(ok===false){ errors.push(moduleKey); }
+      else { modulesTouched++; recordsCreated += toAdd.length; }
+    }catch(e){
+      errors.push(moduleKey+': '+(e&&e.message?e.message:e));
+    }
+  }
+
+  // Also seed a few non-hasProject shared items linked by notes if useful (jobTasks)
+  if(Array.isArray(STATE.jobTasks)){
+    const hasJT = STATE.jobTasks.some(t=>t.projectId===pid || (t.title&&t.title.includes(DEMO_PROJECT_NAME)));
+    if(!hasJT){
+      const jt = {
+        id: genId(),
+        title: `مهمة تجريبية — ${DEMO_PROJECT_NAME}`,
+        roleKey: '',
+        projectId: pid,
+        status: 'قيد التنفيذ',
+        priority: 'متوسطة',
+        dueDate: todayISO(),
+        notes: 'مهمة مرتبطة بالمشروع التجريبي',
+        isDemo: true,
+        createdBy: currentUser.username,
+        createdByName: currentUser.name,
+        createdAt: new Date().toISOString()
+      };
+      STATE.jobTasks.push(jt);
+      try{ await dbSet('jobTasks', STATE.jobTasks); modulesTouched++; recordsCreated++; }catch(e){}
+    }
+  }
+
+  let msg = `✅ تم إنشاء/تحديث المشروع التجريبي «${DEMO_PROJECT_NAME}»\n`;
+  msg += `• الأقسام التي تم تعبئتها: ${modulesTouched}\n`;
+  msg += `• السجلات المُضافة: ${recordsCreated}\n`;
+  msg += `• يمكن مراجعة بنود قيد الاعتماد والمعتمد والمرفوض من لوحة القيادة.\n`;
+  msg += `• للحذف الكامل أو الإخفاء: إدارة النظام ← مشروع Tast ali`;
+  if(errors.length) msg += `\n\n⚠ تعذر حفظ بعض الأقسام (${errors.length}): ${errors.slice(0,5).join(', ')}`;
+  alert(msg);
+  render();
+}
+
+async function deleteDemoProjectTastAli(){
+  if(!currentUser || !currentUser.isAdmin){
+    alert('هذه العملية للمدير فقط.');
+    return;
+  }
+  const pid = getDemoProjectId();
+  const project = (STATE.projects||[]).find(p=>p.id===pid || p.name===DEMO_PROJECT_NAME || p.isDemo);
+  if(!project && !pid){
+    alert('لا يوجد مشروع تجريبي Tast ali لحذفه.');
+    return;
+  }
+  const targetId = (project&&project.id) || pid;
+  if(!confirm(`حذف المشروع التجريبي «${DEMO_PROJECT_NAME}» وجميع السجلات المرتبطة به في كل الأقسام؟\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
+
+  let deletedRecords = 0;
+  const touched = [];
+  for(const key of Object.keys(STATE)){
+    if(!Array.isArray(STATE[key])) continue;
+    const before = STATE[key].length;
+    STATE[key] = STATE[key].filter(r=>{
+      if(!r || typeof r!=='object') return true;
+      const linked = (r.projectId && String(r.projectId)===String(targetId))
+        || r.isDemo===true
+        || r.demoProject===DEMO_PROJECT_NAME
+        || (key==='projects' && (r.id===targetId || r.name===DEMO_PROJECT_NAME));
+      return !linked;
+    });
+    const removed = before - STATE[key].length;
+    if(removed>0){
+      deletedRecords += removed;
+      touched.push(key);
+      try{ await dbSet(key, STATE[key]); }catch(e){ console.error(e); }
+    }
+  }
+  setDemoProjectId('');
+  alert(`🗑 تم حذف المشروع التجريبي «${DEMO_PROJECT_NAME}»\n• سجلات محذوفة: ${deletedRecords}\n• أقسام متأثرة: ${touched.length}`);
+  render();
+}
+
+function hideDemoProjectTastAli(){
+  if(!currentUser || !currentUser.isAdmin){
+    alert('هذه العملية للمدير فقط.');
+    return;
+  }
+  const pid = getDemoProjectId();
+  const project = (STATE.projects||[]).find(p=>p.id===pid || p.name===DEMO_PROJECT_NAME || p.isDemo);
+  if(!project){
+    alert('لا يوجد مشروع تجريبي Tast ali.');
+    return;
+  }
+  project.hidden = true;
+  project.status = project.status || 'متوقف مؤقتاً';
+  project.notes = (project.notes||'') + ' | تم إخفاؤه من العرض التجريبي';
+  dbSet('projects', STATE.projects).then(()=>{
+    alert('تم تعليم المشروع التجريبي كمُخفى. لن يظهر في الفلاتر الافتراضية إن وُجدت، ويمكن إظهاره مجدداً.');
+    render();
+  });
+}
+
+function unhideDemoProjectTastAli(){
+  if(!currentUser || !currentUser.isAdmin){
+    alert('هذه العملية للمدير فقط.');
+    return;
+  }
+  const pid = getDemoProjectId();
+  const project = (STATE.projects||[]).find(p=>p.id===pid || p.name===DEMO_PROJECT_NAME || p.isDemo);
+  if(!project){
+    alert('لا يوجد مشروع تجريبي Tast ali.');
+    return;
+  }
+  project.hidden = false;
+  dbSet('projects', STATE.projects).then(()=>{
+    alert('تم إظهار المشروع التجريبي مجدداً.');
+    render();
+  });
+}
+
+function demoProjectStatusHTML(){
+  const pid = getDemoProjectId();
+  const project = (STATE.projects||[]).find(p=>p.id===pid || p.name===DEMO_PROJECT_NAME || p.isDemo);
+  if(!project){
+    return `<div class="section-note" style="margin-top:8px;">لا يوجد مشروع تجريبي «Tast ali» حالياً. اضغط الزر أدناه لإنشائه بكل الفروع والأقسام.</div>`;
+  }
+  let linked = 0;
+  for(const key of Object.keys(STATE)){
+    if(!Array.isArray(STATE[key])) continue;
+    linked += STATE[key].filter(r=>r && (r.projectId===project.id || r.isDemo || r.demoProject===DEMO_PROJECT_NAME)).length;
+  }
+  const pending = [];
+  for(const key of Object.keys(STATE)){
+    if(!Array.isArray(STATE[key])) continue;
+    STATE[key].forEach(r=>{
+      if(r && r.projectId===project.id && r.approvalStatus==='قيد الاعتماد') pending.push(key);
+    });
+  }
+  return `<div class="section-note" style="margin-top:8px;background:#f0f7ff;border:1px solid #c5dff5;padding:10px;border-radius:8px;">
+    <b>المشروع التجريبي نشط:</b> ${escapeHtml(project.name)}
+    <br>الحالة: ${escapeHtml(project.status||'—')} ${project.hidden?'(مخفى)':''}
+    <br>سجلات مرتبطة تقريباً: ${linked}
+    <br>بنود قيد الاعتماد مرتبطة: ${pending.length}
+  </div>`;
+}
+
+
 /* ===================== State ===================== */
 const PERM_KEYS = [ 'salesContracts','projectResources','sales','customerService','company','projects','details','planning','siteExecution','engineer','engineersList','labor','equipment',
   'techoffice','boq','purchases','suppliers','deliveries','warehouse','warehousesLoc','contracts','extracts',
@@ -4971,7 +5269,7 @@ function canAccessProject(projectId, user=currentUser){
   return s.ids.includes(String(projectId));
 }
 function visibleProjects(user=currentUser){
-  const all=STATE.projects||[];
+  const all=(STATE.projects||[]).filter(p=>!p.hidden);
   if(!user) return [];
   if(user.isAdmin) return all.slice();
   const s=projectScope(user);
@@ -5742,6 +6040,18 @@ function systemManagementHTML(){
     <button class="quick-btn" onclick="goRoute('backup')"><b>⇩</b>Backup / Restore</button>
     <button class="quick-btn" onclick="goRoute('approvalSettings')"><b>✓</b>إدارة الاعتمادات</button>
     <button class="quick-btn" onclick="goRoute('jobTasks')"><b>📋</b>المهام الوظيفية${jobCount?` (${jobCount})`:''}</button>
+  </div>
+
+  <div class="panel" style="margin-top:16px;">
+    <div class="panel-title"><span>🧪 المشروع التجريبي — Tast ali</span><small>اختبار الربط بين كل الأقسام ودورة الاعتمادات</small></div>
+    <div class="section-note">ينشئ مشروعاً تجريبياً باسم <b>Tast ali</b> ويملأ عينات في <b>جميع الأقسام المرتبطة بالمشاريع</b> في القائمة الرئيسية (مراحل، تقارير موقع، عقود، مشتريات، مستخلصات، QA/QC، HSE، تصميمات هندسية، إجراءات عمل، استلام وتسليم، توجيهات، …) مع حالات اعتماد متنوعة (قيد الاعتماد / معتمد / مرفوض). يمكن حذف المشروع وسجلاته بالكامل أو إخفاؤه دون حذف البيانات الأخرى.</div>
+    ${demoProjectStatusHTML()}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+      <button type="button" class="btn btn-primary" onclick="createDemoProjectTastAli()">＋ إنشاء / تعبئة مشروع Tast ali الكامل</button>
+      <button type="button" class="btn btn-ghost" onclick="hideDemoProjectTastAli()">👁 إخفاء المشروع التجريبي</button>
+      <button type="button" class="btn btn-ghost" onclick="unhideDemoProjectTastAli()">إظهار المشروع التجريبي</button>
+      <button type="button" class="btn btn-danger" onclick="deleteDemoProjectTastAli()">🗑 حذف المشروع التجريبي بالكامل</button>
+    </div>
   </div>
 
   <div class="panel" style="margin-top:16px;">
