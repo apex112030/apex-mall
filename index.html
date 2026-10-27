@@ -569,7 +569,7 @@ async function createDemoProjectTastAli(){
   const errors = [];
 
   for(const [moduleKey, mod] of Object.entries(MODULES)){
-    if(!mod || !mod.hasProject) continue;
+    if(!mod || !mod.hasProject || moduleKey==='engineersList') continue;
     if(!Array.isArray(STATE[moduleKey])) STATE[moduleKey]=[];
     // Skip if already has demo records for this project (unless user chose recreate - we still add if few)
     const existingDemo = STATE[moduleKey].filter(r=>r.projectId===pid && (r.isDemo || r.demoProject===DEMO_PROJECT_NAME));
@@ -2329,7 +2329,7 @@ const MODULES = {
     columns:[['date','التاريخ'],['type','النوع'],['title','العنوان'],['location','الموقع'],['requestedBy','مقدم الطلب']]
   },
   engineersList:{
-    title:'المهندسون', permKey:'engineersList',
+    title:'المهندسون', permKey:'engineersList', hasProject:true, projectOptional:true, multiProject:true,
     fields:[
       {name:'name',label:'الاسم',type:'text',required:true},
       {name:'specialty',label:'التخصص',type:'select',options:['مدني','معماري','كهرباء','ميكانيكا','مساحة']},
@@ -2340,7 +2340,7 @@ const MODULES = {
     columns:[['name','الاسم'],['specialty','التخصص'],['phone','تليفون'],['status','الحالة']]
   },
   labor:{
-    title:'العمالة', permKey:'labor', hasProject:true,
+    title:'العمالة', permKey:'labor', hasProject:true, projectOptional:true, multiProject:true,
     fields:[
       {name:'groupName',label:'اسم المجموعة / العامل',type:'text',required:true},
       {name:'craft',label:'المهنة',type:'text'},
@@ -2351,7 +2351,7 @@ const MODULES = {
     columns:[['groupName','المجموعة'],['craft','المهنة'],['count','العدد'],['dailyRate','الأجر اليومي']]
   },
   equipment:{
-    title:'المعدات', permKey:'equipment', hasProject:true,
+    title:'المعدات', permKey:'equipment', hasProject:true, projectOptional:true, multiProject:true,
     fields:[
       {name:'name',label:'اسم المعدة',type:'text',required:true},
       {name:'type',label:'النوع',type:'text'},
@@ -3664,7 +3664,10 @@ function workflowCanUserApproveStage(stage,user=currentUser){
   const specs=Array.isArray(stage.approverSpecialties)?stage.approverSpecialties:[];
   if(ids.length||specs.length){
     const uid=String(user.id||''); const us=String(user.specialty||user.speciality||'').trim();
-    return ids.map(String).includes(uid) || (!!us && specs.includes(us));
+    const eIds=ids.filter(x=>String(x).startsWith('eng:')).map(x=>String(x).slice(4));
+    const nm=String(user.name||'').trim();
+    const byEng=eIds.length && wfEngineerList().some(e=>eIds.includes(String(e.id)) && (String(e.userId||'')===uid || (!!nm && String(e.name||'').trim()===nm)));
+    return ids.map(String).includes(uid) || byEng || (!!us && specs.includes(us));
   }
   const pk=stage.permissionKey||'';
   if(!pk) return false;
@@ -5136,7 +5139,7 @@ function collectApprovalItems(statusFilter){
         record:r,
         status:st,
         label:approvalRecordTitle(key,r),
-        project:mod.hasProject?projectName(r.projectId):'',
+        project:mod.hasProject?projectLabelFor(mod,r):'',
         createdBy:r.createdByName||r.createdBy||'—',
         approvedBy:r.approvedByName||r.approvedBy||'',
         approvedAt:r.approvedAt||'',
@@ -5265,7 +5268,7 @@ function canAccessProject(projectId, user=currentUser){
   const s=projectScope(user);
   if(s.mode==='all') return true;
   // مستخدم مقيّد: بدون projectId يُسمح للسجلات العامة فقط (ليس كمشروع)
-  if(!projectId) return true;
+  if(!projectId || projectId===PROJECT_PENDING) return true;
   return s.ids.includes(String(projectId));
 }
 function visibleProjects(user=currentUser){
@@ -5290,8 +5293,8 @@ function scopeRecords(list,user=currentUser, moduleKey){
   }
   // باقي الأقسام: إخفاء سجلات المشاريع غير المصرّح بها
   return list.filter(r=>{
-    if(!r.projectId) return true;
-    return ids.has(String(r.projectId));
+    const rp=recProjectIds(r); if(!rp.length || rp.includes(PROJECT_PENDING)) return true;
+    return rp.some(x=>ids.has(String(x)));
   });
 }
 function projectOptionsHTML(selectedId, includeEmptyLabel){
@@ -6225,7 +6228,7 @@ function projectSummariesHTML(){
   const type=window.epmsSummaryType||'overall';
   const chosen=pid?visibleProjects().filter(p=>String(p.id)===String(pid)):visibleProjects();
   const scopeIds=new Set(chosen.map(p=>p.id));
-  const scoped=arr=>arr.filter(r=>!r.projectId||scopeIds.has(r.projectId));
+  const scoped=arr=>arr.filter(r=>!r.projectId||r.projectId===PROJECT_PENDING||scopeIds.has(r.projectId));
   const pct=p=>Math.max(0,Math.min(100,Number(p.percentComplete??p.percent??0)||0));
   const avg=chosen.length?Math.round(chosen.reduce((a,p)=>a+pct(p),0)/chosen.length):0;
   const datasets=[
@@ -6417,17 +6420,19 @@ function moduleHTML(key, mod){
   if(mod.hasProject){
     const pid = projectFilter[key] || '';
     // إن كان الفلتر يشير لمشروع غير مسموح أعد ضبطه
-    const pidOk = !pid || allowedProjects.some(p=>String(p.id)===String(pid));
+    const pidOk = !pid || (mod.projectOptional && (pid===PROJECT_NONE||pid===PROJECT_PENDING)) || allowedProjects.some(p=>String(p.id)===String(pid));
     const effectivePid = pidOk ? pid : '';
     if(!pidOk) projectFilter[key] = '';
     filterBar = `
       <select onchange="setProjectFilter('${key}', this.value)">
         <option value="">كل المشاريع المسموح بها</option>
+        ${mod.projectOptional?`<option value="${PROJECT_NONE}" ${effectivePid===PROJECT_NONE?'selected':''}>${LBL_NO_PROJECT}</option><option value="${PROJECT_PENDING}" ${effectivePid===PROJECT_PENDING?'selected':''}>${LBL_PENDING_PROJECT}</option>`:''}
         ${allowedProjects.map(p=>`<option value="${p.id}" ${String(effectivePid)===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
       </select>`;
     if(effectivePid){
       if(key==='surveillanceCameras') filtered = list.filter(r=>r.projectId===effectivePid || r.scopeMode==='كل المشاريع' || !r.projectId);
-      else filtered = list.filter(r=>String(r.projectId)===String(effectivePid));
+      else if(effectivePid===PROJECT_NONE) filtered = list.filter(r=>!recProjectIds(r).length);
+      else filtered = list.filter(r=>recProjectIds(r).includes(String(effectivePid)));
     }
   }
   if(key==='suppliers'){
@@ -6448,7 +6453,11 @@ function moduleHTML(key, mod){
   const rows = filtered.map((r,rowIndex)=>{
     const cells = mod.columns.map(([f,_])=>`<td>${formatCell(mod,f,r[f])}</td>`).join('');
     const projLabel = key==='surveillanceCameras' && (r.scopeMode==='كل المشاريع' || !r.projectId) ? 'كل المشاريع' : projectName(r.projectId);
-    const projCell = mod.hasProject ? `<td>${escapeHtml(projLabel)}</td>` : '';
+    const projCell = mod.hasProject ? (mod.multiProject && editable
+      ? `<td><span class="print-only">${escapeHtml(projectLabelFor(mod,r))}</span><details class="no-print"><summary style="cursor:pointer">${escapeHtml(projectLabelFor(mod,r))}</summary>${[[PROJECT_PENDING,LBL_PENDING_PROJECT]].concat(allowedProjects.map(pp=>[pp.id,pp.name])).map(([v,l])=>`<label style="display:flex;gap:6px;align-items:center;margin:3px 0"><input type="checkbox" ${recProjectIds(r).includes(String(v))?'checked':''} onchange="quickToggleProject('${key}','${r.id}','${v}',this.checked)"><span>${escapeHtml(l)}</span></label>`).join('')}</details></td>`
+      : mod.projectOptional && editable
+      ? `<td><span class="print-only">${escapeHtml(projectLabelFor(mod,r))}</span><select class="no-print" title="نقل لمشروع" onchange="quickMoveProject('${key}','${r.id}',this.value)"><option value="" ${!r.projectId?'selected':''}>${LBL_NO_PROJECT}</option><option value="${PROJECT_PENDING}" ${r.projectId===PROJECT_PENDING?'selected':''}>${LBL_PENDING_PROJECT}</option>${allowedProjects.map(pp=>`<option value="${pp.id}" ${String(r.projectId||'')===String(pp.id)?'selected':''}>${escapeHtml(pp.name)}</option>`).join('')}</select></td>`
+      : `<td>${escapeHtml(projectLabelFor(mod,r))}</td>`) : '';
     const creator = r.createdByName || r.createdBy || '—';
     const lastEdit = (Array.isArray(r.editHistory)&&r.editHistory.length)
       ? r.editHistory[r.editHistory.length-1]
@@ -6598,7 +6607,7 @@ function printRecordsBatch(key,records){
   const longFields=new Set(['steps','method','scope','notes','resources','risks','qualityChecks','references','itemsChecked','prerequisites','contents','openIssues','defects','criteria','evidence','whatHappened','rootCause','action','description','workItem','blockers','inputs','outputs','responsibles']);
 
   const blocks=records.map((r,i)=>{
-    const projName=mod.hasProject?(projectName(r.projectId)||'—'):'';
+    const projName=mod.hasProject?(projectLabelFor(mod,r)||'—'):'';
     const ordered=[];
     const seen=new Set();
     if(Array.isArray(mod.fields)){
@@ -6633,7 +6642,7 @@ function printRecordsBatch(key,records){
 
     const metaRows=metaFields.map(f=>{
       let raw=r[f];
-      if(f==='projectId') raw=projectName(raw)||raw;
+      if(f==='projectId') raw=projectLabelFor(mod,r);
       const val=printFormatValue(raw);
       return `<div class="meta-item"><span class="meta-label">${escapeHtml(printFieldLabel(key,f,mod))}</span><span class="meta-val">${escapeHtml(val)}</span></div>`;
     }).join('');
@@ -6807,7 +6816,33 @@ function printDocument(key,id){
   const html=key==='contracts'?`<div class="print-document"><h1>عقد مقاولة</h1><h2>بين المالك والمقاول</h2><div class="doc-meta"><div><b>المشروع:</b> ${escapeHtml(p)}</div><div><b>رقم العقد:</b> ${escapeHtml(r.contractNumber||'')}</div><div><b>المالك:</b> ${escapeHtml(r.owner||'')}</div><div><b>المقاول:</b> ${escapeHtml(r.contractor||r.party||'')}</div><div><b>قيمة العقد:</b> ${escapeHtml(r.value||'')} ${escapeHtml(r.currency||'')}</div><div><b>مدة التنفيذ:</b> ${escapeHtml(r.duration||'')} يوم</div><div><b>تاريخ البدء:</b> ${escapeHtml(r.startDate||'')}</div><div><b>تاريخ الانتهاء:</b> ${escapeHtml(r.endDate||'')}</div><div><b>الاحتجاز:</b> ${escapeHtml(r.retention||'')}</div><div><b>الدفعة المقدمة:</b> ${escapeHtml(r.advance||'')}</div></div><h3>أولاً: نطاق الأعمال</h3><p>${escapeHtml(r.scope||'')}</p><h3>ثانياً: شروط الدفع والمستخلصات</h3><p>${escapeHtml(r.paymentTerms||'')}</p><h3>ثالثاً: بنود وشروط العقد</h3><p style="white-space:pre-wrap">${escapeHtml(r.clauses||'')}</p><h3>رابعاً: أحكام عامة</h3><p>يلتزم الطرفان بتنفيذ الأعمال طبقاً للمخططات والمواصفات والعقد والبرنامج الزمني، وتوثيق المستخلصات والمراسلات والاستلامات طبقاً لإجراءات المشروع.</p><div class="signatures"><div><b>المالك</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div><b>المقاول</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></div>`:`<div class="print-document"><h1>مستخلص أعمال</h1><h2>بين المالك والمقاول</h2><div class="doc-meta"><div><b>المشروع:</b> ${escapeHtml(p)}</div><div><b>رقم المستخلص:</b> ${escapeHtml(r.number||'')}</div><div><b>المالك:</b> ${escapeHtml(r.owner||'')}</div><div><b>المقاول:</b> ${escapeHtml(r.contractor||'')}</div><div><b>رقم العقد:</b> ${escapeHtml(r.contractNumber||'')}</div><div><b>تاريخ المستخلص:</b> ${escapeHtml(r.date||'')}</div><div><b>الفترة:</b> ${escapeHtml(r.periodFrom||'')} إلى ${escapeHtml(r.periodTo||'')}</div><div><b>الحالة:</b> ${escapeHtml(r.status||'')}</div></div><h3>بيان الأعمال</h3><p style="white-space:pre-wrap">${escapeHtml(r.workDescription||'')}</p><table><tr><th>البيان</th><th>القيمة</th></tr><tr><td>إجمالي الأعمال السابقة</td><td>${escapeHtml(r.previousAmount||0)}</td></tr><tr><td>أعمال الفترة الحالية</td><td>${escapeHtml(r.currentAmount||0)}</td></tr><tr><td>إجمالي الأعمال حتى تاريخه</td><td>${escapeHtml(r.amount||0)}</td></tr><tr><td>إجمالي الاستقطاعات</td><td>${escapeHtml(r.deductions||0)}</td></tr><tr><td><b>صافي المستخلص المستحق</b></td><td><b>${escapeHtml(r.netAmount||0)}</b></td></tr></table><h3>ملاحظات وشروط الدفع</h3><p style="white-space:pre-wrap">${escapeHtml(r.notes||'')}</p><div class="signatures"><div><b>اعتماد المالك / الاستشاري</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div><div><b>المقاول</b><br><br>الاسم: __________________<br>التوقيع: ________________<br>التاريخ: _________________</div></div></div>`;
   const w=window.open('','_blank'); if(!w)return; w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${title}</title><style>body{background:#eee;font-family:Arial}.print-document{background:#fff;color:#111;max-width:900px;margin:20px auto;padding:30px;line-height:1.8}.doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;border:1px solid #bbb;padding:12px}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;text-align:center}.print-document table{width:100%;border-collapse:collapse}.print-document th,.print-document td{border:1px solid #999;padding:7px}</style></head><body>${html}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`); w.document.close();
 }
-function projectName(id){ const p = STATE.projects.find(x=>x.id===id); return p ? p.name : '—'; }
+const PROJECT_PENDING='__pending__', PROJECT_NONE='__none__';
+const LBL_NO_PROJECT='لم يوضع في مشروع بعد', LBL_PENDING_PROJECT='جاري إرساله بمشروع';
+function projNoneChange(el){ if(el.checked) document.querySelectorAll('.f-proj-check').forEach(x=>x.checked=false); else if(!document.querySelector('.f-proj-check:checked')) el.checked=true; }
+function projBoxChange(){ const n=document.querySelector('.f-proj-none'); if(n) n.checked=!document.querySelector('.f-proj-check:checked'); }
+function recProjectIds(r){ if(!r) return []; if(Array.isArray(r.projectIds)) return r.projectIds.filter(Boolean).map(String); return r.projectId?[String(r.projectId)]:[]; }
+function projectLabelFor(mod,r){ const ids=recProjectIds(r); if(mod&&mod.projectOptional&&!ids.length) return LBL_NO_PROJECT; if(ids.length>1||(mod&&mod.multiProject&&ids.length)) return ids.map(projectName).join('، '); return projectName(r&&r.projectId); }
+async function quickToggleProject(key,id,pid,on){
+  const mod=MODULES[key]; if(!mod||!mod.multiProject||!canEdit(mod.permKey)){alert('ليس لديك صلاحية التعديل.');render();return;}
+  if(on && pid!==PROJECT_PENDING && !canAccessProject(pid)){alert('المشروع المختار غير ضمن صلاحياتك.');render();return;}
+  const r=(STATE[key]||[]).find(x=>String(x.id)===String(id)); if(!r) return;
+  const set=new Set(recProjectIds(r)); if(on) set.add(String(pid)); else set.delete(String(pid));
+  r.projectIds=[...set]; r.projectId=r.projectIds[0]||'';
+  r.updatedBy=currentUser.username; r.updatedByName=currentUser.name; r.updatedAt=new Date().toISOString();
+  pushEditHistory(r,(on?'إضافة إلى: ':'إزالة من: ')+projectName(pid));
+  await dbSet(key,STATE[key]); render();
+}
+async function quickMoveProject(key,id,pid){
+  const mod=MODULES[key]; if(!mod||!mod.projectOptional||!canEdit(mod.permKey)){alert('ليس لديك صلاحية التعديل.');render();return;}
+  if(pid && pid!==PROJECT_PENDING && !canAccessProject(pid)){alert('المشروع المختار غير ضمن صلاحياتك.');render();return;}
+  const r=(STATE[key]||[]).find(x=>String(x.id)===String(id)); if(!r) return;
+  if(String(r.projectId||'')===String(pid||'')) return;
+  r.projectId=pid||'';
+  r.updatedBy=currentUser.username; r.updatedByName=currentUser.name; r.updatedAt=new Date().toISOString();
+  pushEditHistory(r,'نقل إلى: '+(pid?projectName(pid):LBL_NO_PROJECT));
+  await dbSet(key,STATE[key]); render();
+}
+function projectName(id){ if(id===PROJECT_PENDING) return LBL_PENDING_PROJECT; const p = STATE.projects.find(x=>x.id===id); return p ? p.name : '—'; }
 function openCameraStream(id){
   const cam=(STATE.surveillanceCameras||[]).find(x=>x.id===id);
   if(!cam||!cam.streamUrl){ alert('لا يوجد رابط بث لهذه الكاميرا'); return; }
@@ -6903,11 +6938,14 @@ function modalHTML(){
   const canApproveHere = !isNew && canApproveRecord(moduleKey, record);
 
   let projField = '';
-  if(mod.hasProject){
+  if(mod.multiProject){
+    const cur=new Set(recProjectIds(record));
+    projField = `<div class="field full"><label>${t('المشاريع','Projects','Projets')} <small style="color:#6c7d91">(يمكن اختيار أكثر من مشروع — بدون اختيار = ${LBL_NO_PROJECT})</small></label><div style="max-height:180px;overflow:auto;border:1px solid #e5eef6;border-radius:8px;padding:6px"><label style="display:flex;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" class="f-proj-none" ${cur.size?'':'checked'} ${!editable?'disabled':''} onchange="projNoneChange(this)"><span>${LBL_NO_PROJECT}</span></label>${[[PROJECT_PENDING,LBL_PENDING_PROJECT]].concat(visibleProjects().map(p=>[p.id,p.name])).map(([v,l])=>`<label style="display:flex;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" class="f-proj-check" onchange="projBoxChange()" value="${escapeHtml(String(v))}" ${cur.has(String(v))?'checked':''} ${!editable?'disabled':''}><span>${escapeHtml(l)}</span></label>`).join('')}</div>${visibleProjects().length?'':'<div class="section-note" style="color:#b45309;margin-top:6px">لا توجد مشاريع معرّفة أو مسموحة لك حاليًا — أضف مشروعًا من «المشاريع» أولًا أو راجع صلاحيات المشاريع للمستخدم.</div>'}</div>`;
+  } else if(mod.hasProject){
     projField = `<div class="field full">
-      <label>${t('المشروع','Project','Projet')} *</label>
+      <label>${t('المشروع','Project','Projet')}${mod.projectOptional?'':' *'}</label>
       <select id="f_projectId" ${!editable?'disabled':''}>
-        <option value="">${t('— اختر مشروع —','— Select project —','— Choisir un projet —')}</option>
+        ${mod.projectOptional?`<option value="" ${!record.projectId?'selected':''}>${LBL_NO_PROJECT}</option><option value="${PROJECT_PENDING}" ${record.projectId===PROJECT_PENDING?'selected':''}>${LBL_PENDING_PROJECT}</option>`:`<option value="">${t('— اختر مشروع —','— Select project —','— Choisir un projet —')}</option>`}
         ${visibleProjects().map(p=>`<option value="${p.id}" ${String(record.projectId||'')===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
       </select>
     </div>`;
@@ -6995,14 +7033,18 @@ async function saveRecord(){
     }
     record[f.name] = v;
   }
-  if(mod.hasProject){
+  if(mod.multiProject){
+    const pids=[...document.querySelectorAll('.f-proj-check:checked')].map(x=>x.value);
+    for(const x of pids){ if(x!==PROJECT_PENDING && !canAccessProject(x)){ alert('أحد المشاريع المختارة غير ضمن صلاحياتك.'); return; } }
+    record.projectIds=pids; record.projectId=pids[0]||'';
+  } else if(mod.hasProject){
     const pidEl=document.getElementById('f_projectId');
     const pid = pidEl ? pidEl.value : '';
     if(moduleKey==='surveillanceCameras' && record.scopeMode==='كل المشاريع'){
       record.projectId = '';
     }else{
-      if(!pid){ alert(t('من فضلك اختر المشروع','Please select a project','Veuillez choisir un projet')); return; }
-      if(!canAccessProject(pid)){ alert('المشروع المختار غير ضمن صلاحياتك.'); return; }
+      if(!pid && !mod.projectOptional){ alert(t('من فضلك اختر المشروع','Please select a project','Veuillez choisir un projet')); return; }
+      if(pid && !canAccessProject(pid)){ alert('المشروع المختار غير ضمن صلاحياتك.'); return; }
       record.projectId = pid;
     }
   }
@@ -7478,18 +7520,36 @@ function openWorkflowEditor(moduleKey){
   const mod=MODULES[moduleKey], w=JSON.parse(JSON.stringify(approvalWorkflow(moduleKey)));
   modalState={isWorkflowModal:true,moduleKey,record:w}; render();
 }
+function wfEngineerList(){ return Array.isArray(STATE.engineersList)?STATE.engineersList:[]; }
+function wfApproversPicker(st,i){
+  const ids=new Set((st.approverIds||[]).map(String)), specs=new Set(st.approverSpecialties||[]);
+  const chk=(cls,val,checked,label)=>`<label style="display:flex;gap:8px;align-items:center;margin:4px 0;padding:5px 8px;border:1px solid #e5eef6;border-radius:6px"><input type="checkbox" class="${cls}" data-i="${i}" value="${escapeHtml(String(val))}" ${checked?'checked':''}><span>${label}</span></label>`;
+  const users=(STATE.users||[]).map(u=>chk('wf-user',u.id,ids.has(String(u.id)),`<b>${escapeHtml(u.name||u.username)}</b> <small style="color:#6c7d91">(${escapeHtml(u.username||'')}${u.specialty?' · '+escapeHtml(u.specialty):''}${u.isAdmin?' · مدير نظام':''})</small>`)).join('')||'<div class="section-note">لا يوجد مستخدمون.</div>';
+  const engs=wfEngineerList().map(e=>chk('wf-eng','eng:'+e.id,ids.has('eng:'+e.id),`<b>${escapeHtml(e.name||'')}</b> <small style="color:#6c7d91">(مهندس${e.specialty?' · '+escapeHtml(e.specialty):''})</small>`)).join('')||'<div class="section-note">لا يوجد مهندسون في السجل.</div>';
+  const sp=specialtyList().map(x=>chk('wf-spec',x,specs.has(x),escapeHtml(x))).join('');
+  const n=ids.size+specs.size;
+  return `<div class="field full"><details ${n?'open':''}><summary style="cursor:pointer;font-weight:700">المعتمدون بالاسم / التخصص ${n?'('+n+')':''}</summary><div class="section-note" style="margin-top:6px">اختر أفرادًا أو مهندسين أو تخصصات يحق لهم اعتماد هذه المرحلة. إن لم تختر أحدًا تُستخدم صلاحية القسم أعلاه.</div><b>المستخدمون / الأفراد</b>${users}<b style="display:block;margin-top:8px">المهندسون (من السجل)</b>${engs}<b style="display:block;margin-top:8px">التخصصات</b>${sp}</details></div>`;
+}
+function wfSyncStages(){
+  const w=modalState&&modalState.record; if(!w||!w.stages) return;
+  document.querySelectorAll('.wf-label').forEach(el=>{const i=Number(el.dataset.i); if(w.stages[i])w.stages[i].label=el.value.trim()||('المرحلة '+(i+1));});
+  document.querySelectorAll('.wf-perm').forEach(el=>{const i=Number(el.dataset.i); if(w.stages[i])w.stages[i].permissionKey=el.value;});
+  if(!document.querySelector('.wf-user,.wf-eng,.wf-spec')) return;
+  w.stages.forEach(st=>{st.approverIds=[];st.approverSpecialties=[];});
+  document.querySelectorAll('.wf-user:checked,.wf-eng:checked').forEach(el=>{const i=Number(el.dataset.i); if(w.stages[i])w.stages[i].approverIds.push(el.value);});
+  document.querySelectorAll('.wf-spec:checked').forEach(el=>{const i=Number(el.dataset.i); if(w.stages[i])w.stages[i].approverSpecialties.push(el.value);});
+}
 function workflowModalHTML(){
   if(!modalState?.isWorkflowModal)return '';
   const k=modalState.moduleKey, mod=MODULES[k], w=modalState.record||{stages:[]};
-  const rows=(w.stages||[]).map((st,i)=>`<div class="panel" style="margin:8px 0;padding:10px"><div class="toolbar"><b>المرحلة ${i+1}</b><button class="btn btn-danger btn-sm" onclick="removeWorkflowStage(${i})">حذف</button></div><div class="form-grid"><div class="field"><label>اسم المرحلة</label><input class="wf-label" data-i="${i}" value="${escapeHtml(st.label||'')}"></div><div class="field"><label>صلاحية القسم المطلوبة</label><select class="wf-perm" data-i="${i}"><option value="">— تحديد بالاسم/التخصص فقط —</option>${PERM_KEYS.map(pk=>`<option value="${pk}" ${st.permissionKey===pk?'selected':''}>${escapeHtml(PERM_LABELS[pk]||pk)}</option>`).join('')}</select></div></div></div>`).join('');
+  const rows=(w.stages||[]).map((st,i)=>`<div class="panel" style="margin:8px 0;padding:10px"><div class="toolbar"><b>المرحلة ${i+1}</b><button class="btn btn-danger btn-sm" onclick="removeWorkflowStage(${i})">حذف</button></div><div class="form-grid"><div class="field"><label>اسم المرحلة</label><input class="wf-label" data-i="${i}" value="${escapeHtml(st.label||'')}"></div><div class="field"><label>صلاحية القسم المطلوبة</label><select class="wf-perm" data-i="${i}"><option value="">— تحديد بالاسم/التخصص فقط —</option>${PERM_KEYS.map(pk=>`<option value="${pk}" ${st.permissionKey===pk?'selected':''}>${escapeHtml(PERM_LABELS[pk]||pk)}</option>`).join('')}</select></div>${wfApproversPicker(st,i)}</div></div>`).join('');
   return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:850px"><h3>Workflow مركزي — ${escapeHtml(mod?.title||k)}</h3><div class="section-note">نفس المحرك يستخدم لكل الأقسام. أضف المراحل بالترتيب، ويمكن تحديد المعتمدين لاحقاً من إعدادات الصلاحيات.</div>${rows||'<div class="section-note">لا توجد مراحل.</div>'}<div class="toolbar"><button class="btn btn-ghost" onclick="addWorkflowStage()">+ إضافة مرحلة</button></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">إلغاء</button><button class="btn btn-primary" onclick="saveWorkflowEditor()">حفظ Workflow</button></div></div></div>`;
 }
-function addWorkflowStage(){ if(!modalState?.isWorkflowModal)return; modalState.record.stages=modalState.record.stages||[]; modalState.record.stages.push({level:modalState.record.stages.length+1,label:'مرحلة اعتماد جديدة',permissionKey:'',approverIds:[],approverSpecialties:[]}); render(); }
-function removeWorkflowStage(i){ if(!modalState?.isWorkflowModal)return; modalState.record.stages.splice(i,1); modalState.record.stages.forEach((x,j)=>x.level=j+1); render(); }
+function addWorkflowStage(){ if(!modalState?.isWorkflowModal)return; wfSyncStages(); modalState.record.stages=modalState.record.stages||[]; modalState.record.stages.push({level:modalState.record.stages.length+1,label:'مرحلة اعتماد جديدة',permissionKey:'',approverIds:[],approverSpecialties:[]}); render(); }
+function removeWorkflowStage(i){ if(!modalState?.isWorkflowModal)return; wfSyncStages(); modalState.record.stages.splice(i,1); modalState.record.stages.forEach((x,j)=>x.level=j+1); render(); }
 async function saveWorkflowEditor(){
   if(!modalState?.isWorkflowModal)return; const k=modalState.moduleKey, w=modalState.record;
-  document.querySelectorAll('.wf-label').forEach(el=>{const i=Number(el.dataset.i); if(w.stages[i])w.stages[i].label=el.value.trim()||('المرحلة '+(i+1));});
-  document.querySelectorAll('.wf-perm').forEach(el=>{const i=Number(el.dataset.i); if(w.stages[i])w.stages[i].permissionKey=el.value;});
+  wfSyncStages();
   w.enabled=true; w.requireSequential=true; w.stages=w.stages||[]; w.stages.forEach((x,i)=>x.level=i+1);
   if(!w.stages.length){alert('أضف مرحلة واحدة على الأقل.');return;}
   if(!Array.isArray(STATE.approvalWorkflows))STATE.approvalWorkflows=[];
