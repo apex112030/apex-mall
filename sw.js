@@ -1,4 +1,4 @@
-const CACHE = 'epms-v2-24';
+const CACHE = 'epms-v6-advanced-schedule';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
