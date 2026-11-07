@@ -5755,6 +5755,15 @@ function mainLayout(){
 function toggleSidebar(){ sidebarOpen = !sidebarOpen; render(); }
 function logout(){ clearFastSession(); currentUser = null; currentRoute='dashboard'; render(); }
 
+function setProjectFilter(key,value){
+  projectFilter[key]=value||'';
+  // عند تغيير المشروع في المستخلصات نعيد بناء قائمة المقاولين والعقود والنتائج
+  render();
+}
+function setExtractFilter(kind,value){
+  projectFilter['extracts_'+kind]=value||'';
+  render();
+}
 function goRoute(key){
   if(currentUser && !currentUser.isAdmin){
     const lvl=routePermissionLevel(key);
@@ -6461,6 +6470,30 @@ function moduleHTML(key, mod){
     else if(g) filtered=filtered.filter(r=>g[1].includes(r.type));
     const q=(projectFilter.suppliers_q||'').trim().toLowerCase();
     if(q) filtered=filtered.filter(r=>((r.name||'')+' '+(r.phone||'')+' '+(r.notes||'')).toLowerCase().includes(q));
+  }
+  if(key==='extracts'){
+    const q=String(projectFilter.extracts_q||'').trim().toLowerCase();
+    const contractor=String(projectFilter.extracts_contractor||'');
+    const activity=String(projectFilter.extracts_activity||'');
+    const pid=String(projectFilter.extracts_project||'');
+    // قوائم المقاولين مأخوذة من العقود، والعقود مرتبطة بالمشروع عند وجوده
+    const contractRows=(STATE.contracts||[]).filter(c=>!pid || String(c.projectId)===pid);
+    const contractors=[...new Set(contractRows.map(c=>c.contractor).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'ar'));
+    const activities=(mod.fields.find(f=>f.name==='activityType')||{}).options||[];
+    filterBar += `<select onchange="setExtractFilter('project',this.value)" title="المشروع">
+      <option value="">كل المشاريع</option>${allowedProjects.map(p=>`<option value="${escapeHtml(p.id)}" ${pid===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+    </select>`;
+    filterBar += `<select onchange="setExtractFilter('contractor',this.value)" title="المقاول">
+      <option value="">كل المقاولين</option>${contractors.map(c=>`<option value="${escapeHtml(c)}" ${contractor===String(c)?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+    </select>`;
+    filterBar += `<select onchange="setExtractFilter('activity',this.value)" title="نوع النشاط">
+      <option value="">كل الأنشطة</option>${activities.map(a=>`<option value="${escapeHtml(a)}" ${activity===String(a)?'selected':''}>${escapeHtml(a)}</option>`).join('')}
+    </select>`;
+    filterBar += `<input type="search" placeholder="بحث بالمقاول أو النشاط أو رقم العقد أو المستخلص..." value="${escapeHtml(projectFilter.extracts_q||'')}" oninput="setExtractFilter('q',this.value)" style="min-width:280px;">`;
+    if(pid) filtered=filtered.filter(r=>String(r.projectId||'')===pid);
+    if(contractor) filtered=filtered.filter(r=>String(r.contractor||'')===contractor);
+    if(activity) filtered=filtered.filter(r=>String(r.activityType||'')===activity);
+    if(q) filtered=filtered.filter(r=>[r.contractor,r.activityType,r.contractNumber,r.number,r.owner,r.workDescription].map(v=>String(v||'')).join(' ').toLowerCase().includes(q));
   }
   if(sortField){ filtered.sort((a,b)=>{ const av=a[sortField]||'', bv=b[sortField]||''; return (String(av).localeCompare(String(bv)))*(sortDir==='asc'?1:-1); }); }
 
