@@ -2242,23 +2242,33 @@ const MODULES = {
       {name:'contractor',label:'اسم المقاول',type:'select',options:[]},
       {name:'contractNumber',label:'رقم العقد',type:'select',options:[]},
       {name:'activityType',label:'نوع النشاط',type:'select',options:['أعمال مدنية','هيكل خرساني','مباني','تشطيبات','أعمال معمارية','كهرباء','ميكانيكا وتكييف','أعمال صحية','MEP','لاندسكيب','طرق وبنية تحتية','خوازيق وأساسات','أعمال معدنية','توريدات','أعمال أخرى']},
+      {name:'boqItemId',label:'بند العقد / BOQ المرتبط',type:'select',options:[]},
       {name:'workDescription',label:'وصف الأعمال / بنود المستخلص',type:'textarea'},
-      {name:'previousAmount',label:'إجمالي الأعمال السابقة (يحسب تلقائياً)',type:'number'},
-      {name:'currentAmount',label:'أعمال الفترة الحالية',type:'number'},
-      {name:'amount',label:'إجمالي الأعمال التراكمي (يحسب تلقائياً)',type:'number'},
-      {name:'advanceRecovery',label:'استرداد دفعة مقدمة',type:'number'},
-      {name:'retention',label:'ضمان / محتجز',type:'number'},
-      {name:'taxDeduction',label:'ضرائب وخصومات',type:'number'},
+      {name:'previousQuantity',label:'الكمية السابقة (تُحسب تلقائياً)',type:'number'},
+      {name:'currentQuantity',label:'الكمية المنفذة خلال الفترة الحالية',type:'number'},
+      {name:'cumulativeQuantity',label:'الكمية التراكمية (تُحسب تلقائياً)',type:'number'},
+      {name:'contractQuantity',label:'الكمية التعاقدية من BOQ (تُعرض تلقائياً)',type:'number'},
+      {name:'unitPrice',label:'سعر الوحدة من BOQ (يُعرض تلقائياً)',type:'number'},
+      {name:'previousAmount',label:'قيمة الأعمال السابقة (تُحسب تلقائياً)',type:'number'},
+      {name:'currentAmount',label:'قيمة أعمال الفترة الحالية (تُحسب تلقائياً)',type:'number'},
+      {name:'amount',label:'قيمة الأعمال التراكمية (تُحسب تلقائياً)',type:'number'},
+      {name:'advanceRecoveryRate',label:'نسبة استرداد الدفعة المقدمة %',type:'number'},
+      {name:'advanceRecovery',label:'استرداد دفعة مقدمة (قيمة)',type:'number'},
+      {name:'retentionRate',label:'نسبة المحتجز / ضمان الأعمال %',type:'number'},
+      {name:'retention',label:'قيمة المحتجز',type:'number'},
+      {name:'taxRate',label:'نسبة الخصم الضريبي %',type:'number'},
+      {name:'taxDeduction',label:'قيمة الخصم الضريبي',type:'number'},
       {name:'otherDeductions',label:'استقطاعات أخرى',type:'number'},
       {name:'deductions',label:'إجمالي الاستقطاعات (يحسب تلقائياً)',type:'number'},
-      {name:'vatAmount',label:'ضريبة القيمة المضافة المضافة',type:'number'},
+      {name:'vatRate',label:'نسبة ضريبة القيمة المضافة %',type:'number'},
+      {name:'vatAmount',label:'قيمة ضريبة القيمة المضافة',type:'number'},
       {name:'netAmount',label:'صافي المستخلص الحالي (يحسب تلقائياً)',type:'number'},
       {name:'paidAmount',label:'المبلغ المصروف فعلياً',type:'number'},
       {name:'remainingAmount',label:'المتبقي من المستخلص (يحسب تلقائياً)',type:'number'},
       {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','مقدم للعميل','مراجع','معتمد','مصروف جزئياً','مصروف','مرفوض']},
       {name:'notes',label:'ملاحظات وشروط الدفع',type:'textarea'}
     ],
-    columns:[['number','رقم المستخلص'],['date','التاريخ'],['owner','المالك'],['contractor','المقاول'],['amount','الإجمالي'],['netAmount','الصافي'],['status','الحالة']]
+    columns:[['number','رقم المستخلص'],['date','التاريخ'],['owner','المالك'],['contractor','المقاول'],['contractNumber','رقم العقد'],['activityType','نوع النشاط'],['itemCount','عدد بنود BOQ'],['currentQuantity','إجمالي كمية الفترة'],['cumulativeQuantity','الكمية التراكمية'],['currentAmount','قيمة الفترة'],['amount','قيمة تراكمية'],['netAmount','الصافي'],['status','الحالة']]
   },
   contracts:{
     title:'عقود المالك والمقاول', permKey:'contracts', hasProject:true,
@@ -2275,8 +2285,13 @@ const MODULES = {
       {name:'startDate',label:'تاريخ البدء',type:'date'},
       {name:'endDate',label:'تاريخ الانتهاء',type:'date'},
       {name:'duration',label:'مدة التنفيذ بالأيام',type:'number'},
-      {name:'advance',label:'الدفعة المقدمة',type:'number'},
-      {name:'retention',label:'نسبة / قيمة الاحتجاز',type:'text'},
+      {name:'advance',label:'قيمة الدفعة المقدمة بالعقد',type:'number'},
+      {name:'advanceRecoveryRate',label:'نسبة استرداد الدفعة المقدمة من كل مستخلص %',type:'number'},
+      {name:'advanceRecoveryCap',label:'الحد الأقصى لاسترداد الدفعة المقدمة (اختياري)',type:'number'},
+      {name:'retentionRate',label:'نسبة المحتجز / ضمان الأعمال %',type:'number'},
+      {name:'retentionCap',label:'الحد الأقصى للمحتجز (اختياري)',type:'number'},
+      {name:'taxRate',label:'نسبة الخصم الضريبي %',type:'number'},
+      {name:'vatRate',label:'نسبة ضريبة القيمة المضافة %',type:'number'},
       {name:'paymentTerms',label:'شروط الدفع والمستخلصات',type:'textarea'},
       {name:'clauses',label:'بنود وشروط العقد (يمكن تعديل المقترح)',type:'textarea'},
       {name:'attachmentsSchedule',label:'الملاحق والمستندات المرجعية (رسومات / BOQ / مواصفات)',type:'textarea'},
@@ -2371,6 +2386,10 @@ const MODULES = {
   boq:{
     title:'الكميات / BOQ', permKey:'boq', hasProject:true,
     fields:[
+      {name:'itemCode',label:'كود البند',type:'text'},
+      {name:'contractor',label:'المقاول',type:'select',options:[]},
+      {name:'contractNumber',label:'رقم العقد',type:'select',options:[]},
+      {name:'activityType',label:'نوع النشاط',type:'select',options:['أعمال مدنية','هيكل خرساني','مباني','تشطيبات','أعمال معمارية','كهرباء','ميكانيكا وتكييف','أعمال صحية','MEP','لاندسكيب','طرق وبنية تحتية','خوازيق وأساسات','أعمال معدنية','توريدات','أعمال أخرى']},
       {name:'itemName',label:'البند',type:'text',required:true},
       {name:'unit',label:'الوحدة',type:'text'},
       {name:'quantity',label:'الكمية',type:'number'},
@@ -5764,6 +5783,18 @@ function setExtractFilter(kind,value){
   projectFilter['extracts_'+kind]=value||'';
   render();
 }
+function setModuleSearch(key,value){
+  projectFilter[key+'_q']=value||'';
+  render();
+}
+function setSort(key,value){
+  projectFilter[key+'_sortField']=value||'';
+  render();
+}
+function setSortDir(key,value){
+  projectFilter[key+'_sortDir']=value||'desc';
+  render();
+}
 function goRoute(key){
   if(currentUser && !currentUser.isAdmin){
     const lvl=routePermissionLevel(key);
@@ -6440,6 +6471,11 @@ function moduleHTML(key, mod){
   const sortField = projectFilter[key+'_sortField'] || '';
   const sortDir = projectFilter[key+'_sortDir'] || 'desc';
   const dateFields = mod.fields.filter(f=>f.type==='date').map(f=>[f.name,fieldLabel(f.label)]);
+  const searchableFields = mod.fields.filter(f=>['text','select','number','date'].includes(f.type)).map(f=>f.name);
+  const moduleQ = String(projectFilter[key+'_q']||'').trim().toLowerCase();
+  if(moduleQ){
+    filtered = filtered.filter(r => searchableFields.map(f=>String(r[f]??'')).join(' ').toLowerCase().includes(moduleQ));
+  }
   if(mod.hasProject){
     const pid = projectFilter[key] || '';
     // إن كان الفلتر يشير لمشروع غير مسموح أعد ضبطه
@@ -6476,10 +6512,11 @@ function moduleHTML(key, mod){
     const contractor=String(projectFilter.extracts_contractor||'');
     const activity=String(projectFilter.extracts_activity||'');
     const pid=String(projectFilter.extracts_project||'');
-    // قوائم المقاولين مأخوذة من العقود، والعقود مرتبطة بالمشروع عند وجوده
+    // القوائم تُبنى من العقود والمستخلصات معاً، حتى لا تختفي أسماء المقاولين عند وجود مستخلصات قديمة أو عقود غير مكتملة الربط.
     const contractRows=(STATE.contracts||[]).filter(c=>!pid || String(c.projectId)===pid);
-    const contractors=[...new Set(contractRows.map(c=>c.contractor).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'ar'));
-    const activities=(mod.fields.find(f=>f.name==='activityType')||{}).options||[];
+    const extractRows=(STATE.extracts||[]).filter(r=>!pid || String(r.projectId)===pid);
+    const contractors=[...new Set(contractRows.map(c=>c.contractor).concat(extractRows.map(r=>r.contractor)).map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar',{numeric:true,sensitivity:'base'}));
+    const activities=[...new Set(((mod.fields.find(f=>f.name==='activityType')||{}).options||[]).concat(extractRows.map(r=>r.activityType||'')))].map(v=>String(v).trim()).filter(Boolean).sort((a,b)=>a.localeCompare(b,'ar',{numeric:true,sensitivity:'base'}));
     filterBar += `<select onchange="setExtractFilter('project',this.value)" title="المشروع">
       <option value="">كل المشاريع</option>${allowedProjects.map(p=>`<option value="${escapeHtml(p.id)}" ${pid===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
     </select>`;
@@ -6491,11 +6528,21 @@ function moduleHTML(key, mod){
     </select>`;
     filterBar += `<input type="search" placeholder="بحث بالمقاول أو النشاط أو رقم العقد أو المستخلص..." value="${escapeHtml(projectFilter.extracts_q||'')}" oninput="setExtractFilter('q',this.value)" style="min-width:280px;">`;
     if(pid) filtered=filtered.filter(r=>String(r.projectId||'')===pid);
-    if(contractor) filtered=filtered.filter(r=>String(r.contractor||'')===contractor);
-    if(activity) filtered=filtered.filter(r=>String(r.activityType||'')===activity);
+    if(contractor) filtered=filtered.filter(r=>String(r.contractor||'').trim()===contractor.trim());
+    if(activity) filtered=filtered.filter(r=>String(r.activityType||'').trim()===activity.trim());
     if(q) filtered=filtered.filter(r=>[r.contractor,r.activityType,r.contractNumber,r.number,r.owner,r.workDescription].map(v=>String(v||'')).join(' ').toLowerCase().includes(q));
   }
-  if(sortField){ filtered.sort((a,b)=>{ const av=a[sortField]||'', bv=b[sortField]||''; return (String(av).localeCompare(String(bv)))*(sortDir==='asc'?1:-1); }); }
+  if(sortField){
+    filtered.sort((a,b)=>{
+      const av=a[sortField]??'', bv=b[sortField]??'';
+      const an=Number(av), bn=Number(bv);
+      let cmp;
+      if(av!=='' && bv!=='' && Number.isFinite(an) && Number.isFinite(bn)) cmp=an-bn;
+      else if(/^\d{4}-\d{2}-\d{2}/.test(String(av)) && /^\d{4}-\d{2}-\d{2}/.test(String(bv))) cmp=String(av).localeCompare(String(bv));
+      else cmp=String(av).localeCompare(String(bv),'ar',{numeric:true,sensitivity:'base'});
+      return cmp*(sortDir==='asc'?1:-1);
+    });
+  }
 
   const rows = filtered.map((r,rowIndex)=>{
     const cells = mod.columns.map(([f,_])=>`<td>${formatCell(mod,f,r[f])}</td>`).join('');
@@ -6541,6 +6588,7 @@ function moduleHTML(key, mod){
   return `
     <div class="toolbar no-print">
       <div class="filters">${filterBar}
+        <input type="search" class="module-global-search" placeholder="بحث في ${escapeHtml(moduleTitle(key))}..." value="${escapeHtml(projectFilter[key+'_q']||'')}" oninput="setModuleSearch('${key}',this.value)" style="padding:8px 10px;border:1px solid #d6dbe3;border-radius:8px;min-width:220px;">
         ${dateFields.length?`<span class="sort-label">ترتيب البنود:</span><select onchange="setSort('${key}',this.value)"><option value="">بدون ترتيب زمني</option>${dateFields.map(([f,l])=>`<option value="${f}" ${sortField===f?'selected':''}>حسب ${l}</option>`).join('')}</select><select onchange="setSortDir('${key}',this.value)"><option value="desc" ${sortDir==='desc'?'selected':''}>الأحدث أولاً ↓</option><option value="asc" ${sortDir==='asc'?'selected':''}>الأقدم أولاً ↑</option></select><span class="sort-current">${sortField ? (sortDir==='desc'?'الأحدث ← الأقدم':'الأقدم ← الأحدث') : 'الترتيب الافتراضي'}</span>`:''}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -6991,7 +7039,7 @@ function modalHTML(){
   } else if(mod.hasProject){
     projField = `<div class="field full">
       <label>${t('المشروع','Project','Projet')}${mod.projectOptional?'':' *'}</label>
-      <select id="f_projectId" ${!editable?'disabled':''}>
+      <select id="f_projectId" onchange="if(modalState&&modalState.moduleKey==='extracts') refreshAllExtractItemRows()" ${!editable?'disabled':''}>
         ${mod.projectOptional?`<option value="" ${!record.projectId?'selected':''}>${LBL_NO_PROJECT}</option><option value="${PROJECT_PENDING}" ${record.projectId===PROJECT_PENDING?'selected':''}>${LBL_PENDING_PROJECT}</option>`:`<option value="">${t('— اختر مشروع —','— Select project —','— Choisir un projet —')}</option>`}
         ${visibleProjects().map(p=>`<option value="${p.id}" ${String(record.projectId||'')===String(p.id)?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
       </select>
@@ -7026,13 +7074,24 @@ function modalHTML(){
         const _cs=[...new Set((STATE.contracts||[]).filter(c=>!record.projectId||String(c.projectId)===String(record.projectId)).map(c=>c.contractor).filter(Boolean))];
         _opts=_cs.map(_optHTML).join(''); if(val&&!_cs.includes(val))_opts+=_optHTML(val);
       } else if(moduleKey==='extracts' && f.name==='contractNumber'){
-        const _ct=(STATE.contracts||[]).filter(c=>c.contractor===record.contractor&&(!record.projectId||String(c.projectId)===String(record.projectId)));
+        const _ct=(STATE.contracts||[]).filter(c=>c.contractor===record.contractor&&(!record.projectId||String(c.projectId)===String(record.projectId))&&c.status!=='ملغي');
+        const _nums=[...new Set(_ct.map(c=>c.contractNumber).filter(Boolean))];
+        _opts=_nums.map(_optHTML).join(''); if(val&&!_nums.includes(val))_opts+=_optHTML(val);
+      } else if(moduleKey==='extracts' && f.name==='boqItemId'){
+        const _b=(STATE.boq||[]).filter(b=>b.contractor===record.contractor&&String(b.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(b.projectId)===String(record.projectId)));
+        _opts=_b.map(b=>`<option value="${escapeHtml(String(b.id))}" ${String(val)===String(b.id)?'selected':''}>${escapeHtml((b.itemCode?b.itemCode+' — ':'')+(b.itemName||'')+(b.activityType?' — '+b.activityType:'')+(b.unit?' — '+b.unit:''))}</option>`).join('');
+        if(val&&!_b.some(b=>String(b.id)===String(val))) _opts+=_optHTML(val);
+      } else if(moduleKey==='boq' && f.name==='contractor'){
+        const _cs=[...new Set([...(STATE.contracts||[]).map(c=>c.contractor),...(STATE.suppliers||[]).filter(x=>/مقاول/.test(String(x.type||''))).map(x=>x.name)].filter(Boolean))];
+        _opts=_cs.map(_optHTML).join(''); if(val&&!_cs.includes(val))_opts+=_optHTML(val);
+      } else if(moduleKey==='boq' && f.name==='contractNumber'){
+        const _ct=(STATE.contracts||[]).filter(c=>c.contractor===record.contractor&&(!record.projectId||String(c.projectId)===String(record.projectId))&&c.status!=='ملغي');
         const _nums=[...new Set(_ct.map(c=>c.contractNumber).filter(Boolean))];
         _opts=_nums.map(_optHTML).join(''); if(val&&!_nums.includes(val))_opts+=_optHTML(val);
       } else {
         _opts=(f.name==='specialty'||f.name==='discipline'?specialtyList():f.options).map(_optHTML).join('');
       }
-      input = `<select id="f_${f.name}" ${moduleKey==='extracts'&&f.name==='contractor'?`onchange="extractContractorChanged()"`:''} ${moduleKey==='extracts'&&f.name==='contractNumber'?`onchange="suggestNextExtractNumber()"`:''} ${f.name==='contractType'?`onchange="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')"`:''} ${!editable?'disabled':''}>
+      input = `<select id="f_${f.name}" ${moduleKey==='extracts'&&f.name==='contractor'?`onchange="extractContractorChanged();refreshAllExtractItemRows()"`:''} ${moduleKey==='extracts'&&f.name==='contractNumber'?`onchange="extractContractChanged();refreshAllExtractItemRows()"`:''} ${moduleKey==='extracts'&&f.name==='boqItemId'?`onchange="extractBOQChanged()"`:''} ${moduleKey==='extracts'&&f.name==='currentQuantity'?`oninput="refreshExtractQuantityPreview()"`:''} ${moduleKey==='boq'&&f.name==='contractor'?`onchange="boqContractorChanged()"`:''} ${moduleKey==='boq'&&f.name==='contractNumber'?`onchange="boqContractChanged()"`:''} ${f.name==='contractType'?`onchange="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')"`:''} ${!editable?'disabled':''}>
         <option value="">—</option>
         ${_opts}
       </select>`;
@@ -7055,6 +7114,7 @@ function modalHTML(){
         ${sopTemplatePicker}${fieldsHTML}
         ${moduleKey==='projects'&&!isNew&&canView('projectResources')?`<div class="field full"><button type="button" class="btn btn-ghost" onclick="window.__epmsPrefillProjectId='${record.id}';modalState=null;currentRoute='projectResources';openNew('projectResources')">إضافة مهندسين / عمالة / معدات لهذا المشروع</button></div>`:''}
         ${['contracts','salesContracts'].includes(moduleKey)?`<div class="field full" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" onclick="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')">اقتراح بنود حسب نوع العقد</button><button type="button" class="btn btn-primary" onclick="printCurrentContract()">طباعة العقد / حفظ PDF</button></div>`:''}
+        ${moduleKey==='extracts'?extractItemsEditorHTML(record,editable):''}
         <div class="field full">
           <label>${t('المرفقات — يمكن إضافة أكثر من ملف','Attachments — multiple files allowed','Pièces jointes — plusieurs fichiers autorisés')}</label>
           ${editable ? `<input type="file" id="f_attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">` : ''}
@@ -7080,12 +7140,17 @@ function epmsCalcExtract(){
  const prior=(STATE.extracts||[]).filter(x=>x.id!==editId&&x.contractor===contractor&&String(x.contractNumber)===String(contractNo)&&(!projectId||String(x.projectId)===String(projectId))&&x.status!=='مرفوض');
  const previous=prior.reduce((a,x)=>a+(Number(x.currentAmount)||0),0);
  const current=epmsNum('currentAmount');
- const deductions=epmsNum('advanceRecovery')+epmsNum('retention')+epmsNum('taxDeduction')+epmsNum('otherDeductions');
- const net=current-deductions+epmsNum('vatAmount');
+ const calc=(rate,amount)=>{const r=epmsNum(rate);if(r>0){const v=current*r/100;epmsSet(amount,v);return v;}return epmsNum(amount);};
+ const advance=calc('advanceRecoveryRate','advanceRecovery');
+ const retention=calc('retentionRate','retention');
+ const tax=calc('taxRate','taxDeduction');
+ const vat=calc('vatRate','vatAmount');
+ const deductions=advance+retention+tax+epmsNum('otherDeductions');
+ const net=current-deductions+vat;
  const paid=epmsNum('paidAmount');
  epmsSet('previousAmount',previous);epmsSet('amount',previous+current);epmsSet('deductions',deductions);epmsSet('netAmount',net);epmsSet('remainingAmount',net-paid);
 }
-document.addEventListener('input',e=>{if(e.target&&/^f_(currentAmount|advanceRecovery|retention|taxDeduction|otherDeductions|vatAmount|paidAmount)$/.test(e.target.id||''))epmsCalcExtract();});
+document.addEventListener('input',e=>{if(e.target&&/^f_(currentAmount|advanceRecoveryRate|retentionRate|taxRate|vatRate|advanceRecovery|retention|taxDeduction|otherDeductions|vatAmount|paidAmount)$/.test(e.target.id||''))epmsCalcExtract();});
 document.addEventListener('change',e=>{if(e.target&&['f_contractor','f_contractNumber','f_projectId'].includes(e.target.id))setTimeout(epmsCalcExtract,0);});
 function epmsContractorStatement(){
  const rows=(STATE.extracts||[]).filter(x=>x.contractor&&x.contractNumber);
@@ -7119,23 +7184,146 @@ function epmsShowAccountingLedger(){
  const rows=a.map(e=>`<tr><td>${escapeHtml(e.date||'')}</td><td>${escapeHtml(e.contractor||'')}</td><td>${escapeHtml(e.contractNumber||'')}</td><td>${escapeHtml(e.description||'')}</td><td>${escapeHtml(e.debitAccount||'')}</td><td>${escapeHtml(e.creditAccount||'')}</td><td>${(Number(e.debit)||0).toFixed(2)}</td><td>${escapeHtml(e.status||'')}</td></tr>`).join('');
  const w=window.open('','_blank');if(!w){alert('اسمح بالنوافذ المنبثقة لعرض دفتر اليومية.');return;}w.document.write(`<html lang="ar" dir="rtl"><meta charset="utf-8"><title>دفتر يومية المقاولين</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:7px;text-align:center}th{background:#eee}</style><h2>دفتر يومية المقاولين</h2><table><tr><th>التاريخ</th><th>المقاول</th><th>العقد</th><th>البيان</th><th>مدين</th><th>دائن</th><th>المبلغ</th><th>الحالة</th></tr>${rows||'<tr><td colspan="8">لا توجد قيود</td></tr>'}</table><p>إجمالي المدين: ${a.reduce((s,e)=>s+(Number(e.debit)||0),0).toFixed(2)} | إجمالي الدائن: ${a.reduce((s,e)=>s+(Number(e.credit)||0),0).toFixed(2)}</p><button onclick="print()">طباعة</button></html>`);w.document.close();
 }
+function contractorNamesForProject(projectId){
+ const names=[...(STATE.contracts||[]).filter(c=>!projectId||String(c.projectId)===String(projectId)).map(c=>c.contractor),...(STATE.suppliers||[]).filter(x=>/مقاول/.test(String(x.type||''))).map(x=>x.name)];
+ return [...new Set(names.filter(Boolean))];
+}
+function contractsFor(contractor,projectId){
+ return (STATE.contracts||[]).filter(c=>c.contractor===contractor&&(!projectId||String(c.projectId)===String(projectId))&&c.status!=='ملغي');
+}
+function boqFor(contractor,contractNo,projectId){
+ return (STATE.boq||[]).filter(b=>b.contractor===contractor&&String(b.contractNumber)===String(contractNo)&&(!projectId||String(b.projectId)===String(projectId)));
+}
 function extractContractorChanged(){
  const contractor=document.getElementById('f_contractor')?.value||'';
  const projectId=document.getElementById('f_projectId')?.value||'';
  const sel=document.getElementById('f_contractNumber'); if(!sel)return;
- const contracts=(STATE.contracts||[]).filter(c=>c.contractor===contractor&&(!projectId||String(c.projectId)===String(projectId)));
+ const contracts=contractsFor(contractor,projectId);
  const current=sel.value; sel.innerHTML='<option value="">—</option>'+[...new Set(contracts.map(c=>c.contractNumber).filter(Boolean))].map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
  if(contracts.some(c=>c.contractNumber===current))sel.value=current;
+ extractContractChanged();
+}
+function extractContractChanged(){
+ const contractor=document.getElementById('f_contractor')?.value||'';
+ const contractNo=document.getElementById('f_contractNumber')?.value||'';
+ const projectId=document.getElementById('f_projectId')?.value||'';
+ const boqSel=document.getElementById('f_boqItemId');
+ if(boqSel){ const items=boqFor(contractor,contractNo,projectId); const current=boqSel.value; boqSel.innerHTML='<option value="">— اختر بند العقد / BOQ —</option>'+items.map(b=>`<option value="${escapeHtml(String(b.id))}">${escapeHtml((b.itemCode?b.itemCode+' — ':'')+(b.itemName||'')+(b.activityType?' — '+b.activityType:'')+(b.unit?' — '+b.unit:''))}</option>`).join(''); if(items.some(b=>String(b.id)===String(current)))boqSel.value=current; }
  suggestNextExtractNumber();
+ const linked=contracts.find(c=>String(c.contractNumber)===String(contractNo));
+ const cv=document.getElementById('f_contractValue'); if(cv&&linked)cv.value=linked.value||''; refreshExtractQuantityPreview();
+}
+function extractBOQChanged(){
+ const id=document.getElementById('f_boqItemId')?.value||''; const b=(STATE.boq||[]).find(x=>String(x.id)===String(id));
+ if(!b)return;
+ const act=document.getElementById('f_activityType'); if(act&&b.activityType)act.value=b.activityType;
+ const desc=document.getElementById('f_workDescription'); if(desc&&b.itemName&&!desc.value)desc.value=b.itemName;
+ const cq=document.getElementById('f_contractQuantity'); if(cq)cq.value=Number(b.quantity)||0;
+ const up=document.getElementById('f_unitPrice'); if(up)up.value=Number(b.unitPrice)||0;
+ refreshExtractQuantityPreview();
+}
+function refreshExtractQuantityPreview(){
+ const contractor=document.getElementById('f_contractor')?.value||''; const contractNo=document.getElementById('f_contractNumber')?.value||''; const projectId=document.getElementById('f_projectId')?.value||''; const boqId=document.getElementById('f_boqItemId')?.value||'';
+ if(!contractor||!contractNo||!boqId)return;
+ const linked=(STATE.contracts||[]).find(c=>c.contractor===contractor&&String(c.contractNumber)===String(contractNo)&&(!projectId||String(c.projectId)===String(projectId))&&c.status!=='ملغي');
+ if(!linked)return;
+ const prev=(STATE.extracts||[]).filter(x=>x.id!==modalState?.record?.id&&x.contractor===contractor&&String(x.contractNumber)===String(contractNo)&&String(x.contractId||'')===String(linked.id)&&(!projectId||String(x.projectId)===String(projectId))&&String(x.boqItemId||'')===String(boqId)&&x.status!=='مرفوض').reduce((a,x)=>a+(Number(x.currentQuantity)||0),0);
+ const cur=Number(document.getElementById('f_currentQuantity')?.value)||0; const cum=prev+cur; const up=Number(document.getElementById('f_unitPrice')?.value)||0;
+ const pq=document.getElementById('f_previousQuantity'); if(pq)pq.value=prev; const cm=document.getElementById('f_cumulativeQuantity'); if(cm)cm.value=cum; const ca=document.getElementById('f_currentAmount'); if(ca)ca.value=(cur*up).toFixed(2); const am=document.getElementById('f_amount'); if(am)am.value=(cum*up).toFixed(2);
 }
 function suggestNextExtractNumber(){
  const contractor=document.getElementById('f_contractor')?.value||'';
  const contractNo=document.getElementById('f_contractNumber')?.value||'';
  const projectId=document.getElementById('f_projectId')?.value||'';
  const numberEl=document.getElementById('f_number'); if(!numberEl||!contractor||!contractNo)return;
- const nums=(STATE.extracts||[]).filter(x=>x.contractor===contractor&&String(x.contractNumber)===String(contractNo)&&(!projectId||String(x.projectId)===String(projectId))).map(x=>String(x.number||''));
+ const linked=(STATE.contracts||[]).find(c=>c.contractor===contractor&&String(c.contractNumber)===String(contractNo)&&(!projectId||String(c.projectId)===String(projectId)));
+ const contractId=linked?.id||'';
+ const nums=(STATE.extracts||[]).filter(x=>x.id!==modalState?.record?.id&&x.contractor===contractor&&String(x.contractNumber)===String(contractNo)&&(contractId?String(x.contractId)===String(contractId):true)&&(!projectId||String(x.projectId)===String(projectId))&&x.status!=='مرفوض').map(x=>String(x.number||''));
  let max=0; nums.forEach(n=>{const m=n.match(/(\d+)\s*$/);if(m)max=Math.max(max,parseInt(m[1],10));});
- if(!numberEl.value||numberEl.dataset.auto==='1'){numberEl.value=String(max+1);numberEl.dataset.auto='1';}
+ const next=String(max+1);
+ if(!numberEl.value||numberEl.dataset.auto==='1'||(modalState?.isNew&&numberEl.dataset.auto!=='0')){numberEl.value=next;numberEl.dataset.auto='1';}
+}
+function boqContractorChanged(){
+ const contractor=document.getElementById('f_contractor')?.value||''; const projectId=document.getElementById('f_projectId')?.value||''; const sel=document.getElementById('f_contractNumber'); if(!sel)return;
+ const current=sel.value; const cs=contractsFor(contractor,projectId); sel.innerHTML='<option value="">—</option>'+[...new Set(cs.map(c=>c.contractNumber).filter(Boolean))].map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''); if(cs.some(c=>c.contractNumber===current))sel.value=current;
+}
+function boqContractChanged(){ /* contract is now the primary link; validation occurs on save */ }
+async function extractItemsSource(record){
+  if(Array.isArray(record&&record.items)&&record.items.length) return record.items.map(x=>({...x}));
+  if(record&&record.boqItemId) return [{boqItemId:String(record.boqItemId),currentQuantity:Number(record.currentQuantity)||0}];
+  return [{boqItemId:'',currentQuantity:0}];
+}
+function extractBoqOptions(contractor,contractNumber,projectId,selected){
+  const bs=(STATE.boq||[]).filter(b=>b.contractor===contractor&&String(b.contractNumber)===String(contractNumber)&&(!projectId||String(b.projectId)===String(projectId)));
+  return '<option value="">— اختر بند BOQ —</option>'+bs.map(b=>`<option value="${escapeHtml(String(b.id))}" ${String(selected)===String(b.id)?'selected':''}>${escapeHtml((b.itemCode?b.itemCode+' — ':'')+(b.itemName||'')+(b.activityType?' — '+b.activityType:'')+(b.unit?' — '+b.unit:''))}</option>`).join('');
+}
+function extractItemsEditorHTML(record,editable){
+  const items=extractItemsSource(record); const projectId=record.projectId||''; const contractor=record.contractor||''; const contract=record.contractNumber||'';
+  return `<div class="field full" style="margin-top:10px;border:2px solid #d9e8f5;border-radius:12px;padding:12px;background:#fbfdff">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>بنود المستخلص</b><div class="section-note" style="margin:4px 0 0">يمكن إضافة عدة بنود BOQ داخل نفس المستخلص. الكميات والأسعار السابقة والحالية والتراكمية تُحسب لكل بند تلقائياً.</div></div>${editable?'<button type="button" class="btn btn-primary btn-sm" onclick="addExtractItemRow()">+ إضافة بند</button>':''}</div>
+    <div id="extractItemsEditor" style="margin-top:10px">${items.map((it,i)=>extractItemRowHTML(it,i,projectId,contractor,contract,editable)).join('')}</div>
+    <div id="extractItemsSummary" class="section-note" style="margin-top:10px;font-weight:700">سيتم حساب إجمالي بنود المستخلص تلقائياً عند الحفظ.</div>
+  </div>`;
+}
+function extractItemRowHTML(it,i,projectId,contractor,contract,editable){
+  const boq=(STATE.boq||[]).find(b=>String(b.id)===String(it.boqItemId||''));
+  const cq=boq?Number(boq.quantity)||0:0, up=boq?Number(boq.unitPrice)||0:0;
+  return `<div class="extract-item-row" data-index="${i}" style="border:1px solid #e2eaf2;border-radius:10px;padding:10px;margin:8px 0;background:#fff">
+    <div style="display:grid;grid-template-columns:2.4fr 1.1fr 1fr 1fr 1fr 1fr auto;gap:7px;align-items:end">
+      <div><label>بند BOQ</label><select class="ei-boq" data-i="${i}" onchange="refreshExtractItemRow(${i})" ${!editable?'disabled':''}>${extractBoqOptions(contractor,contract,projectId,it.boqItemId||'')}</select></div>
+      <div><label>الكمية السابقة</label><input class="ei-prev" data-i="${i}" type="number" step="any" value="${escapeHtml(it.previousQuantity??'0')}" readonly></div>
+      <div><label>كمية الفترة</label><input class="ei-current" data-i="${i}" type="number" step="any" min="0" value="${escapeHtml(it.currentQuantity??'0')}" oninput="refreshExtractItemRow(${i})" ${!editable?'disabled':''}></div>
+      <div><label>الكمية التراكمية</label><input class="ei-cum" data-i="${i}" type="number" step="any" value="0" readonly></div>
+      <div><label>كمية العقد</label><input class="ei-contractqty" data-i="${i}" type="number" step="any" value="${cq}" readonly></div>
+      <div><label>سعر الوحدة</label><input class="ei-unit" data-i="${i}" type="number" step="any" value="${up}" readonly></div>
+      <div>${editable?`<button type="button" class="btn btn-danger btn-sm" onclick="removeExtractItemRow(${i})">حذف</button>`:''}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;margin-top:7px">
+      <div><label>قيمة السابقة</label><input class="ei-prevamt" data-i="${i}" type="number" step="any" value="0" readonly></div>
+      <div><label>قيمة الفترة الحالية</label><input class="ei-currentamt" data-i="${i}" type="number" step="any" value="0" readonly></div>
+      <div><label>القيمة التراكمية</label><input class="ei-amt" data-i="${i}" type="number" step="any" value="0" readonly></div>
+      <div><label>الوحدة / النشاط</label><input class="ei-meta" data-i="${i}" type="text" value="${escapeHtml((boq?.unit||'')+(boq?.activityType?' / '+boq.activityType:''))}" readonly></div>
+    </div>
+  </div>`;
+}
+function currentExtractItemRows(){
+  return [...document.querySelectorAll('#extractItemsEditor .extract-item-row')].map((row,i)=>({
+    boqItemId:row.querySelector('.ei-boq')?.value||'', currentQuantity:Number(row.querySelector('.ei-current')?.value)||0,
+    previousQuantity:Number(row.querySelector('.ei-prev')?.value)||0, cumulativeQuantity:Number(row.querySelector('.ei-cum')?.value)||0,
+    contractQuantity:Number(row.querySelector('.ei-contractqty')?.value)||0, unitPrice:Number(row.querySelector('.ei-unit')?.value)||0,
+    previousAmount:Number(row.querySelector('.ei-prevamt')?.value)||0, currentAmount:Number(row.querySelector('.ei-currentamt')?.value)||0,
+    amount:Number(row.querySelector('.ei-amt')?.value)||0
+  }));
+}
+function addExtractItemRow(){
+  const ed=document.getElementById('extractItemsEditor'); if(!ed)return;
+  const rows=currentExtractItemRows(); rows.push({boqItemId:'',currentQuantity:0});
+  const projectId=document.getElementById('f_projectId')?.value||''; const contractor=document.getElementById('f_contractor')?.value||''; const contract=document.getElementById('f_contractNumber')?.value||'';
+  ed.innerHTML=rows.map((it,i)=>extractItemRowHTML(it,i,projectId,contractor,contract,true)).join(''); rows.forEach((_,i)=>refreshExtractItemRow(i));
+}
+function removeExtractItemRow(i){
+  const rows=currentExtractItemRows(); if(rows.length<=1){alert('يجب أن يحتوي المستخلص على بند واحد على الأقل.');return;} rows.splice(i,1);
+  const ed=document.getElementById('extractItemsEditor'); const projectId=document.getElementById('f_projectId')?.value||''; const contractor=document.getElementById('f_contractor')?.value||''; const contract=document.getElementById('f_contractNumber')?.value||'';
+  ed.innerHTML=rows.map((it,j)=>extractItemRowHTML(it,j,projectId,contractor,contract,true)).join(''); rows.forEach((_,j)=>refreshExtractItemRow(j));
+}
+function refreshExtractItemRow(i){
+  const row=document.querySelector(`#extractItemsEditor .extract-item-row[data-index="${i}"]`); if(!row)return;
+  const boqId=row.querySelector('.ei-boq')?.value||''; const boq=(STATE.boq||[]).find(b=>String(b.id)===String(boqId));
+  const contractor=document.getElementById('f_contractor')?.value||''; const contract=document.getElementById('f_contractNumber')?.value||''; const projectId=document.getElementById('f_projectId')?.value||'';
+  const prev=(STATE.extracts||[]).filter(x=>x.id!==modalState?.record?.id&&x.contractor===contractor&&String(x.contractNumber)===String(contract)&&(!projectId||String(x.projectId)===String(projectId))&&x.status!=='مرفوض').reduce((sum,x)=>{
+    if(Array.isArray(x.items)) return sum+x.items.filter(it=>String(it.boqItemId)===String(boqId)).reduce((a,it)=>a+(Number(it.currentQuantity)||0),0);
+    return sum+(String(x.boqItemId)===String(boqId)?Number(x.currentQuantity)||0:0);
+  },0);
+  const cur=Math.max(0,Number(row.querySelector('.ei-current')?.value)||0), cq=boq?Number(boq.quantity)||0:0, up=boq?Number(boq.unitPrice)||0:0, cum=prev+cur;
+  const set=(sel,v)=>{const e=row.querySelector(sel);if(e)e.value=Number(v||0).toFixed(3).replace(/\.000$/,'');};
+  set('.ei-prev',prev);set('.ei-cum',cum);set('.ei-contractqty',cq);set('.ei-unit',up);set('.ei-prevamt',prev*up);set('.ei-currentamt',cur*up);set('.ei-amt',cum*up);
+  const meta=row.querySelector('.ei-meta');if(meta)meta.value=(boq?.unit||'')+(boq?.activityType?' / '+boq.activityType:'');
+  const sum=[...document.querySelectorAll('#extractItemsEditor .ei-currentamt')].reduce((a,e)=>a+(Number(e.value)||0),0); const sm=document.getElementById('extractItemsSummary');if(sm)sm.textContent='إجمالي قيمة بنود الفترة الحالية: '+sum.toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function refreshAllExtractItemRows(){
+  const contractor=document.getElementById('f_contractor')?.value||'', contract=document.getElementById('f_contractNumber')?.value||'', projectId=document.getElementById('f_projectId')?.value||'';
+  const rows=currentExtractItemRows(); const ed=document.getElementById('extractItemsEditor'); if(!ed)return;
+  ed.innerHTML=rows.map((it,i)=>extractItemRowHTML(it,i,projectId,contractor,contract,true)).join(''); rows.forEach((_,i)=>refreshExtractItemRow(i));
 }
 async function saveRecord(){
   const {moduleKey, record, isNew} = modalState;
@@ -7182,19 +7370,70 @@ async function saveRecord(){
     record.approvalStatus=vals.length?(allApproved?'معتمد':anyRejected?'مرفوض':'قيد الاعتماد'):'بدون اعتماد';
   }
   if(moduleKey==='extracts'){
-    const linked=(STATE.contracts||[]).find(c=>c.contractor===record.contractor&&String(c.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(c.projectId)===String(record.projectId)));
+    const linked=(STATE.contracts||[]).find(c=>c.contractor===record.contractor&&String(c.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(c.projectId)===String(record.projectId))&&c.status!=='ملغي');
     if(!record.contractor||!record.contractNumber){alert('يرجى اختيار المقاول ورقم العقد من العقود المسجلة.');return;}
     if(!linked){alert('العقد المختار غير مرتبط بالمقاول أو المشروع المحدد.');return;}
     record.contractId=linked.id;
-    const previous=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(x.projectId)===String(record.projectId)));
-    record.previousAmount=previous.filter(x=>x.status!=='مرفوض').reduce((a,x)=>a+(Number(x.currentAmount)||0),0);
-    record.amount=record.previousAmount+(Number(record.currentAmount)||0);
+    const itemEls=[...document.querySelectorAll('#extractItemsEditor .extract-item-row')];
+    if(!itemEls.length){alert('يجب إضافة بند BOQ واحد على الأقل إلى المستخلص.');return;}
+    const items=[]; const used=new Set();
+    for(const row of itemEls){
+      const boqId=row.querySelector('.ei-boq')?.value||''; const cur=Math.max(0,Number(row.querySelector('.ei-current')?.value)||0);
+      if(!boqId){alert('يوجد بند BOQ غير مختار في المستخلص.');return;}
+      if(used.has(String(boqId))){alert('لا يمكن تكرار نفس بند BOQ داخل المستخلص نفسه.');return;} used.add(String(boqId));
+      const boq=(STATE.boq||[]).find(b=>String(b.id)===String(boqId));
+      if(!boq||boq.contractor!==record.contractor||String(boq.contractNumber)!==String(record.contractNumber)|| (record.projectId && String(boq.projectId)!==String(record.projectId))){alert('بند BOQ المختار لا يتبع العقد أو المقاول أو المشروع المحدد.');return;}
+      const previous=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&String(x.contractId||'')===String(linked.id)&&(!record.projectId||String(x.projectId)===String(record.projectId))&&x.status!=='مرفوض').reduce((sum,x)=>{
+        if(Array.isArray(x.items)) return sum+x.items.filter(it=>String(it.boqItemId)===String(boqId)).reduce((a,it)=>a+(Number(it.currentQuantity)||0),0);
+        return sum+(String(x.boqItemId)===String(boqId)?Number(x.currentQuantity)||0:0);
+      },0);
+      const contractQty=Number(boq.quantity)||0, unitPrice=Number(boq.unitPrice)||0, cum=previous+cur;
+      if(contractQty>0 && cum>contractQty){const extra=cum-contractQty;if(!confirm('البند '+(boq.itemCode||boq.itemName||boqId)+' سيتجاوز كمية BOQ التعاقدية بمقدار '+extra+'. هل تريد الاستمرار؟'))return;}
+      items.push({boqItemId:String(boqId),boqItemName:boq.itemName||'',boqItemCode:boq.itemCode||'',unit:boq.unit||'',activityType:boq.activityType||'',previousQuantity:previous,currentQuantity:cur,cumulativeQuantity:cum,contractQuantity:contractQty,unitPrice:unitPrice,previousAmount:previous*unitPrice,currentAmount:cur*unitPrice,amount:cum*unitPrice});
+    }
+    record.items=items;
+    record.itemCount=items.length;
+    record.boqItemId=items[0].boqItemId; record.boqItemName=items[0].boqItemName; record.boqItemCode=items[0].boqItemCode; record.unit=items[0].unit; record.activityType=record.activityType||items[0].activityType;
+    record.previousQuantity=items.reduce((a,x)=>a+x.previousQuantity,0);
+    record.currentQuantity=items.reduce((a,x)=>a+x.currentQuantity,0);
+    record.cumulativeQuantity=items.reduce((a,x)=>a+x.cumulativeQuantity,0);
+    record.contractQuantity=items.reduce((a,x)=>a+x.contractQuantity,0);
+    record.previousAmount=items.reduce((a,x)=>a+x.previousAmount,0);
+    record.currentAmount=items.reduce((a,x)=>a+x.currentAmount,0);
+    record.amount=items.reduce((a,x)=>a+x.amount,0);
+    // Load commercial/financial terms from the linked contract as the default source.
+    // Preserve an explicit certificate override only when the user has deliberately entered one.
+    if(linked){
+      const contractRates=['advanceRecoveryRate','retentionRate','taxRate','vatRate'];
+      contractRates.forEach(k=>{const v=linked[k]; if(v!==undefined&&v!==null&&v!=='' ) record[k]=Number(v)||0;});
+      record.contractAdvanceAmount=Number(linked.advance)||0;
+      record.contractAdvanceRecoveryCap=Number(linked.advanceRecoveryCap)||0;
+      record.contractRetentionCap=Number(linked.retentionCap)||0;
+      record.financialTermsSource='العقد المرتبط';
+    }
+    // Recalculate certificate deductions and VAT from the current-period BOQ valuation.
+    const gross=Number(record.currentAmount)||0;
+    const pct=(name)=>Math.max(0,Number(record[name])||0);
+    if(pct('advanceRecoveryRate')>0)record.advanceRecovery=gross*pct('advanceRecoveryRate')/100;
+    if(pct('retentionRate')>0)record.retention=gross*pct('retentionRate')/100;
+    if(pct('taxRate')>0)record.taxDeduction=gross*pct('taxRate')/100;
+    if(pct('vatRate')>0)record.vatAmount=gross*pct('vatRate')/100;
+    if(Number(record.contractAdvanceRecoveryCap)>0) record.advanceRecovery=Math.min(Number(record.advanceRecovery)||0,Number(record.contractAdvanceRecoveryCap));
+    if(Number(record.contractRetentionCap)>0) record.retention=Math.min(Number(record.retention)||0,Number(record.contractRetentionCap));
     record.deductions=(Number(record.advanceRecovery)||0)+(Number(record.retention)||0)+(Number(record.taxDeduction)||0)+(Number(record.otherDeductions)||0);
-    record.netAmount=(Number(record.currentAmount)||0)-record.deductions+(Number(record.vatAmount)||0);
+    record.netAmount=gross-record.deductions+(Number(record.vatAmount)||0);
     record.remainingAmount=record.netAmount-(Number(record.paidAmount)||0);
-    const nums=previous.map(x=>parseInt(String(x.number||'').match(/(\d+)\s*$/)?.[1]||'0',10)).filter(Number.isFinite);
-    const expected=nums.length?Math.max(...nums)+1:1;
+    record.financialBreakdown={termsSource:record.financialTermsSource||'إدخال المستخلص',contractAdvanceAmount:Number(record.contractAdvanceAmount)||0,advanceRecoveryRate:pct('advanceRecoveryRate'),retentionRate:pct('retentionRate'),taxRate:pct('taxRate'),vatRate:pct('vatRate'),grossCurrent:gross,advanceRecovery:Number(record.advanceRecovery)||0,retention:Number(record.retention)||0,taxDeduction:Number(record.taxDeduction)||0,otherDeductions:Number(record.otherDeductions)||0,totalDeductions:record.deductions,vatAmount:Number(record.vatAmount)||0,netAmount:record.netAmount,paidAmount:Number(record.paidAmount)||0,remainingAmount:record.remainingAmount};
+    const previousForNumber=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&String(x.contractId||'')===String(linked.id)&&(!record.projectId||String(x.projectId)===String(record.projectId))&&x.status!=='مرفوض');
+    const nums=previousForNumber.map(x=>parseInt(String(x.number||'').match(/(\d+)\s*$/)?.[1]||'0',10)).filter(Number.isFinite); const expected=nums.length?Math.max(...nums)+1:1;
     if(isNew && String(record.number)!==String(expected) && !confirm('رقم المستخلص التالي حسب سجل هذا المقاول والعقد هو '+expected+'. هل تريد الاحتفاظ بالرقم الذي أدخلته؟')) record.number=String(expected);
+  }
+  if(moduleKey==='boq'){
+    if(record.contractor&&record.contractNumber){
+      const c=(STATE.contracts||[]).find(x=>x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(x.projectId)===String(record.projectId))&&x.status!=='ملغي');
+      if(!c){alert('لا يمكن حفظ بند BOQ: المقاول ورقم العقد غير مرتبطين بعقد مسجل في المشروع.');return;}
+      record.contractId=c.id;
+    } else if(record.contractor||record.contractNumber){ alert('يرجى اختيار المقاول ورقم العقد المرتبطين ببند BOQ.'); return; }
   }
   if(moduleSupportsApproval(moduleKey)){
     // أي سجل جديد أو معدّل بعد اعتماد سابق يعود لقيد الاعتماد
