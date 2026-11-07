@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>EPMS V10 — منظومة الاعتماد المركزية | شركة بناة مصر (الحج مجدي) للمقاولات متعددة المهام</title>
+<title>EPMS V13 — ربط حسابات المقاولين بالمحاسبة | شركة بناة مصر (الحج مجدي) للمقاولات متعددة المهام</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Zain:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -2239,15 +2239,23 @@ const MODULES = {
       {name:'periodFrom',label:'عن الفترة من',type:'date'},
       {name:'periodTo',label:'إلى',type:'date'},
       {name:'owner',label:'اسم المالك',type:'text'},
-      {name:'contractor',label:'اسم المقاول',type:'text'},
-      {name:'contractNumber',label:'رقم العقد',type:'text'},
+      {name:'contractor',label:'اسم المقاول',type:'select',options:[]},
+      {name:'contractNumber',label:'رقم العقد',type:'select',options:[]},
+      {name:'activityType',label:'نوع النشاط',type:'select',options:['أعمال مدنية','هيكل خرساني','مباني','تشطيبات','أعمال معمارية','كهرباء','ميكانيكا وتكييف','أعمال صحية','MEP','لاندسكيب','طرق وبنية تحتية','خوازيق وأساسات','أعمال معدنية','توريدات','أعمال أخرى']},
       {name:'workDescription',label:'وصف الأعمال / بنود المستخلص',type:'textarea'},
-      {name:'previousAmount',label:'إجمالي الأعمال السابقة',type:'number'},
+      {name:'previousAmount',label:'إجمالي الأعمال السابقة (يحسب تلقائياً)',type:'number'},
       {name:'currentAmount',label:'أعمال الفترة الحالية',type:'number'},
-      {name:'amount',label:'إجمالي الأعمال حتى تاريخه',type:'number'},
-      {name:'deductions',label:'إجمالي الاستقطاعات',type:'number'},
-      {name:'netAmount',label:'صافي المستخلص المستحق',type:'number'},
-      {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','مقدم للعميل','مراجع','معتمد','مصروف','مرفوض']},
+      {name:'amount',label:'إجمالي الأعمال التراكمي (يحسب تلقائياً)',type:'number'},
+      {name:'advanceRecovery',label:'استرداد دفعة مقدمة',type:'number'},
+      {name:'retention',label:'ضمان / محتجز',type:'number'},
+      {name:'taxDeduction',label:'ضرائب وخصومات',type:'number'},
+      {name:'otherDeductions',label:'استقطاعات أخرى',type:'number'},
+      {name:'deductions',label:'إجمالي الاستقطاعات (يحسب تلقائياً)',type:'number'},
+      {name:'vatAmount',label:'ضريبة القيمة المضافة المضافة',type:'number'},
+      {name:'netAmount',label:'صافي المستخلص الحالي (يحسب تلقائياً)',type:'number'},
+      {name:'paidAmount',label:'المبلغ المصروف فعلياً',type:'number'},
+      {name:'remainingAmount',label:'المتبقي من المستخلص (يحسب تلقائياً)',type:'number'},
+      {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','مقدم للعميل','مراجع','معتمد','مصروف جزئياً','مصروف','مرفوض']},
       {name:'notes',label:'ملاحظات وشروط الدفع',type:'textarea'}
     ],
     columns:[['number','رقم المستخلص'],['date','التاريخ'],['owner','المالك'],['contractor','المقاول'],['amount','الإجمالي'],['netAmount','الصافي'],['status','الحالة']]
@@ -6981,10 +6989,17 @@ function modalHTML(){
       if(Array.isArray(f.groups)){
         _opts=f.groups.map(g=>`<optgroup label="${escapeHtml(g[0])}">${g[1].map(_optHTML).join('')}</optgroup>`).join('');
         if(val && !f.options.includes(val)) _opts+=`<optgroup label="قيم سابقة">${_optHTML(val)}</optgroup>`;
+      } else if(moduleKey==='extracts' && f.name==='contractor'){
+        const _cs=[...new Set((STATE.contracts||[]).filter(c=>!record.projectId||String(c.projectId)===String(record.projectId)).map(c=>c.contractor).filter(Boolean))];
+        _opts=_cs.map(_optHTML).join(''); if(val&&!_cs.includes(val))_opts+=_optHTML(val);
+      } else if(moduleKey==='extracts' && f.name==='contractNumber'){
+        const _ct=(STATE.contracts||[]).filter(c=>c.contractor===record.contractor&&(!record.projectId||String(c.projectId)===String(record.projectId)));
+        const _nums=[...new Set(_ct.map(c=>c.contractNumber).filter(Boolean))];
+        _opts=_nums.map(_optHTML).join(''); if(val&&!_nums.includes(val))_opts+=_optHTML(val);
       } else {
         _opts=(f.name==='specialty'||f.name==='discipline'?specialtyList():f.options).map(_optHTML).join('');
       }
-      input = `<select id="f_${f.name}" ${f.name==='contractType'?`onchange="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')"`:''} ${!editable?'disabled':''}>
+      input = `<select id="f_${f.name}" ${moduleKey==='extracts'&&f.name==='contractor'?`onchange="extractContractorChanged()"`:''} ${moduleKey==='extracts'&&f.name==='contractNumber'?`onchange="suggestNextExtractNumber()"`:''} ${f.name==='contractType'?`onchange="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')"`:''} ${!editable?'disabled':''}>
         <option value="">—</option>
         ${_opts}
       </select>`;
@@ -7022,6 +7037,73 @@ function modalHTML(){
   </div>`;
 }
 
+function epmsNum(id){const e=document.getElementById('f_'+id);const n=Number(e?.value||0);return Number.isFinite(n)?n:0;}
+function epmsSet(id,v){const e=document.getElementById('f_'+id);if(e)e.value=(Math.round((Number(v)||0)*100)/100).toFixed(2);}
+function epmsCalcExtract(){
+ const contractor=document.getElementById('f_contractor')?.value||'';
+ const contractNo=document.getElementById('f_contractNumber')?.value||'';
+ const projectId=document.getElementById('f_projectId')?.value||'';
+ const editId=(window.modalState&&modalState.record&&modalState.record.id)||'';
+ const prior=(STATE.extracts||[]).filter(x=>x.id!==editId&&x.contractor===contractor&&String(x.contractNumber)===String(contractNo)&&(!projectId||String(x.projectId)===String(projectId))&&x.status!=='مرفوض');
+ const previous=prior.reduce((a,x)=>a+(Number(x.currentAmount)||0),0);
+ const current=epmsNum('currentAmount');
+ const deductions=epmsNum('advanceRecovery')+epmsNum('retention')+epmsNum('taxDeduction')+epmsNum('otherDeductions');
+ const net=current-deductions+epmsNum('vatAmount');
+ const paid=epmsNum('paidAmount');
+ epmsSet('previousAmount',previous);epmsSet('amount',previous+current);epmsSet('deductions',deductions);epmsSet('netAmount',net);epmsSet('remainingAmount',net-paid);
+}
+document.addEventListener('input',e=>{if(e.target&&/^f_(currentAmount|advanceRecovery|retention|taxDeduction|otherDeductions|vatAmount|paidAmount)$/.test(e.target.id||''))epmsCalcExtract();});
+document.addEventListener('change',e=>{if(e.target&&['f_contractor','f_contractNumber','f_projectId'].includes(e.target.id))setTimeout(epmsCalcExtract,0);});
+function epmsContractorStatement(){
+ const rows=(STATE.extracts||[]).filter(x=>x.contractor&&x.contractNumber);
+ const key=(x)=>[x.contractor,x.contractNumber,x.projectId||''].join(' | ');
+ const groups={};rows.forEach(x=>{const k=key(x);(groups[k]||(groups[k]=[])).push(x);});
+ const lines=Object.entries(groups).map(([k,a])=>{const gross=a.reduce((v,x)=>v+(Number(x.currentAmount)||0),0);const net=a.reduce((v,x)=>v+(Number(x.netAmount)||0),0);const paid=a.reduce((v,x)=>v+(Number(x.paidAmount)||0),0);return `<tr><td>${escapeHtml(k)}</td><td>${a.length}</td><td>${gross.toFixed(2)}</td><td>${net.toFixed(2)}</td><td>${paid.toFixed(2)}</td><td>${(net-paid).toFixed(2)}</td></tr>`;}).join('');
+ const w=window.open('','_blank');if(!w){alert('اسمح بالنوافذ المنبثقة لعرض كشف الحساب.');return;}w.document.write(`<html lang="ar" dir="rtl"><meta charset="utf-8"><title>كشف حساب المقاولين</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:8px;text-align:center}th{background:#eee}h2{text-align:center}</style><h2>كشف حساب المقاولين والعقود</h2><p><button onclick="window.opener.epmsPostContractorAccounting()">ترحيل المستخلصات المعتمدة إلى الحسابات</button> <button onclick="window.opener.epmsShowAccountingLedger()">عرض دفتر يومية المقاولين</button></p><table><thead><tr><th>المقاول | العقد | المشروع</th><th>عدد المستخلصات</th><th>إجمالي الأعمال</th><th>صافي المستخلصات</th><th>المصروف</th><th>الرصيد المستحق</th></tr></thead><tbody>${lines||'<tr><td colspan="6">لا توجد بيانات</td></tr>'}</tbody></table><p>تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}</p><button onclick="print()">طباعة</button></html>`);w.document.close();
+}
+function epmsLedgerKey(x){return String(x.id||x._id||x.number||'')+'|'+String(x.contractor||'')+'|'+String(x.contractNumber||'');}
+async function epmsPostContractorAccounting(){
+ const approved=(STATE.extracts||[]).filter(x=>/معتمد|approved|مكتمل/i.test(String(x.status||x.approvalStatus||x.state||'')));
+ if(!approved.length){alert('لا توجد مستخلصات معتمدة قابلة للترحيل. تأكد من حالة الاعتماد أولاً.');return;}
+ const entries=Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
+ let added=0;
+ approved.forEach(x=>{
+  const key=epmsLedgerKey(x); const gross=Number(x.currentAmount)||0; const net=Number(x.netAmount)||0; const paid=Number(x.paidAmount)||0;
+  if(gross>0&&!entries.some(e=>e.sourceKey===key&&e.kind==='extract')){
+   entries.push({id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),date:x.date||new Date().toISOString().slice(0,10),sourceKey:key,sourceType:'extract',kind:'extract',contractor:x.contractor,contractNumber:x.contractNumber,projectId:x.projectId||'',description:'إثبات مستخلص مقاول رقم '+(x.number||''),debitAccount:'أعمال تحت التنفيذ / تكلفة المشروع',creditAccount:'مستحقات المقاولين',debit:gross,credit:gross,status:'مرحّل'});added++;
+  }
+  if(paid>0&&!entries.some(e=>e.sourceKey===key&&e.kind==='payment')){
+   entries.push({id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),date:x.paymentDate||x.date||new Date().toISOString().slice(0,10),sourceKey:key,sourceType:'extract',kind:'payment',contractor:x.contractor,contractNumber:x.contractNumber,projectId:x.projectId||'',description:'صرف مستخلص مقاول رقم '+(x.number||''),debitAccount:'مستحقات المقاولين',creditAccount:'البنك / الخزينة',debit:paid,credit:paid,status:'مرحّل'});added++;
+  }
+ });
+ STATE.accountingEntries=entries;
+ try{await dbSet('accountingEntries',entries);}catch(e){alert('تعذر حفظ قيود اليومية في قاعدة البيانات: '+(e.message||e));return;}
+ alert('تم ترحيل '+added+' قيد/قيود جديدة. القيود السابقة لم تُكرر.');
+ epmsShowAccountingLedger();
+}
+function epmsShowAccountingLedger(){
+ const a=Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
+ const rows=a.map(e=>`<tr><td>${escapeHtml(e.date||'')}</td><td>${escapeHtml(e.contractor||'')}</td><td>${escapeHtml(e.contractNumber||'')}</td><td>${escapeHtml(e.description||'')}</td><td>${escapeHtml(e.debitAccount||'')}</td><td>${escapeHtml(e.creditAccount||'')}</td><td>${(Number(e.debit)||0).toFixed(2)}</td><td>${escapeHtml(e.status||'')}</td></tr>`).join('');
+ const w=window.open('','_blank');if(!w){alert('اسمح بالنوافذ المنبثقة لعرض دفتر اليومية.');return;}w.document.write(`<html lang="ar" dir="rtl"><meta charset="utf-8"><title>دفتر يومية المقاولين</title><style>body{font-family:Arial;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:7px;text-align:center}th{background:#eee}</style><h2>دفتر يومية المقاولين</h2><table><tr><th>التاريخ</th><th>المقاول</th><th>العقد</th><th>البيان</th><th>مدين</th><th>دائن</th><th>المبلغ</th><th>الحالة</th></tr>${rows||'<tr><td colspan="8">لا توجد قيود</td></tr>'}</table><p>إجمالي المدين: ${a.reduce((s,e)=>s+(Number(e.debit)||0),0).toFixed(2)} | إجمالي الدائن: ${a.reduce((s,e)=>s+(Number(e.credit)||0),0).toFixed(2)}</p><button onclick="print()">طباعة</button></html>`);w.document.close();
+}
+function extractContractorChanged(){
+ const contractor=document.getElementById('f_contractor')?.value||'';
+ const projectId=document.getElementById('f_projectId')?.value||'';
+ const sel=document.getElementById('f_contractNumber'); if(!sel)return;
+ const contracts=(STATE.contracts||[]).filter(c=>c.contractor===contractor&&(!projectId||String(c.projectId)===String(projectId)));
+ const current=sel.value; sel.innerHTML='<option value="">—</option>'+[...new Set(contracts.map(c=>c.contractNumber).filter(Boolean))].map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+ if(contracts.some(c=>c.contractNumber===current))sel.value=current;
+ suggestNextExtractNumber();
+}
+function suggestNextExtractNumber(){
+ const contractor=document.getElementById('f_contractor')?.value||'';
+ const contractNo=document.getElementById('f_contractNumber')?.value||'';
+ const projectId=document.getElementById('f_projectId')?.value||'';
+ const numberEl=document.getElementById('f_number'); if(!numberEl||!contractor||!contractNo)return;
+ const nums=(STATE.extracts||[]).filter(x=>x.contractor===contractor&&String(x.contractNumber)===String(contractNo)&&(!projectId||String(x.projectId)===String(projectId))).map(x=>String(x.number||''));
+ let max=0; nums.forEach(n=>{const m=n.match(/(\d+)\s*$/);if(m)max=Math.max(max,parseInt(m[1],10));});
+ if(!numberEl.value||numberEl.dataset.auto==='1'){numberEl.value=String(max+1);numberEl.dataset.auto='1';}
+}
 async function saveRecord(){
   const {moduleKey, record, isNew} = modalState;
   const mod = MODULES[moduleKey];
@@ -7065,6 +7147,21 @@ async function saveRecord(){
     const allApproved=vals.length>0 && vals.every(sec=>record.incidentApprovals[sec]&&record.incidentApprovals[sec].status==='معتمد');
     const anyRejected=vals.some(sec=>record.incidentApprovals[sec]&&record.incidentApprovals[sec].status==='مرفوض');
     record.approvalStatus=vals.length?(allApproved?'معتمد':anyRejected?'مرفوض':'قيد الاعتماد'):'بدون اعتماد';
+  }
+  if(moduleKey==='extracts'){
+    const linked=(STATE.contracts||[]).find(c=>c.contractor===record.contractor&&String(c.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(c.projectId)===String(record.projectId)));
+    if(!record.contractor||!record.contractNumber){alert('يرجى اختيار المقاول ورقم العقد من العقود المسجلة.');return;}
+    if(!linked){alert('العقد المختار غير مرتبط بالمقاول أو المشروع المحدد.');return;}
+    record.contractId=linked.id;
+    const previous=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(x.projectId)===String(record.projectId)));
+    record.previousAmount=previous.filter(x=>x.status!=='مرفوض').reduce((a,x)=>a+(Number(x.currentAmount)||0),0);
+    record.amount=record.previousAmount+(Number(record.currentAmount)||0);
+    record.deductions=(Number(record.advanceRecovery)||0)+(Number(record.retention)||0)+(Number(record.taxDeduction)||0)+(Number(record.otherDeductions)||0);
+    record.netAmount=(Number(record.currentAmount)||0)-record.deductions+(Number(record.vatAmount)||0);
+    record.remainingAmount=record.netAmount-(Number(record.paidAmount)||0);
+    const nums=previous.map(x=>parseInt(String(x.number||'').match(/(\d+)\s*$/)?.[1]||'0',10)).filter(Number.isFinite);
+    const expected=nums.length?Math.max(...nums)+1:1;
+    if(isNew && String(record.number)!==String(expected) && !confirm('رقم المستخلص التالي حسب سجل هذا المقاول والعقد هو '+expected+'. هل تريد الاحتفاظ بالرقم الذي أدخلته؟')) record.number=String(expected);
   }
   if(moduleSupportsApproval(moduleKey)){
     // أي سجل جديد أو معدّل بعد اعتماد سابق يعود لقيد الاعتماد
