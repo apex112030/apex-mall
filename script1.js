@@ -452,24 +452,30 @@ function integrationSettingsHTML(){
     ['extracts','finance','المستخلصات ↔ الماليات'],
     ['invoices','accounting','الفواتير ↔ المحاسبة'],
     ['invoices','finance','الفواتير ↔ الماليات'],
-    ['boq','contracts','BOQ ↔ العقود (يدوي فقط عند الطلب)'],
-    ['boq','extracts','BOQ ↔ المستخلصات (يدوي فقط عند الطلب)'],
-    ['boq','accounting','BOQ ↔ المحاسبة (يدوي فقط عند الطلب)'],
-    ['boq','finance','BOQ ↔ الماليات (يدوي فقط عند الطلب)'],
-    ['boq','purchases','BOQ ↔ المشتريات']
+    ['boq','contracts','BOQ ↔ العقود — اختياري'],
+    ['boq','extracts','BOQ ↔ المستخلصات — اختياري'],
+    ['boq','accounting','BOQ ↔ المحاسبة — اختياري'],
+    ['boq','finance','BOQ ↔ الماليات — اختياري'],
+    ['boq','purchases','BOQ ↔ المشتريات — غير مفعّل افتراضياً']
   ];
   return `<div class="hero"><h1>⚙️ إعدادات الربط بين الأقسام</h1>
-    <p>تحكم مركزي في العلاقات بين BOQ والعقود والمستخلصات والمحاسبة والماليات والفواتير والمشتريات. لا يتم إنشاء ربط تلقائي إلا للعلاقات المفعّلة هنا.</p></div>
-    <div class="panel"><div class="section-note">
-      <b>القاعدة الحالية:</b> BOQ مستقل افتراضياً عن المشتريات والمحاسبة والماليات والمستخلصات والعقود.
-      ويمكن فتح الربط من داخل BOQ بالزر الخاص بكل قسم فقط إذا سمحت هذه الإعدادات.
-      <br><b>الربط المالي الافتراضي:</b> المستخلصات ↔ المحاسبة، المستخلصات ↔ الماليات، الفواتير ↔ المحاسبة، الفواتير ↔ الماليات.
+    <p>تحكم مركزي في كل علاقة بين الأقسام. التفعيل هنا يسمح بالربط، بينما الربط الفعلي لبند BOQ يتم من أزرار الربط الموجودة داخل البند نفسه.</p></div>
+    <div class="panel">
+      <div class="section-note">
+        <b>الإعداد الافتراضي:</b> BOQ مستقل عن المشتريات والعقود والمستخلصات والمحاسبة والماليات.
+        <br><b>الربط المالي الافتراضي:</b> المستخلصات ↔ المحاسبة، المستخلصات ↔ الماليات، الفواتير ↔ المحاسبة، الفواتير ↔ الماليات.
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+        <button type="button" class="btn btn-primary btn-sm" onclick="setAllIntegrations(true)">تفعيل جميع الروابط المسموح بها</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="setAllIntegrations(false)">تعطيل جميع الروابط الاختيارية</button>
+        <button type="button" class="btn btn-amber btn-sm" onclick="restoreDefaultIntegrations()">استعادة الإعداد الافتراضي</button>
+      </div>
+      <table><thead><tr><th>العلاقة</th><th>الحالة</th><th>التحكم</th></tr></thead><tbody>
+      ${rows.map(([a,b,l])=>`<tr><td><b>${escapeHtml(l)}</b></td><td>${isIntegrationEnabled(a,b)?'<span class="badge ok">مفعّل</span>':'<span class="badge">غير مفعّل</span>'}</td><td><button type="button" class="btn ${isIntegrationEnabled(a,b)?'btn-danger':'btn-primary'} btn-sm" onclick="toggleIntegration('${a}','${b}')">${isIntegrationEnabled(a,b)?'تعطيل':'تفعيل'}</button></td></tr>`).join('')}
+      </tbody></table>
     </div>
-    <table><thead><tr><th>العلاقة</th><th>الحالة</th><th>التحكم</th></tr></thead><tbody>
-    ${rows.map(([a,b,l])=>`<tr><td><b>${escapeHtml(l)}</b></td><td>${isIntegrationEnabled(a,b)?'<span class="badge ok">مفعّل</span>':'<span class="badge">غير مفعّل</span>'}</td><td><button type="button" class="btn ${isIntegrationEnabled(a,b)?'btn-danger':'btn-primary'} btn-sm" onclick="toggleIntegration('${a}','${b}')">${isIntegrationEnabled(a,b)?'تعطيل':'تفعيل'}</button></td></tr>`).join('')}
-    </tbody></table></div>
     <div class="panel"><div class="panel-title"><span>الترقيم التلقائي</span></div>
-      <div class="section-note">عند اختيار/إدخال اسم المقاول في العقود أو الفواتير أو المستخلصات، يبحث النظام عن آخر رقم مستخدم لهذا المقاول ويقترح الرقم التالي تلقائياً. لا يتم تغيير رقم سجل موجود.</div>
+      <div class="section-note">عند اختيار المقاول في العقد أو الفاتورة أو المستخلص، يبحث النظام عن آخر رقم لهذا المقاول ويقترح الرقم التالي. أرقام السجلات القديمة لا تتغير.</div>
       <div class="form-grid">
         ${[['contracts','العقود'],['extracts','المستخلصات'],['invoices','الفواتير']].map(([k,l])=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" ${s.numbering[k]?'checked':''} onchange="toggleNumberingSetting('${k}',this.checked)"> ${l} — ترقيم تلقائي</label>`).join('')}
         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" ${s.numbering.perContractor?'checked':''} onchange="toggleNumberingSetting('perContractor',this.checked)"> التسلسل مستقل لكل مقاول</label>
@@ -478,20 +484,34 @@ function integrationSettingsHTML(){
 }
 async function toggleIntegration(a,b){
   if(!currentUser?.isAdmin){alert('هذه الإعدادات لمدير النظام فقط.');return;}
-  setIntegrationEnabled(a,b,!isIntegrationEnabled(a,b));
-  await dbSet('integrationSettings',getIntegrationSettings());
+  const old=isIntegrationEnabled(a,b); setIntegrationEnabled(a,b,!old);
+  const ok=await dbSet('integrationSettings',getIntegrationSettings());
+  if(ok===false){setIntegrationEnabled(a,b,old);return;}
   render();
+}
+async function setAllIntegrations(on){
+  if(!currentUser?.isAdmin){alert('هذه الإعدادات لمدير النظام فقط.');return;}
+  const s=getIntegrationSettings();
+  ['extracts|accounting','extracts|finance','invoices|accounting','invoices|finance','boq|contracts','boq|extracts','boq|accounting','boq|finance','boq|purchases'].forEach(k=>s.links[k]=!!on);
+  if(!on){ s.links['boq|purchases']=false; }
+  const ok=await dbSet('integrationSettings',s); if(ok===false)return; render();
+}
+async function restoreDefaultIntegrations(){
+  if(!currentUser?.isAdmin){alert('هذه الإعدادات لمدير النظام فقط.');return;}
+  STATE.integrationSettings=JSON.parse(JSON.stringify(DEFAULT_INTEGRATION_SETTINGS));
+  const ok=await dbSet('integrationSettings',STATE.integrationSettings); if(ok===false)return; render();
 }
 async function toggleNumberingSetting(k,on){
   if(!currentUser?.isAdmin)return;
-  getIntegrationSettings().numbering[k]=!!on;
-  await dbSet('integrationSettings',getIntegrationSettings());
+  const old=!!getIntegrationSettings().numbering[k]; getIntegrationSettings().numbering[k]=!!on;
+  const ok=await dbSet('integrationSettings',getIntegrationSettings()); if(ok===false)getIntegrationSettings().numbering[k]=old;
+  render();
 }
 function nextNumberForContractor(moduleKey, contractor, projectId, fieldName){
   const s=getIntegrationSettings();
   if(!contractor || !s.numbering[moduleKey]) return '';
   const arr=Array.isArray(STATE[moduleKey])?STATE[moduleKey]:[];
-  const rows=arr.filter(r=>String(r.contractor||r.party||'').trim()===String(contractor).trim() && (!s.numbering.perContractor || !projectId || String(r.projectId||'')===String(projectId)));
+  const rows=arr.filter(r=>String(r.contractor||r.party||'').trim()===String(contractor).trim());
   let max=0;
   rows.forEach(r=>{const m=String(r[fieldName]||'').match(/(\d+)\s*$/); if(m) max=Math.max(max,parseInt(m[1],10)||0);});
   return String(max+1);
@@ -6310,7 +6330,7 @@ function moduleHTML(key, mod){
       <td class="no-print"><div class="row-actions">
         ${key==='surveillanceCameras'&&r.streamUrl?`<button class="link-btn" onclick="openCameraStream('${r.id}')">📹 فتح البث</button>`:''}
         ${key==='boq'?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px;">
-          ${[['contracts','العقود','▧'],['extracts','المستخلصات','▣'],['accounting','المحاسبة','¤'],['finance','الماليات','₤']].map(([tk,tl,ic])=>isIntegrationEnabled('boq',tk)?`<button class="link-btn" onclick="openBoqLinkModal('${r.id}','${tk}')">${ic} ${tl}</button>`:`<button class="link-btn" disabled title="فعّل الربط من إعدادات ربط الأقسام">${ic} ${tl}</button>`).join('')}
+          ${[['contracts','العقود','▧'],['extracts','المستخلصات','▣'],['accounting','المحاسبة','¤'],['finance','الماليات','₤']].map(([tk,tl,ic])=>`<button type="button" class="link-btn ${isIntegrationEnabled('boq',tk)?'':'danger'}" onclick="activateBoqLink('${r.id}','${tk}')">${ic} ${isIntegrationEnabled('boq',tk)?'فتح '+tl:'تفعيل '+tl}</button>`).join('')}
         </div>`:''}
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?t('تعديل','Edit','Modifier'):t('عرض','View','Voir')}</button>
         <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ ${t('طباعة','Print','Imprimer')}</button>
@@ -6709,17 +6729,26 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<
 
 /* ---------- Modal (create/edit record) ---------- */
 window.__epmsPrefillProjectId='';
-function openNew(key){ if(!canEdit((MODULES[key]||{}).permKey||key)||!routeActionAllowed('add',key)){alert('ليس لديك صلاحية إضافة سجل في هذا البند.');return;} modalState = {moduleKey:key, record:{...(key==='projectResources'&&window.__epmsPrefillProjectId?{projectId:window.__epmsPrefillProjectId}:{})}, isNew:true}; window.__epmsPrefillProjectId=''; render(); }
+function mountRecordModal(){
+  const old=document.getElementById('epmsRecordModalRoot'); if(old) old.remove();
+  const root=document.createElement('div'); root.id='epmsRecordModalRoot'; root.innerHTML=modalHTML(); document.body.appendChild(root);
+}
+function openNew(key){
+  if(!canEdit((MODULES[key]||{}).permKey||key)||!routeActionAllowed('add',key)){alert('ليس لديك صلاحية إضافة سجل في هذا البند.');return;}
+  modalState = {moduleKey:key, record:{...(key==='projectResources'&&window.__epmsPrefillProjectId?{projectId:window.__epmsPrefillProjectId}:{})}, isNew:true};
+  window.__epmsPrefillProjectId=''; mountRecordModal();
+}
 function openEdit(key, id){
   if(!routeActionAllowed('view',key)){alert('ليس لديك صلاحية مشاهدة هذا البند.');return;}
-  const rec = (STATE[key]||[]).find(r=>r.id===id);
+  const rec = (STATE[key]||[]).find(r=>String(r.id)===String(id));
   if(!rec){ alert('السجل غير موجود'); return; }
   if(key==='projects' && !canAccessProject(rec.id)){ alert('هذا المشروع غير ضمن صلاحياتك.'); return; }
   if(rec.projectId && !canAccessProject(rec.projectId)){ alert('هذا المشروع غير ضمن صلاحياتك.'); return; }
-  modalState = {moduleKey:key, record:{...rec}, isNew:false};
-  render();
+  // فتح نموذج التعديل مباشرة دون إعادة رسم البرنامج بالكامل، لمنع توقف الشاشة أو فقد موضع التمرير.
+  modalState = {moduleKey:key, record:JSON.parse(JSON.stringify(rec)), isNew:false};
+  mountRecordModal();
 }
-function closeModal(){ modalState = null; render(); }
+function closeModal(){ const root=document.getElementById('epmsRecordModalRoot'); if(root) root.remove(); modalState = null; }
 
 const CONTRACT_CLAUSE_TEMPLATES={
  'مقاولة هيكل خرساني':['نطاق الأعمال والرسومات المعتمدة','مستندات العقد وترتيب الأولوية','الموقع وتسليم جبهة العمل','البرنامج الزمني ومراحل التنفيذ','المواد والاختبارات وضبط الجودة','العمالة والمعدات والسلامة','المستخلصات والدفعات والاحتجاز','التغييرات والأعمال الإضافية','التأخير وغرامات التأخير وفق القانون','الاستلام الابتدائي والنهائي','الضمان وإصلاح العيوب','التأمينات والتراخيص','القوة القاهرة','إنهاء العقد وآثاره','تسوية النزاعات والقانون الواجب التطبيق'],
@@ -7096,6 +7125,7 @@ async function saveRecord(){
     }
   }
   await dbSet(moduleKey, STATE[moduleKey]);
+  const _mr=document.getElementById('epmsRecordModalRoot'); if(_mr) _mr.remove();
   modalState = null;
   render();
 }
@@ -7123,6 +7153,15 @@ function boqLinkModalHTML(){
     <div class="section-note">البند: <b>${escapeHtml(r.itemName||'—')}</b> · المشروع: <b>${escapeHtml(projectName(r.projectId)||'—')}</b></div>
     <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">إلغاء</button><button class="btn btn-primary" onclick="saveBoqLink()">حفظ الربط</button></div>
   </div></div>`;
+}
+async function activateBoqLink(boqId,target){
+  if(!currentUser?.isAdmin && !canEdit('boq')){alert('ليس لديك صلاحية تعديل BOQ.');return;}
+  if(!isIntegrationEnabled('boq',target)){
+    setIntegrationEnabled('boq',target,true);
+    const ok=await dbSet('integrationSettings',getIntegrationSettings());
+    if(ok===false){setIntegrationEnabled('boq',target,false);return;}
+  }
+  openBoqLinkModal(boqId,target);
 }
 function openBoqLinkModal(boqId,target){
   if(!isIntegrationEnabled('boq',target)){alert('هذا الربط غير مفعّل من إعدادات ربط الأقسام.');return;}
