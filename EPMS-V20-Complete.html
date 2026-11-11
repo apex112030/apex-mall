@@ -813,7 +813,7 @@ let STATE = {
   warehouseItems:[], warehouseTx:[], finance:[], extracts:[], contracts:[],
   company:[], planning:[], siteExecution:[], engineersList:[], labor:[], equipment:[],
   boq:[], purchases:[], suppliers:[], deliveries:[], warehousesLoc:[], invoices:[],
-  accounting:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
+  accounting:[], disbursements:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
   claims:[], risks:[], specialties:[], handoverRequests:[], handoverInspections:[], handoverPunchList:[], handoverApprovals:[], handoverCloseouts:[], finalHandover:[], postHandoverMaint:[], execReports:[], approvalPolicies:[], approvalWorkflows:[],
   consultantExtracts:[], consultantDirectives:[], contractorRequests:[], jobTasks:[],
   hrEmployees:[], hrOrganization:[], hrRecruitment:[], hrAttendance:[], hrLeaves:[], hrTraining:[], hrEvaluations:[], hrPayroll:[], hrProjectAssignments:[], hrDisciplinary:[], hrExit:[], engArchDesign:[], engStructDesign:[], engElecDesign:[], engMechDesign:[], engPlumbingDesign:[], engCivilInfraDesign:[], engLandscapeDesign:[], engInteriorDesign:[], engShopDrawings:[], engAsBuilt:[], engDesignReview:[], engDesignRfi:[], engSpecs:[], engBim:[], procSopLibrary:[], procWorkStart:[], procPreStart:[], procMethodStatement:[], procSiteReception:[], procDesignHandover:[], procSupervisionStart:[], procDisciplineReceive:[], procStageGate:[], procPartialHandover:[], procSnagClose:[], procLessons:[],
@@ -2409,7 +2409,7 @@ const MODULES = {
       {name:'sourceId',label:'معرّف المصدر',type:'text'},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['date','التاريخ'],['type','النوع'],['category','البند'],['contractor','المقاول'],['extractNumber','المستخلص'],['amount','المبلغ'],['sourceType','المصدر']]
+    columns:[['date','التاريخ'],['type','النوع'],['category','البند'],['contractor','المقاول'],['extractNumber','المستخلص'],['amount','المبلغ'],['sourceType','المصدر'],['approvalStatus','الاعتماد'],['disburseStatus','قرار الصرف']]
   },
   consultantExtracts:{
     title:'مستخلص الاستشاري', permKey:'consultantExtracts', hasProject:true,
@@ -2449,6 +2449,7 @@ const MODULES = {
       {name:'linkToContract',label:'ربط المستخلص بعقد؟',type:'select',options:['نعم — مربوط بعقد','لا — بدون عقد']},
       {name:'contractor',label:'اسم المقاول',type:'select',options:[]},
       {name:'contractNumber',label:'رقم العقد',type:'select',options:[]},
+      {name:'contractorNoContract',label:'اسم المقاول (مستخلص بدون عقد)',type:'text'},
       {name:'activityType',label:'نوع النشاط',type:'select',options:['أعمال مدنية','هيكل خرساني','مباني','تشطيبات','أعمال معمارية','كهرباء','ميكانيكا وتكييف','أعمال صحية','MEP','لاندسكيب','طرق وبنية تحتية','خوازيق وأساسات','أعمال معدنية','توريدات','أعمال أخرى']},
       {name:'boqItemId',label:'بند العقد / BOQ المرتبط',type:'select',options:[]},
       {name:'workDescription',label:'وصف الأعمال / بنود المستخلص',type:'textarea'},
@@ -2703,7 +2704,22 @@ const MODULES = {
       {name:'sourceId',label:'معرّف المصدر',type:'text'},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['date','التاريخ'],['entryType','النوع'],['account','الحساب'],['contractor','المقاول'],['extractNumber','المستخلص'],['amount','المبلغ'],['sourceType','المصدر']]
+    columns:[['date','التاريخ'],['entryType','النوع'],['account','الحساب'],['contractor','المقاول'],['extractNumber','المستخلص'],['amount','المبلغ'],['sourceType','المصدر'],['approvalStatus','الاعتماد'],['disburseStatus','قرار الصرف']]
+  },
+  disbursements:{
+    title:'الصرف', permKey:'accounting', hasProject:true,
+    fields:[
+      {name:'payee',label:'المستفيد (مقاول / مورد)',type:'text'},
+      {name:'amount',label:'المبلغ المستحق للصرف',type:'number',required:true},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'contractNumber',label:'رقم العقد',type:'text'},
+      {name:'extractNumber',label:'رقم المستخلص',type:'text'},
+      {name:'sourceType',label:'المصدر',type:'select',options:['يدوي','مستخلص مقاول','عقد','BOQ','بند زيادة','مشتريات','توريد','فاتورة']},
+      {name:'disburseStatus',label:'قرار الصرف',type:'select',options:['بانتظار القرار','صرف','عدم الصرف']},
+      {name:'paidDate',label:'تاريخ الصرف',type:'date'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['date','التاريخ'],['payee','المستفيد'],['extractNumber','المستخلص'],['amount','المبلغ'],['sourceType','المصدر'],['disburseStatus','قرار الصرف']]
   },
   qaqc:{
     title:'QA/QC والجودة', permKey:'qaqc', hasProject:true,
@@ -3730,6 +3746,7 @@ const NAV = [
   {key:'invoices',label:'الفواتير',module:'invoices'},
   {key:'finance',label:'الماليات',module:'finance'},
   {key:'accounting',label:'المحاسبة',module:'accounting'},
+  {key:'disbursements',label:'الصرف',module:'disbursements'},
   {key:'labor',label:'العمالة',module:'labor'},
   {key:'hrEmployees',label:'الموارد البشرية — العاملون والموظفون',module:'hrEmployees'},
   {key:'hrOrganization',label:'الموارد البشرية — الهيكل والفروع',module:'hrOrganization'},
@@ -4118,6 +4135,7 @@ function isRecordPendingApproval(moduleKey,record){
 }
 function canApproveRecord(moduleKey,record){
   if(!record) return false;
+  if(moduleKey==='disbursements') return false;
   if(workflowEnabled(moduleKey)){
     const st=workflowStageForRecord(moduleKey,record);
     return !!st && record.approvalStatus!=='معتمد' && workflowCanUserApproveStage(st,currentUser);
@@ -4158,7 +4176,9 @@ async function approveRecord(moduleKey,id,decision='اعتماد'){
     const note=decision==='اعتماد'?'':(prompt('اكتب سبب الرفض / الإعادة للمُنشئ:','')||'').trim();
     if(decision!=='اعتماد' && !note){alert('يجب كتابة سبب الرفض.');return;}
     const result=await centralDecideApproval(moduleKey,rec,decision,note);
-    if(result.ok){ pushEditHistory(rec,decision==='اعتماد'?'اعتماد — '+(rec.approvalStage||'مرحلة'):'رفض وإعادة'); await dbSet(moduleKey,STATE[moduleKey]); render(); }
+    if(result.ok){ pushEditHistory(rec,decision==='اعتماد'?'اعتماد — '+(rec.approvalStage||'مرحلة'):'رفض وإعادة'); await dbSet(moduleKey,STATE[moduleKey]);
+      if(result.final && result.status==='معتمد'){ try{ await epmsOnRecordApproved(moduleKey,rec); }catch(e){ console.error('chain',e); } }
+      render(); }
     else alert(result.reason||'تعذر تنفيذ القرار.');
     return;
   }
@@ -4195,6 +4215,7 @@ async function approveRecord(moduleKey,id,decision='اعتماد'){
   }
   pushEditHistory(rec, approved?'اعتماد':'رفض');
   await dbSet(moduleKey,STATE[moduleKey]);
+  if(approved){ try{ await epmsOnRecordApproved(moduleKey,rec); }catch(e){ console.error('chain',e); } }
   render();
 }
 /** الوحدات التي يُفضّل تفعيل الاعتماد لها افتراضياً (يمكن للأدمن تعديلها) */
@@ -5667,7 +5688,7 @@ async function loadAllData(){
     if(DB_LOAD_FAILED.has(key)) return STATE[key]||[];   // فشلت القراءة: نُبقي ما هو موجود ولا نكتب فوقه
     DB_LOADED.add(key); return v;
   };
-  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps','linkSettings'];
+  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','disbursements','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps','linkSettings'];
   keys.forEach(k=>DB_GUARDED.add(k));
   DB_LOADING=true;
   try{
@@ -5804,7 +5825,7 @@ const MENU_SECTIONS = [
   {key:'warehouse',label:'المخازن',icon:'⌂',items:[['warehousesLoc','المخازن'],['warehouseItems','أصناف المخزن'],['warehouseTx','حركة الوارد والمنصرف']]},
   {key:'extracts',label:'المستخلصات',icon:'▣',items:[['extracts','المستخلصات (المقاول)'],['consultantExtracts','مستخلص الاستشاري'],['invoices','الفواتير']]},
   {key:'jobTasksMgmt',label:'المهام الوظيفية',icon:'📋',items:[['jobTasks','إدارة المهام الوظيفية']]},
-  {key:'accounting',label:'المحاسبية',icon:'▤',items:[['finance','الماليات'],['accounting','المحاسبة']]},
+  {key:'accounting',label:'المحاسبية',icon:'▤',items:[['finance','الماليات'],['accounting','المحاسبة'],['disbursements','الصرف']]},
   {key:'labor',label:'العمالة',icon:'♙',items:[['labor','العمالة'],['engineersList','المهندسون'],['equipment','المعدات']]},
   {key:'hr',label:'الموارد البشرية',icon:'👥',items:[
     ['hrEmployees','ملف العاملين والموظفين'],
@@ -5956,7 +5977,7 @@ function sidebarHTML(){
 }
 function topbarTitle(){
   const titles={
-    dashboard:'الرئيسية', executiveDashboard:'لوحة القيادة', linksDrawings:'الترابط والرسومات',
+    dashboard:'الرئيسية', executiveDashboard:'لوحة القيادة', projectDetail:'الشاشة التفصيلية للمشروع',  linksDrawings:'الترابط والرسومات',
     reportsStats:'التقارير والإحصائيات', projectSummaries:'ملخصات المشاريع والتخصصات', siteIncidents:'المستحدثات والطارئ بالموقع', systemManagement:'إدارة النظام', approvalSettings:'إدارة الاعتمادات',
     listManagement:'إدارة القوائم', changePassword:'تغيير كلمة المرور', language:'اللغة', globalSearch:'البحث الشامل', notifications:'مركز التنبيهات', pendingApprovals:'بنود قيد الاعتماد', decidedApprovals:'المعتمد والمرفوض',
     admin:'المستخدمون والصلاحيات',activityLog:'سجل العمليات',backup:'Backup / Restore',brandingSettings:'الهوية والواجهات',
@@ -6101,10 +6122,361 @@ function installCustomModule(m){if(!m||!m.key)return;const f=[{name:'branch',lab
 function hydrateCustomModules(){loadCustomModuleDefs().forEach(installCustomModule)}
 function deleteCustomDepartment(key){if(!confirm('حذف تعريف القسم من القائمة؟ سجلاته المحفوظة لن تُحذف تلقائيًا.'))return;const a=loadCustomModuleDefs().filter(x=>x.key!==key);saveCustomModuleDefs(a);const n=NAV.findIndex(x=>x.key===key);if(n>=0)NAV.splice(n,1);const sec=MENU_SECTIONS.find(x=>x.key==='customGeneratedDepartments');if(sec)sec.items=sec.items.filter(x=>x[0]!==key);delete MODULES[key];render();}
 
+/* =====================================================================
+   V21 — سلسلة التسميع: مستخلص → ماليات → محاسبة → صرف + بيانات المشروع
+   + قرار الصرف / عدم الصرف + المزامنة للجديد فقط + شاشة تفصيلية لكل مشروع
+   ===================================================================== */
+const EPMS_COST_ENTRY_TYPES = ['ترحيل مستخلص','بند زيادة','فاتورة مشتريات','توريد مخزني','سند صرف'];
+function epmsNowISO(){ return new Date().toISOString(); }
+function epmsArr(k){ if(!Array.isArray(STATE[k])) STATE[k]=[]; return STATE[k]; }
+function epmsHistory(rec, action){ try{ pushEditHistory(rec, action); }catch(e){} }
+
+/** هل السجل جديد لم تتم مزامنته من قبل؟ (يعتمد على علامة المزامنة أو وجود أثر سابق) */
+function epmsExtractAlreadyPosted(x){
+  if(!x) return true;
+  if(x.epmsFinanceSyncedAt) return true;
+  return epmsArr('finance').some(f=>f.sourceId==='extract:'+x.id);
+}
+function epmsProcureAlreadyPosted(kind, r){
+  if(!r) return true;
+  if(r.epmsSyncedAt) return true;
+  const src = kind+':'+(r.id||r.orderNumber||r.deliveryNumber||r.number);
+  return epmsArr('finance').some(f=>f.sourceId===src) || epmsArr('accounting').some(a=>a.sourceId===src);
+}
+
+/** (1) مستخلص معتمد → سطر واحد في الماليات بحالة «قيد الاعتماد» (بدون تكرار) */
+async function epmsSyncExtractToFinanceAndAccounting(extract, force){
+  if(!extract || !extract.id) return false;
+  const st=String(extract.status||''), ap=String(extract.approvalStatus||'');
+  const paid=Number(extract.paidAmount)>0;
+  const approved = !!force || ap==='معتمد' || (ap!=='مرفوض' && /معتمد|مصروف|approved|مكتمل/i.test(st)) || paid;
+  if(!approved) return false;
+  const fin=epmsArr('finance');
+  const srcKey='extract:'+extract.id;
+  const gross = Number(extract.currentAmount)||Number(extract.amount)||0;
+  const net   = Number(extract.netAmount)||0;
+  const amount = gross>0 ? gross : net;
+  if(!(amount>0)) return false;
+  const base = {
+    projectId:extract.projectId||'', type:'مستحق مقاول', category:'مستخلص مقاول رقم '+(extract.number||''),
+    amount, date:extract.date||todayISO(), contractor:extract.contractor||'', contractNumber:extract.contractNumber||'',
+    extractNumber:extract.number||'', sourceType:'مستخلص مقاول', sourceId:srcKey,
+    netAmount:net, deductions:Number(extract.deductions)||0, vatAmount:Number(extract.vatAmount)||0,
+    extraAmount:Number(extract.extraAmount)||0, retention:Number(extract.retention)||0, paidAmount:Number(extract.paidAmount)||0,
+    notes:'تسميع تلقائي بعد اعتماد المستخلص رقم '+(extract.number||'')
+  };
+  let row = fin.find(f=>f.sourceId===srcKey && f.chainRow);
+  if(row){
+    if(row.approvalStatus!=='معتمد'){ Object.assign(row, base, {updatedAt:epmsNowISO()}); }
+  } else if(fin.some(f=>f.sourceId===srcKey)){
+    // أثر قديم لنفس المستخلص — لا نكرر
+    extract.epmsFinanceSyncedAt = extract.epmsFinanceSyncedAt || epmsNowISO();
+    await dbSet('extracts', STATE.extracts);
+    return false;
+  } else {
+    row = Object.assign({id:genId(), chainRow:true, approvalStatus:'قيد الاعتماد', extractId:extract.id,
+      createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:epmsNowISO()}, base);
+    fin.push(row);
+  }
+  extract.epmsFinanceSyncedAt = epmsNowISO();
+  extract.epmsFinanceRowId = row.id;
+  await dbSet('finance', STATE.finance);
+  await dbSet('extracts', STATE.extracts);
+  return true;
+}
+
+/** (2) ماليات معتمدة → سطر في المحاسبة بحالة «قيد الاعتماد» */
+async function epmsPostFinanceToAccounting(fin){
+  if(!fin) return false;
+  const acc=epmsArr('accounting');
+  if(acc.some(a=>a.financeId===fin.id)) return false;
+  if(fin.sourceId && acc.some(a=>a.sourceId===fin.sourceId)) { fin.postedToAccountingAt=fin.postedToAccountingAt||epmsNowISO(); return false; }
+  const MAP = {
+    'مستحق مقاول':['ترحيل مستخلص','أعمال تحت التنفيذ / تكلفة المشروع','مستحقات المقاولين'],
+    'مصروف':['سند صرف','مصروفات المشروع','البنك / الخزينة'],
+    'إيراد':['سند قبض','البنك / الخزينة','إيرادات'],
+    'صرف مستخلص':['صرف مستخلص','مستحقات المقاولين','البنك / الخزينة'],
+    'مشتريات':['فاتورة مشتريات','مخزون / مشتريات تحت الاستلام','مستحقات الموردين'],
+    'توريد':['توريد مخزني','مخزون المواد','مشتريات تحت الاستلام'],
+    'فاتورة':['فاتورة مشتريات','مشتريات / مصروف','مستحقات الموردين'],
+    'صرف فاتورة':['صرف فاتورة','مستحقات الموردين','البنك / الخزينة'],
+    'استقطاع':['قيد يومية','مستحقات المقاولين','استقطاعات'],
+    'ضريبة':['قيد يومية','ضريبة قيمة مضافة','مستحقات المقاولين']
+  };
+  const m = MAP[fin.type] || ['قيد يومية', fin.category||'حساب', 'حساب مقابل'];
+  const row = {
+    id:genId(), chainRow:true, approvalStatus:'قيد الاعتماد', financeId:fin.id, projectId:fin.projectId||'',
+    entryType:m[0], account:m[1], contraAccount:m[2], amount:Number(fin.amount)||0, date:fin.date||todayISO(),
+    contractor:fin.contractor||'', contractNumber:fin.contractNumber||'', extractNumber:fin.extractNumber||'',
+    sourceType:fin.sourceType||'يدوي', sourceId:fin.sourceId||'', extractId:fin.extractId||'',
+    netAmount:Number(fin.netAmount)||0, retention:Number(fin.retention)||0, deductions:Number(fin.deductions)||0,
+    disburseStatus:fin.disburseStatus||'', notes:'تسميع تلقائي بعد اعتماد الماليات — '+(fin.category||''),
+    createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:epmsNowISO()
+  };
+  acc.push(row);
+  fin.postedToAccountingAt = epmsNowISO();
+  await dbSet('accounting', STATE.accounting);
+  await dbSet('finance', STATE.finance);
+  return true;
+}
+
+/** (3) محاسبة معتمدة → قيد يومية + سجل صرف + تحديث بيانات المشروع */
+async function epmsPostAccountingToDisbursementAndProject(acc){
+  if(!acc) return {je:false, disb:false};
+  const out={je:false, disb:false};
+  const entries=epmsArr('accountingEntries');
+  const sk='acc:'+acc.id;
+  if(!entries.some(e=>e.sourceKey===sk && e.kind==='main') && Number(acc.amount)>0){
+    entries.push({id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), date:acc.date||todayISO(), sourceKey:sk, sourceType:'accounting', kind:'main',
+      contractor:acc.contractor||'', contractNumber:acc.contractNumber||'', projectId:acc.projectId||'', extractNumber:acc.extractNumber||'',
+      description:(acc.entryType||'قيد')+' — '+(acc.account||''), debitAccount:acc.account||'', creditAccount:acc.contraAccount||'',
+      debit:Number(acc.amount), credit:Number(acc.amount), status:'مرحّل'});
+    out.je=true;
+    if(Number(acc.retention)>0){
+      entries.push({id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), date:acc.date||todayISO(), sourceKey:sk, sourceType:'accounting', kind:'retention',
+        contractor:acc.contractor||'', projectId:acc.projectId||'', description:'محتجز ضمان — مستخلص '+(acc.extractNumber||''),
+        debitAccount:'مستحقات المقاولين', creditAccount:'محتجز ضمان أعمال', debit:Number(acc.retention), credit:Number(acc.retention), status:'مرحّل'});
+    }
+    await dbSet('accountingEntries', entries);
+  }
+  const payable = (acc.entryType==='ترحيل مستخلص') || ['بند زيادة','فاتورة مشتريات','سند صرف','توريد مخزني'].includes(acc.entryType);
+  const disb=epmsArr('disbursements');
+  if(payable && !disb.some(d=>d.accountingId===acc.id)){
+    const due = (acc.entryType==='ترحيل مستخلص' && Number(acc.netAmount)>0) ? Number(acc.netAmount) : (Number(acc.amount)||0);
+    disb.push({id:genId(), chainRow:true, accountingId:acc.id, financeId:acc.financeId||'', extractId:acc.extractId||'', projectId:acc.projectId||'',
+      payee:acc.contractor||'', amount:due, date:todayISO(), contractNumber:acc.contractNumber||'', extractNumber:acc.extractNumber||'',
+      sourceType:acc.sourceType||'يدوي', disburseStatus:acc.disburseStatus||'بانتظار القرار',
+      notes:'تسميع تلقائي بعد اعتماد المحاسبة — '+(acc.entryType||''), createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:epmsNowISO()});
+    out.disb=true;
+    await dbSet('disbursements', disb);
+  }
+  acc.postedToDisbursementAt=epmsNowISO(); acc.postedToProjectAt=epmsNowISO();
+  await dbSet('accounting', STATE.accounting);
+  if(acc.projectId) await epmsRecalcProject(acc.projectId);
+  return out;
+}
+
+/** نقطة الدخول بعد أي اعتماد نهائي */
+async function epmsOnRecordApproved(moduleKey, rec){
+  if(!rec) return;
+  if(moduleKey==='extracts'){
+    const ok=await epmsSyncExtractToFinanceAndAccounting(rec, true);
+    if(ok) alert('تم تسميع المستخلص في الماليات (بانتظار اعتماد الماليات).');
+  } else if(moduleKey==='finance'){
+    const ok=await epmsPostFinanceToAccounting(rec);
+    if(ok) alert('تم تسميع المعاملة في المحاسبة (بانتظار اعتماد المحاسبة).');
+  } else if(moduleKey==='accounting'){
+    const r=await epmsPostAccountingToDisbursementAndProject(rec);
+    const parts=[]; if(r.disb) parts.push('الصرف'); parts.push('بيانات المشروع');
+    alert('تم التسميع في: '+parts.join(' و ')+'.');
+  }
+}
+
+/** قرار «صرف / عدم الصرف» لمعاملة واحدة */
+async function epmsApplyDisburse(moduleKey, rec, decision){
+  const now=epmsNowISO(), by=currentUser?.name||currentUser?.username||'';
+  rec.disburseStatus=decision; rec.disburseBy=by; rec.disburseAt=now;
+  epmsHistory(rec, 'قرار الصرف: '+decision);
+  const touched=new Set([moduleKey]);
+  const finIds = new Set(), accIds = new Set();
+  if(moduleKey==='finance'){ finIds.add(rec.id); epmsArr('accounting').forEach(a=>{ if(a.financeId===rec.id) accIds.add(a.id); }); }
+  if(moduleKey==='accounting'){ accIds.add(rec.id); if(rec.financeId) finIds.add(rec.financeId); }
+  if(moduleKey==='disbursements'){ if(rec.accountingId) accIds.add(rec.accountingId); if(rec.financeId) finIds.add(rec.financeId); }
+  epmsArr('finance').forEach(f=>{ if(finIds.has(f.id) && f!==rec){ f.disburseStatus=decision; touched.add('finance'); } });
+  epmsArr('accounting').forEach(a=>{
+    if((accIds.has(a.id) || (moduleKey==='finance' && a.financeId===rec.id)) && a!==rec){ a.disburseStatus=decision; touched.add('accounting'); }
+  });
+  // سجل الصرف
+  const disb=epmsArr('disbursements');
+  const relatedAcc = moduleKey==='accounting' ? rec : epmsArr('accounting').find(a=>accIds.has(a.id));
+  let d = moduleKey==='disbursements' ? rec : disb.find(x=>relatedAcc && x.accountingId===relatedAcc.id);
+  if(!d && moduleKey==='accounting' && (rec.approvalStatus==='معتمد' || !rec.approvalStatus) && Number(rec.amount)>0){
+    d={id:genId(), chainRow:!!rec.chainRow, accountingId:rec.id, financeId:rec.financeId||'', extractId:rec.extractId||'', projectId:rec.projectId||'',
+       payee:rec.contractor||'', amount:(rec.entryType==='ترحيل مستخلص'&&Number(rec.netAmount)>0)?Number(rec.netAmount):Number(rec.amount),
+       date:todayISO(), contractNumber:rec.contractNumber||'', extractNumber:rec.extractNumber||'', sourceType:rec.sourceType||'يدوي',
+       notes:'قرار صرف من المحاسبة', createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:now};
+    disb.push(d);
+  }
+  if(d){
+    d.disburseStatus=decision; d.disburseBy=by; d.disburseAt=now;
+    d.paidDate = decision==='صرف' ? todayISO() : '';
+    touched.add('disbursements');
+    // انعكاس الصرف على المستخلص المصدر
+    try{
+      const ext = (STATE.extracts||[]).find(x=>String(x.id)===String(d.extractId||(relatedAcc&&relatedAcc.extractId)||''));
+      if(ext){
+        const applied=Number(d.extractPaidApplied)||0;
+        if(decision==='صرف' && !applied){
+          const add=Number(d.amount)||0;
+          ext.paidAmount=(Number(ext.paidAmount)||0)+add; d.extractPaidApplied=add;
+          ext.remainingAmount=(Number(ext.netAmount)||0)-ext.paidAmount;
+          ext.status = ext.remainingAmount<=0.005 ? 'مصروف' : 'مصروف جزئياً';
+          touched.add('extracts');
+        } else if(decision!=='صرف' && applied){
+          ext.paidAmount=Math.max(0,(Number(ext.paidAmount)||0)-applied); d.extractPaidApplied=0;
+          ext.remainingAmount=(Number(ext.netAmount)||0)-ext.paidAmount;
+          ext.status = ext.paidAmount>0 ? 'مصروف جزئياً' : 'معتمد';
+          touched.add('extracts');
+        }
+      }
+    }catch(e){ console.error(e); }
+  }
+  for(const k of touched){ await dbSet(k, STATE[k]); }
+  const pid = rec.projectId || (d&&d.projectId) || '';
+  if(pid) await epmsRecalcProject(pid);
+}
+async function epmsSetDisburse(moduleKey, id, decision){
+  const mod=MODULES[moduleKey]; const rec=(STATE[moduleKey]||[]).find(x=>String(x.id)===String(id));
+  if(!mod||!rec) return;
+  if(!(currentUser && (currentUser.isAdmin || canEdit(mod.permKey)))){ alert('ليس لديك صلاحية تسجيل قرار الصرف.'); return; }
+  if(rec.approvalStatus==='مرفوض'){ alert('لا يمكن تسجيل قرار صرف لمعاملة مرفوضة.'); return; }
+  if(decision==='صرف' && !confirm('تأكيد قرار «صرف» لهذه المعاملة؟')) return;
+  if(decision==='عدم الصرف' && !confirm('تأكيد قرار «عدم الصرف» لهذه المعاملة؟')) return;
+  await epmsApplyDisburse(moduleKey, rec, decision);
+  render();
+}
+/** قرار عام — يُطبّق فقط على المعاملات التي لم يُتخذ فيها قرار بعد */
+async function epmsBulkDisburse(moduleKey){
+  const mod=MODULES[moduleKey];
+  if(!(currentUser && (currentUser.isAdmin || canEdit(mod.permKey)))){ alert('ليس لديك صلاحية تسجيل قرار الصرف.'); return; }
+  const list=scopeRecords(STATE[moduleKey]||[], currentUser, moduleKey).filter(r=>!r.disburseStatus && r.approvalStatus!=='مرفوض');
+  if(!list.length){ alert('لا توجد معاملات بدون قرار صرف.'); return; }
+  const c=prompt('قرار الصرف العام لعدد '+list.length+' معاملة لم يُتخذ فيها قرار:\n1 = صرف\n2 = عدم الصرف\n3 = إلغاء','1');
+  if(c==null||String(c).trim()==='3') return;
+  const decision=String(c).trim()==='2'?'عدم الصرف':'صرف';
+  if(!confirm('سيتم تسجيل «'+decision+'» على '+list.length+' معاملة جديدة فقط (المعاملات المقررة سابقاً لن تتغير). متابعة؟')) return;
+  for(const r of list){ await epmsApplyDisburse(moduleKey, r, decision); }
+  alert('تم تسجيل «'+decision+'» على '+list.length+' معاملة.');
+  render();
+}
+
+/** نسبة إنجاز المشروع من مراحله (آخر تحديث لكل مرحلة) */
+function epmsProjectProgress(pid){
+  const ph=(STATE.phases||[]).filter(x=>String(x.projectId)===String(pid));
+  if(!ph.length) return null;
+  const latest={};
+  ph.forEach(x=>{ const k=String(x.phase||x.id); const prev=latest[k]; if(!prev || String(x.date||'')>=String(prev.date||'')) latest[k]=x; });
+  const vals=Object.values(latest).map(x=>Math.max(0,Math.min(100,Number(x.percent)||0)));
+  return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+}
+function epmsProjectFinancials(pid){
+  const acc=epmsArr('accounting').filter(a=>String(a.projectId)===String(pid));
+  const expenses=acc.filter(a=>a.approvalStatus==='معتمد' && EPMS_COST_ENTRY_TYPES.includes(a.entryType));
+  const disb=epmsArr('disbursements').filter(d=>String(d.projectId)===String(pid));
+  const sum=(arr,f)=>arr.reduce((s,x)=>s+(Number(f(x))||0),0);
+  return {
+    expenseRows:expenses, disbRows:disb,
+    expenses:sum(expenses,a=>a.amount),
+    disbursed:sum(disb.filter(d=>d.disburseStatus==='صرف'),d=>d.amount),
+    notDisbursed:sum(disb.filter(d=>d.disburseStatus==='عدم الصرف'),d=>d.amount),
+    pendingDisb:sum(disb.filter(d=>!d.disburseStatus||d.disburseStatus==='بانتظار القرار'),d=>d.amount),
+    chainExtracts:(STATE.extracts||[]).filter(x=>String(x.projectId)===String(pid) && !epmsExtractAlreadyPosted(x) && (x.approvalStatus==='معتمد'||/معتمد|مصروف/.test(String(x.status||'')))).length,
+    finPending:epmsArr('finance').filter(f=>String(f.projectId)===String(pid) && f.chainRow && f.approvalStatus==='قيد الاعتماد').length,
+    accPending:acc.filter(a=>a.chainRow && a.approvalStatus==='قيد الاعتماد').length
+  };
+}
+/** تسميع المصروفات ونسب الإنجاز في بيانات المشروع — لكل مشروع على حدة */
+async function epmsRecalcProject(pid){
+  const p=(STATE.projects||[]).find(x=>String(x.id)===String(pid)); if(!p) return null;
+  const f=epmsProjectFinancials(pid), pr=epmsProjectProgress(pid);
+  p.actualExpenses=f.expenses; p.disbursedAmount=f.disbursed; p.pendingDisbursement=f.pendingDisb;
+  p.remainingBudget=(Number(p.budget)||0)-f.expenses;
+  if(pr!==null) p.percentComplete=pr;
+  p.financialsSyncedAt=epmsNowISO();
+  try{ await dbSet('projects', STATE.projects); }catch(e){ console.error(e); }
+  return {financials:f, progress:pr};
+}
+async function epmsRecalcProjectClick(pid){
+  const r=await epmsRecalcProject(pid);
+  alert(r ? 'تم تسميع المصروفات ونسبة الإنجاز لهذا المشروع.' : 'المشروع غير موجود.');
+  render();
+}
+
+/* ---------- المزامنة للجديد فقط ---------- */
+async function epmsPostContractorAccounting(){
+  const approved=(STATE.extracts||[]).filter(x=>x.approvalStatus==='معتمد' || (x.approvalStatus!=='مرفوض' && /معتمد|مصروف|approved|مكتمل/i.test(String(x.status||''))));
+  const fresh=approved.filter(x=>!epmsExtractAlreadyPosted(x));
+  if(!approved.length){ alert('لا توجد مستخلصات معتمدة أو مصروفة قابلة للتسميع.'); return; }
+  if(!fresh.length){ alert('لا توجد مستخلصات جديدة — كل المستخلصات المعتمدة تمت مزامنتها سابقاً ('+approved.length+'). لم يتم تكرار أي شيء.'); return; }
+  let n=0;
+  for(const x of fresh){ try{ if(await epmsSyncExtractToFinanceAndAccounting(x, true)) n++; }catch(e){ console.error(e); } }
+  alert('تم تسميع '+n+' مستخلص جديد في الماليات فقط (بانتظار الاعتماد). تم تجاهل '+(approved.length-fresh.length)+' مستخلص سبقت مزامنته.');
+  render();
+}
+async function epmsPostProcurementAccounting(){
+  let n=0, skipped=0;
+  const kinds=[['purchases','purchase',p=>/تم الطلب|تم التوريد|تم الاستلام/i.test(String(p.status||''))],['deliveries','delivery',()=>true],['invoices','invoice',()=>true]];
+  for(const [key,kind,ok] of kinds){
+    for(const r of (STATE[key]||[])){
+      if(!ok(r)) continue;
+      if(epmsProcureAlreadyPosted(kind,r)){ skipped++; continue; }
+      await epmsSyncProcurementToFinanceAndAccounting(key, r); n++;
+    }
+  }
+  alert('تمت مزامنة '+n+' سجل جديد فقط من المشتريات/التوريدات/الفواتير. تم تجاهل '+skipped+' سجل سبقت مزامنته.');
+  render();
+}
+
+/* ---------- الشاشة التفصيلية لكل مشروع ---------- */
+window.__epmsProjectId = window.__epmsProjectId || '';
+function epmsOpenProjectDetail(id){ window.__epmsProjectId=String(id||''); goRoute('projectDetail'); }
+function epmsMoney(n){ return (Number(n)||0).toLocaleString('ar-EG'); }
+function projectCardsPanelHTML(){
+  const ps=visibleProjects();
+  if(!ps.length) return '';
+  return `<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▦</span>شاشة تفصيلية لكل مشروع</span></div>
+  <div class="quick-grid">${ps.map(p=>{
+    const f=epmsProjectFinancials(p.id); const pr=epmsProjectProgress(p.id); const pct=Math.max(0,Math.min(100,pr!==null?pr:Number(p.percentComplete||p.percent||0)));
+    return `<button class="quick-btn" style="text-align:start" onclick="epmsOpenProjectDetail('${escapeHtml(String(p.id))}')"><b>▤</b>${escapeHtml(p.name||'مشروع')}<br><small>إنجاز ${pct}% · مصروفات ${epmsMoney(f.expenses)}</small><div class="progress-track" style="margin-top:6px"><div class="progress-fill" style="width:${pct}%"></div></div></button>`;
+  }).join('')}</div></div>`;
+}
+function projectDetailHTML(){
+  const ps=visibleProjects();
+  if(!currentUser || !(currentUser.isAdmin || canView('projects'))) return noAccessHTML();
+  if(!ps.length) return '<div class="section-note">لا توجد مشاريع ضمن صلاحيتك.</div>';
+  let pid=window.__epmsProjectId; if(!ps.some(p=>String(p.id)===String(pid))) pid=String(ps[0].id);
+  window.__epmsProjectId=pid;
+  const p=ps.find(x=>String(x.id)===String(pid));
+  const f=epmsProjectFinancials(pid); const prog=epmsProjectProgress(pid);
+  const pct=Math.max(0,Math.min(100,prog!==null?prog:Number(p.percentComplete||p.percent||0)));
+  const budget=Number(p.budget)||0;
+  const phases=(STATE.phases||[]).filter(x=>String(x.projectId)===String(pid)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const canEditDisb=currentUser.isAdmin||canEdit('accounting');
+  const badge=(v)=>{ const c=/^(صرف|معتمد)$/.test(v)?'ok':/^(عدم الصرف|مرفوض)$/.test(v)?'bad':'warn'; return `<span class="badge ${c}">${escapeHtml(v||'بانتظار القرار')}</span>`; };
+  const stat=(ic,n,l,cls='')=>`<div class="stat-card ${cls}"><span class="stat-icon">${ic}</span><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  return `<div class="page-wrap">
+   <div class="hero reference-hero"><h1>▤ ${escapeHtml(p.name||'مشروع')}</h1>
+    <p>${escapeHtml(p.client||'')} ${p.location?'— '+escapeHtml(p.location):''} · الحالة: ${escapeHtml(p.status||'—')} ${p.startDate?'· من '+escapeHtml(p.startDate):''} ${p.endDate?'إلى '+escapeHtml(p.endDate):''}</p></div>
+   <div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;align-items:center">
+     <select onchange="epmsOpenProjectDetail(this.value)" style="min-width:220px">${ps.map(x=>`<option value="${escapeHtml(String(x.id))}" ${String(x.id)===String(pid)?'selected':''}>${escapeHtml(x.name||'مشروع')}</option>`).join('')}</select>
+     ${(currentUser.isAdmin||canEdit('projects'))?`<button class="btn btn-amber" onclick="epmsRecalcProjectClick('${escapeHtml(String(pid))}')">🔄 تسميع مصروفات ونسبة إنجاز هذا المشروع</button>`:''}
+     <button class="btn btn-ghost" onclick="goRoute('dashboard')">⌂ الرئيسية</button>
+     <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+   </div>
+   <div class="cards-row reference-stats">
+     ${stat('◉',pct+'%','نسبة الإنجاز')}
+     ${stat('¤',epmsMoney(budget),'الميزانية التقديرية')}
+     ${stat('▣',epmsMoney(f.expenses),'المصروفات المعتمدة (محاسبة)','danger')}
+     ${stat('✓',epmsMoney(f.disbursed),'المصروف فعلياً','success')}
+     ${stat('⏳',epmsMoney(f.pendingDisb),'بانتظار قرار الصرف')}
+     ${stat('Σ',epmsMoney(budget-f.expenses),'المتبقي من الميزانية')}
+   </div>
+   <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⇢</span>مسار التسميع لهذا المشروع</span></div>
+     <div class="section-note">مستخلصات معتمدة لم تُسمَّع في الماليات: <b>${f.chainExtracts}</b> · ماليات بانتظار الاعتماد: <b>${f.finPending}</b> · محاسبة بانتظار الاعتماد: <b>${f.accPending}</b> · مبالغ «عدم الصرف»: <b>${epmsMoney(f.notDisbursed)}</b></div></div>
+   <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◫</span>مراحل المشروع ونسب الإنجاز</span></div>
+     ${phases.length?`<table class="dashboard-table"><thead><tr><th>المرحلة</th><th>الإنجاز</th><th>التاريخ</th></tr></thead><tbody>${phases.map(x=>{const v=Math.max(0,Math.min(100,Number(x.percent)||0));return `<tr><td>${escapeHtml(x.phase||'—')}</td><td><div class="progress-row"><div class="progress-track"><div class="progress-fill" style="width:${v}%"></div></div><b>${v}%</b></div></td><td>${escapeHtml(x.date||'—')}</td></tr>`;}).join('')}</tbody></table>`:'<div class="section-note">لا توجد مراحل مسجلة. أضفها من «تفاصيل المشروع».</div>'}</div>
+   <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▤</span>مصروفات المشروع (محاسبة معتمدة)</span></div>
+     ${f.expenseRows.length?`<table class="dashboard-table"><thead><tr><th>التاريخ</th><th>النوع</th><th>المقاول / الجهة</th><th>المستخلص</th><th>المبلغ</th><th>قرار الصرف</th></tr></thead><tbody>${f.expenseRows.map(a=>`<tr><td>${escapeHtml(a.date||'—')}</td><td>${escapeHtml(a.entryType||'—')}</td><td>${escapeHtml(a.contractor||'—')}</td><td>${escapeHtml(a.extractNumber||'—')}</td><td>${epmsMoney(a.amount)}</td><td>${badge(a.disburseStatus)}</td></tr>`).join('')}</tbody></table>`:'<div class="section-note">لا توجد مصروفات معتمدة بعد.</div>'}</div>
+   <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">💵</span>الصرف</span><span class="more" onclick="goRoute('disbursements')">كل سجلات الصرف</span></div>
+     ${f.disbRows.length?`<table class="dashboard-table"><thead><tr><th>التاريخ</th><th>المستفيد</th><th>المستخلص</th><th>المبلغ</th><th>القرار</th>${canEditDisb?'<th class="no-print">إجراء</th>':''}</tr></thead><tbody>${f.disbRows.map(d=>`<tr><td>${escapeHtml(d.date||'—')}</td><td>${escapeHtml(d.payee||'—')}</td><td>${escapeHtml(d.extractNumber||'—')}</td><td>${epmsMoney(d.amount)}</td><td>${badge(d.disburseStatus)}</td>${canEditDisb?`<td class="no-print"><button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','صرف')">صرف</button><button class="link-btn danger" onclick="epmsSetDisburse('disbursements','${d.id}','عدم الصرف')">عدم صرف</button></td>`:''}</tr>`).join('')}</tbody></table>`:'<div class="section-note">لا توجد سجلات صرف لهذا المشروع.</div>'}</div>
+  </div>`;
+}
+
 function routeContent(){
   if(currentRoute==='dashboard') return dashboardHTML();
   if(currentRoute==='salesDashboard') return salesDashboardHTML();
   if(currentRoute==='executiveDashboard') return dashboardHTML(true);
+  if(currentRoute==='projectDetail') return projectDetailHTML();
   if(currentRoute==='projectManagement') return projectManagementHTML();
   if(currentRoute==='linksDrawings') return linksDrawingsHTML();
   if(currentRoute==='reportsStats') return reportsStatsHTML();
@@ -6207,7 +6579,7 @@ function dashboardHTML(executive=false){
   const projectAvg=projectTotal?Math.round(scopedProjects.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/projectTotal):0;
   const projectRows=can('projects')?scopedProjects.slice(0,6).map(p=>{
     const pct=Math.max(0,Math.min(100,Number(p.percentComplete||p.percent||0)));
-    return `<div class="progress-row"><span>${escapeHtml(p.name||'مشروع')}</span><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
+    return `<div class="progress-row" style="cursor:pointer" onclick="epmsOpenProjectDetail('${escapeHtml(String(p.id))}')" title="فتح الشاشة التفصيلية"><span>${escapeHtml(p.name||'مشروع')}</span><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
   }).join(''):'<div class="section-note">لا توجد صلاحية لعرض بيانات المشاريع.</div>';
 
   const quick=[];
@@ -6256,6 +6628,7 @@ function dashboardHTML(executive=false){
       ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◫</span>تقدم المشاريع</span><span>${projectAvg}% متوسط</span></div><div class="mini-bars">${projectRows}</div></div>`:''}
       ${can('finance')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">¤</span>الملخص المالي</span><span class="more" onclick="goRoute('finance')">التفاصيل</span></div><div style="display:grid;gap:9px;"><div class="stat-card success"><div class="n">${STATE.finance.filter(f=>f.type==='إيراد').reduce((a,f)=>a+Number(f.amount||0),0).toLocaleString('ar-EG')}</div><div class="l">إجمالي الإيرادات</div></div><div class="stat-card danger"><div class="n">${STATE.finance.filter(f=>f.type==='مصروف').reduce((a,f)=>a+Number(f.amount||0),0).toLocaleString('ar-EG')}</div><div class="l">إجمالي المصروفات</div></div></div></div>`:''}
     </div>
+    ${can('projects')?projectCardsPanelHTML():''}
     ${sectionLinks.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚙</span>الأقسام المتاحة لهذا المستخدم</span></div><div class="quick-grid">${sectionLinks.join('')}</div></div>`:''}
     <div class="dashboard-sections">
       ${quick.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">＋</span>إجراءات سريعة</span></div><div class="quick-grid">${quick.join('')}</div></div>`:''}
@@ -6896,6 +7269,7 @@ function moduleHTML(key, mod){
         ${key==='surveillanceCameras'&&r.streamUrl?`<button class="link-btn" onclick="openCameraStream('${r.id}')">📹 فتح البث</button>`:''}
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?t('تعديل','Edit','Modifier'):t('عرض','View','Voir')}</button>
         <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ ${t('طباعة','Print','Imprimer')}</button>
+        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&r.approvalStatus!=='مرفوض'?`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 ${r.disburseStatus==='صرف'?'✓ ':''}صرف</button><button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ ${r.disburseStatus==='عدم الصرف'?'✓ ':''}عدم صرف</button>`:''}
         ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${canApproveRecord(key,r)?`<button class="link-btn" onclick="approveRecord('${key}','${r.id}','اعتماد')">${t('اعتماد','Approve','Approuver')}</button><button class="link-btn danger" onclick="approveRecord('${key}','${r.id}','رفض')">${t('رفض','Reject','Rejeter')}</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">${t('حذف','Delete','Supprimer')}</button>`:''}
       </div></td>
     </tr>`;
@@ -6924,7 +7298,7 @@ function moduleHTML(key, mod){
         `:''}
         ${key==='extracts'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">📒 ترحيل المعتمد → ماليات ومحاسبة</button>`:''}
         ${key==='purchases'||key==='deliveries'||key==='invoices'?`<button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">📒 ترحيل المشتريات/التوريدات/الفواتير → ماليات ومحاسبة</button>`:''}
-        ${key==='accounting'||key==='finance'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">🔄 مزامنة من المستخلصات</button><button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">🔄 مزامنة من المشتريات والفواتير</button>`:''}
+        ${key==='accounting'||key==='finance'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">🔄 مزامنة المستخلصات الجديدة فقط</button><button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">🔄 مزامنة المشتريات والفواتير الجديدة فقط</button><button class="btn btn-primary" onclick="epmsBulkDisburse('${key}')" title="يُطبّق على المعاملات التي لم يُتخذ فيها قرار فقط">💵 صرف / عدم صرف (عام)</button>`:''}
         ${editable ? `<button class="btn btn-amber" onclick="openNew('${key}')">+ ${t('إضافة','Add','Ajouter')}</button>` : ''}
       </div>
     </div>
@@ -7301,6 +7675,10 @@ function formatApprovalBadge(key,r){
 }
 function formatCell(mod, field, val){
   if(val === undefined || val === null || val === '') return '<span style="color:#B7B0A0">—</span>';
+  if(field==='disburseStatus'||field==='approvalStatus'){
+    const c=/^(صرف|معتمد)$/.test(val)?'ok':/^(عدم الصرف|مرفوض)$/.test(val)?'bad':'warn';
+    return `<span class="badge ${c}">${escapeHtml(String(val))}</span>`;
+  }
   const fdef = mod.fields.find(f=>f.name===field);
   if(fdef && fdef.type==='number') return Number(val).toLocaleString('ar-EG');
   if(fdef && fdef.name==='status'){
@@ -7475,7 +7853,7 @@ function modalHTML(){
     } else {
       input = `<input type="${f.type}" id="f_${f.name}" value="${escapeHtml(val)}" ${!editable?'disabled':''}>`;
     }
-    return `<div class="field ${isFull?'full':''}"><label>${fieldLabel(f.label)}${f.required?' *':''}</label>${input}</div>`;
+    return `<div class="field ${isFull?'full':''}" ${moduleKey==='extracts'&&f.name==='contractorNoContract'?`id="fw_contractorNoContract" style="display:${extractIsLinkedToContract(record)?'none':''}"`:''}><label>${fieldLabel(f.label)}${f.required?' *':''}</label>${input}</div>`;
   }).join('');
 
   const wideModal = ['extracts','contracts','boq','salesContracts'].includes(moduleKey);
@@ -7653,105 +8031,12 @@ async function epmsSyncProcurementToFinanceAndAccounting(moduleKey, record){
   await dbSet('finance', STATE.finance);
   await dbSet('accounting', STATE.accounting);
   await dbSet('accountingEntries', STATE.accountingEntries);
-}
-
-async function epmsPostProcurementAccounting(){
-  let n=0;
-  for(const p of (STATE.purchases||[])){
-    if(/تم الطلب|تم التوريد|تم الاستلام/i.test(String(p.status||''))){ await epmsSyncProcurementToFinanceAndAccounting('purchases', p); n++; }
-  }
-  for(const d of (STATE.deliveries||[])){ await epmsSyncProcurementToFinanceAndAccounting('deliveries', d); n++; }
-  for(const inv of (STATE.invoices||[])){ await epmsSyncProcurementToFinanceAndAccounting('invoices', inv); n++; }
-  alert('تمت مزامنة سلسلة المشتريات/التوريدات/الفواتير ('+n+' سجل) إلى الماليات والمحاسبة.');
-  render();
+  record.epmsSyncedAt = new Date().toISOString();
+  try{ await dbSet(moduleKey, STATE[moduleKey]); }catch(e){}
 }
 
 /** مزامنة سلسلة: مستخلص → ماليات → محاسبة */
-async function epmsSyncExtractToFinanceAndAccounting(extract){
-  if(!extract || !extract.id) return;
-  const status=String(extract.status||extract.approvalStatus||'');
-  const approved=/معتمد|مصروف|approved|مكتمل/i.test(status);
-  const paid=Number(extract.paidAmount)>0 || /مصروف/i.test(status);
-  if(!approved && !paid) return; // لا ترحيل قبل الاعتماد أو الصرف
-  STATE.finance = Array.isArray(STATE.finance)?STATE.finance:[];
-  STATE.accounting = Array.isArray(STATE.accounting)?STATE.accounting:[];
-  STATE.accountingEntries = Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
-  const srcKey = 'extract:'+extract.id;
-  const date = extract.date || new Date().toISOString().slice(0,10);
-  const net = Number(extract.netAmount)||0;
-  const gross = Number(extract.currentAmount)||0;
-  const paidAmt = Number(extract.paidAmount)||0;
-  const extraAmt = Number(extract.extraAmount)||0;
-  const ensureFinance=(type, category, amount, note)=>{
-    if(!(amount>0)) return;
-    const exists=STATE.finance.find(f=>f.sourceId===srcKey && f.type===type && f.category===category);
-    if(exists){
-      exists.amount=amount; exists.date=date; exists.contractor=extract.contractor||''; exists.contractNumber=extract.contractNumber||'';
-      exists.extractNumber=extract.number||''; exists.projectId=extract.projectId||''; exists.notes=note||exists.notes;
-      exists.updatedAt=new Date().toISOString();
-    } else {
-      STATE.finance.push({
-        id: genId(), projectId:extract.projectId||'', type, category, amount, date,
-        contractor:extract.contractor||'', contractNumber:extract.contractNumber||'',
-        extractNumber:extract.number||'', sourceType: extraAmt>0 && category.includes('زيادة') ? 'بند زيادة' : 'مستخلص مقاول',
-        sourceId:srcKey, notes:note||'', createdBy:currentUser?.username, createdByName:currentUser?.name,
-        createdAt:new Date().toISOString()
-      });
-    }
-  };
-  ensureFinance('مستحق مقاول','مستخلص مقاول — إجمالي الفترة', gross, 'إثبات أعمال مستخلص رقم '+(extract.number||''));
-  if(Number(extract.deductions)>0) ensureFinance('استقطاع','استقطاعات مستخلص', Number(extract.deductions), 'استقطاعات مستخلص رقم '+(extract.number||''));
-  if(Number(extract.vatAmount)>0) ensureFinance('ضريبة','ضريبة قيمة مضافة على مستخلص', Number(extract.vatAmount), 'ضريبة مستخلص رقم '+(extract.number||''));
-  if(extraAmt>0) ensureFinance('مستحق مقاول','بند زيادة خارج BOQ/العقود', extraAmt, 'بنود زيادة في مستخلص رقم '+(extract.number||''));
-  if(net>0) ensureFinance('مستحق مقاول','صافي المستخلص المستحق', net, 'صافي مستخلص رقم '+(extract.number||''));
-  if(paidAmt>0) ensureFinance('صرف مستخلص','صرف مستخلص مقاول', paidAmt, 'صرف مستخلص رقم '+(extract.number||''));
-  await dbSet('finance', STATE.finance);
-
-  const ensureAcc=(entryType, account, contra, amount, note)=>{
-    if(!(amount>0)) return;
-    const exists=STATE.accounting.find(a=>a.sourceId===srcKey && a.entryType===entryType && a.account===account);
-    if(exists){
-      exists.amount=amount; exists.date=date; exists.contractor=extract.contractor||''; exists.contractNumber=extract.contractNumber||'';
-      exists.extractNumber=extract.number||''; exists.projectId=extract.projectId||''; exists.notes=note||exists.notes;
-    } else {
-      STATE.accounting.push({
-        id:genId(), projectId:extract.projectId||'', entryType, account, contraAccount:contra, amount, date,
-        contractor:extract.contractor||'', contractNumber:extract.contractNumber||'', extractNumber:extract.number||'',
-        sourceType:'مستخلص مقاول', sourceId:srcKey, notes:note||'',
-        createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:new Date().toISOString()
-      });
-    }
-  };
-  ensureAcc('ترحيل مستخلص','أعمال تحت التنفيذ / تكلفة المشروع','مستحقات المقاولين', gross, 'ترحيل مستخلص رقم '+(extract.number||''));
-  if(extraAmt>0) ensureAcc('بند زيادة','أعمال إضافية / أوامر تغيير','مستحقات المقاولين', extraAmt, 'بند زيادة مستخلص رقم '+(extract.number||''));
-  if(paidAmt>0) ensureAcc('صرف مستخلص','مستحقات المقاولين','البنك / الخزينة', paidAmt, 'صرف مستخلص رقم '+(extract.number||''));
-  await dbSet('accounting', STATE.accounting);
-
-  // قيود اليومية التفصيلية (دفتر اليومية)
-  const ledgerKey = epmsLedgerKey(extract);
-  const entries=STATE.accountingEntries;
-  const pushJE=(kind, debitAccount, creditAccount, amount, desc)=>{
-    if(!(amount>0)) return;
-    if(entries.some(e=>e.sourceKey===ledgerKey && e.kind===kind)){
-      const e=entries.find(x=>x.sourceKey===ledgerKey && x.kind===kind);
-      e.debit=amount; e.credit=amount; e.date=date; e.description=desc;
-      return;
-    }
-    entries.push({
-      id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
-      date, sourceKey:ledgerKey, sourceType:'extract', kind,
-      contractor:extract.contractor, contractNumber:extract.contractNumber, projectId:extract.projectId||'',
-      extractNumber:extract.number||'', description:desc,
-      debitAccount, creditAccount, debit:amount, credit:amount, status:'مرحّل'
-    });
-  };
-  pushJE('extract','أعمال تحت التنفيذ / تكلفة المشروع','مستحقات المقاولين', gross, 'إثبات مستخلص مقاول رقم '+(extract.number||''));
-  if(extraAmt>0) pushJE('extra','أعمال إضافية / أوامر تغيير','مستحقات المقاولين', extraAmt, 'بند زيادة خارج BOQ — مستخلص '+(extract.number||''));
-  if(Number(extract.retention)>0) pushJE('retention','مستحقات المقاولين','محتجز ضمان أعمال', Number(extract.retention), 'محتجز ضمان مستخلص '+(extract.number||''));
-  if(paidAmt>0) pushJE('payment','مستحقات المقاولين','البنك / الخزينة', paidAmt, 'صرف مستخلص مقاول رقم '+(extract.number||''));
-  STATE.accountingEntries=entries;
-  await dbSet('accountingEntries', entries);
-}
+/* (استُبدلت بنسخة V21 أسفل الملف) */
 
 /** تحديث إجماليات العقد من بنود BOQ المرتبطة */
 async function epmsSyncBoqTotalsToContract(boqItem){
@@ -7773,26 +8058,6 @@ async function epmsSyncBoqTotalsToContract(boqItem){
 }
 
 function epmsLedgerKey(x){return String(x.id||x._id||x.number||'')+'|'+String(x.contractor||'')+'|'+String(x.contractNumber||'');}
-async function epmsPostContractorAccounting(){
- const approved=(STATE.extracts||[]).filter(x=>/معتمد|مصروف|approved|مكتمل/i.test(String(x.status||x.approvalStatus||x.state||'')));
- if(!approved.length){alert('لا توجد مستخلصات معتمدة أو مصروفة قابلة للترحيل. تأكد من حالة الاعتماد أولاً.');return;}
- for(const x of approved){ try{ await epmsSyncExtractToFinanceAndAccounting(x); }catch(e){ console.error(e); } }
- const entries=Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
- let added=0;
- approved.forEach(x=>{
-  const key=epmsLedgerKey(x); const gross=Number(x.currentAmount)||0; const net=Number(x.netAmount)||0; const paid=Number(x.paidAmount)||0;
-  if(gross>0&&!entries.some(e=>e.sourceKey===key&&e.kind==='extract')){
-   entries.push({id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),date:x.date||new Date().toISOString().slice(0,10),sourceKey:key,sourceType:'extract',kind:'extract',contractor:x.contractor,contractNumber:x.contractNumber,projectId:x.projectId||'',description:'إثبات مستخلص مقاول رقم '+(x.number||''),debitAccount:'أعمال تحت التنفيذ / تكلفة المشروع',creditAccount:'مستحقات المقاولين',debit:gross,credit:gross,status:'مرحّل'});added++;
-  }
-  if(paid>0&&!entries.some(e=>e.sourceKey===key&&e.kind==='payment')){
-   entries.push({id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),date:x.paymentDate||x.date||new Date().toISOString().slice(0,10),sourceKey:key,sourceType:'extract',kind:'payment',contractor:x.contractor,contractNumber:x.contractNumber,projectId:x.projectId||'',description:'صرف مستخلص مقاول رقم '+(x.number||''),debitAccount:'مستحقات المقاولين',creditAccount:'البنك / الخزينة',debit:paid,credit:paid,status:'مرحّل'});added++;
-  }
- });
- STATE.accountingEntries=entries;
- try{await dbSet('accountingEntries',entries);}catch(e){alert('تعذر حفظ قيود اليومية في قاعدة البيانات: '+(e.message||e));return;}
- alert('تم ترحيل '+added+' قيد/قيود جديدة. القيود السابقة لم تُكرر.');
- epmsShowAccountingLedger();
-}
 function epmsShowAccountingLedger(){
  const a=Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
  const rows=a.map(e=>`<tr><td>${escapeHtml(e.date||'')}</td><td>${escapeHtml(e.contractor||'')}</td><td>${escapeHtml(e.contractNumber||'')}</td><td>${escapeHtml(e.description||'')}</td><td>${escapeHtml(e.debitAccount||'')}</td><td>${escapeHtml(e.creditAccount||'')}</td><td>${(Number(e.debit)||0).toFixed(2)}</td><td>${escapeHtml(e.status||'')}</td></tr>`).join('');
@@ -7832,6 +8097,7 @@ function extractLinkToContractChanged(){
     }
   };
   wrap(ctr); wrap(cno);
+  const _ncw=document.getElementById('fw_contractorNoContract'); if(_ncw) _ncw.style.display = linked ? 'none' : '';
   if(linked){
     try{ extractContractorChanged(); }catch(e){}
   }
@@ -8069,6 +8335,12 @@ async function saveRecord(){
     record.approvalStatus=vals.length?(allApproved?'معتمد':anyRejected?'مرفوض':'قيد الاعتماد'):'بدون اعتماد';
   }
   if(moduleKey==='extracts'){
+    // مستخلص بدون عقد: اسم المقاول يُكتب في الخانة المخصصة ويُستخدم كاسم المقاول في الماليات والمحاسبة
+    if(!extractIsLinkedToContract(record)){
+      const _nm=String(record.contractorNoContract||'').trim();
+      if(_nm){ record.contractor=_nm; record.contractNumber=''; }
+      else if(!record.contractor){ alert('أدخل «اسم المقاول (مستخلص بدون عقد)».'); return; }
+    }
     const itemEls=[...document.querySelectorAll('#extractItemsEditor .extract-item-row')];
     if(!itemEls.length){
       if(linkOn('extractRequireBoq')){ alert('يجب إضافة بند BOQ واحد على الأقل (أو عطّل «إلزام BOQ للمستخلص» من إعدادات الربط).'); return; }
@@ -8379,6 +8651,7 @@ async function saveRecord(){
     }
   }
   await dbSet(moduleKey, STATE[moduleKey]);
+  if(moduleKey==='phases' && record.projectId){ try{ await epmsRecalcProject(record.projectId); }catch(e){ console.error(e); } }
   if(moduleKey==='extracts' && record._epmsSyncChain){
     if(linkOn('autoSyncExtractFinance') || isSectionLinked('extracts','finance') || isSectionLinked('extracts','accounting')){
       try{ await epmsSyncExtractToFinanceAndAccounting(record); }catch(e){ console.error('chain sync', e); }
@@ -10171,8 +10444,9 @@ async function syncScheduleToEpmsPlanning(scheduleId){
     if(k && !byName[k]) byName[k]=r;
   });
 
-  let updated=0, created=0;
+  let updated=0, created=0, skipped=0;
   for(const act of acts){
+    if(STATE.planning.some(r=>String(r.projectId)===String(projectId) && r.scheduleSourceId===scheduleId && String(r.scheduleActivityId)===String(act.id))){ skipped++; continue; }
     const name = (act.name || act.id || 'نشاط').trim();
     const key = normActivityName(name);
     const dates = computeScheduleActDates(sp, act);
@@ -10238,7 +10512,7 @@ async function syncScheduleToEpmsPlanning(scheduleId){
   saveScheduleLinkMap(map);
 
   await dbSet('planning', STATE.planning);
-  alert(`✅ تمت المزامنة إلى مشروع EPMS\nجديد: ${created}\nتحديث بنود مماثلة: ${updated}\nيمكنك مراجعتها من: البرنامج الزمني (قائمة)`);
+  alert(`✅ تمت المزامنة إلى مشروع EPMS\nجديد: ${created}\nتحديث بنود مماثلة: ${updated}\nتم تجاهل (سبقت مزامنتها): ${skipped}\nيمكنك مراجعتها من: البرنامج الزمني (قائمة)`);
 }
 
 
@@ -10286,8 +10560,9 @@ async function syncScheduleToBoq(scheduleId){
 
   STATE.boq = STATE.boq || [];
   const existing = STATE.boq.filter(r=>String(r.projectId)===String(projectId));
-  let updated=0, created=0;
+  let updated=0, created=0, skipped=0;
   for(const act of acts){
+    if(existing.some(r=>r.scheduleSourceId===scheduleId && String(r.scheduleActivityId)===String(act.id))){ skipped++; continue; }
     const name = (act.name || act.id || 'بند').trim();
     const match = existing.find(r=>namesSimilar(r.itemName, name));
     const dates = computeScheduleActDates(sp, act);
@@ -10332,7 +10607,7 @@ async function syncScheduleToBoq(scheduleId){
   }
   const map = getScheduleLinkMap(); map[scheduleId]=projectId; saveScheduleLinkMap(map);
   await dbSet('boq', STATE.boq);
-  alert('✅ مزامنة BOQ\\nجديد: '+created+'\\nتحديث بنود مماثلة: '+updated+'\\nمن: الكميات / BOQ');
+  alert('✅ مزامنة BOQ\\nجديد: '+created+'\\nتحديث بنود مماثلة: '+updated+'\\nتم تجاهل (سبقت مزامنتها): '+skipped+'\\nمن: الكميات / BOQ');
 }
 
 async function submitScheduleOfficialApproval(scheduleId){
