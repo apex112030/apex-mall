@@ -131,7 +131,7 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 .top-action .tb-badge.bad{background:#e34b57;color:#fff;}
 .top-action.pending-btn{background:rgba(240,161,26,.22);border-color:rgba(240,161,26,.45);}
 .top-action.decided-btn{background:rgba(17,169,107,.18);border-color:rgba(17,169,107,.4);}
-.content{padding:16px 18px 48px;width:100%;max-width:100%;margin:0;box-sizing:border-box;flex:1 1 auto;min-height:0;overflow-x:auto;}
+.content{padding:16px 18px 48px;width:100%;max-width:100%;margin:0;box-sizing:border-box;flex:1 1 auto;min-height:0;overflow-x:auto;overflow-y:auto;}
 
 /* ---------- Toolbar ---------- */
 .toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;width:100%;box-sizing:border-box;}.toolbar .filters{flex:1 1 320px;min-width:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}.toolbar .filters select,.toolbar .filters input[type=search]{max-width:100%;box-sizing:border-box;}
@@ -146,8 +146,25 @@ table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.92);borde
 /* منع قص الواجهة من اليسار أو الأسفل */
 .layout > .main{min-width:0;overflow:visible;}
 #content{padding-bottom:max(48px, env(safe-area-inset-bottom, 0px));}
-.table-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border-radius:10px;}
-.table-scroll table{min-width:720px;}
+.table-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border-radius:10px;
+  padding-bottom:6px;
+  scrollbar-width:auto;
+  scrollbar-color:#0b63d8 #e8eef5;
+}
+.table-scroll::-webkit-scrollbar{height:14px;}
+.table-scroll::-webkit-scrollbar-track{background:#e8eef5;border-radius:8px;}
+.table-scroll::-webkit-scrollbar-thumb{background:#0b63d8;border-radius:8px;border:2px solid #e8eef5;}
+.table-scroll::-webkit-scrollbar-thumb:hover{background:#074a9e;}
+.table-scroll table{min-width:max(720px,100%);}
+/* شريط تمرير أفقي ظاهر أسفل الجداول والصفحات */
+.content, .main, #content{
+  scrollbar-width:auto;
+  scrollbar-color:#0b63d8 #e8eef5;
+}
+.content::-webkit-scrollbar, .main::-webkit-scrollbar, #content::-webkit-scrollbar{height:14px;width:12px;}
+.content::-webkit-scrollbar-thumb, .main::-webkit-scrollbar-thumb, #content::-webkit-scrollbar-thumb{background:#0b63d8;border-radius:8px;}
+.content::-webkit-scrollbar-track, .main::-webkit-scrollbar-track, #content::-webkit-scrollbar-track{background:#e8eef5;}
+
 .row-actions{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start;}
 @media (min-width:821px){
   .sidebar{transform:none!important;}
@@ -974,6 +991,47 @@ async function toggleSectionLink(from, to){
   const cur = linkOn(from, to);
   await setLinkSetting(id, !cur);
   alert((!cur?'تم تفعيل':'تم تعطيل')+' الربط: '+(LINK_PAIR_DEFS.find(p=>p.id===id||p.id===(to+'|'+from))||{label:from+' ↔ '+to}).label);
+}
+/** تفعيل كل روابط الأقسام */
+async function enableAllSectionLinks(){
+  const p = {};
+  (LINK_PAIR_DEFS||[]).forEach(x=>{ p[x.id]=true; });
+  p.linkBoqToContract=true;
+  p.linkExtractToBoq=true;
+  p.extractLinkContracts=true;
+  p.autoSyncExtractFinance=true;
+  p.linkPurchaseChain=true;
+  p.autoSyncProcureFinance=true;
+  p.allowExtraWithoutContract=true;
+  await saveLinkSettings(p);
+  alert('تم تفعيل كل الروابط بين الأقسام.');
+}
+/** فصل كل الأقسام عن بعضها */
+async function disableAllSectionLinks(){
+  const p = {};
+  (LINK_PAIR_DEFS||[]).forEach(x=>{ p[x.id]=false; });
+  p.linkBoqToContract=false;
+  p.boqRequireContract=false;
+  p.linkExtractToBoq=false;
+  p.extractRequireBoq=false;
+  p.extractLinkContracts=false;
+  p.extractRequireContract=false;
+  p.autoSyncExtractFinance=false;
+  p.linkPurchaseChain=false;
+  p.autoSyncProcureFinance=false;
+  await saveLinkSettings(p);
+  alert('تم فصل كل الأقسام — لا يوجد ربط إلزامي أو تلقائي.');
+}
+/** فصل BOQ فقط عن الجميع مع الإبقاء على باقي الروابط */
+async function disconnectBoqFromAll(){
+  const p = {
+    'boq|contracts':false, 'boq|extracts':false, 'boq|finance':false,
+    'boq|accounting':false, 'boq|invoices':false, 'boq|purchases':false,
+    linkBoqToContract:false, linkExtractToBoq:false,
+    boqRequireContract:false, extractRequireBoq:false
+  };
+  await saveLinkSettings(p);
+  alert('تم فصل BOQ عن العقود والمستخلصات والماليات والمحاسبة والفواتير والمشتريات.');
 }
 
 
@@ -6310,10 +6368,10 @@ function systemManagementHTML(){
       ${linkSettingToggle('autoSyncProcureFinance','ترحيل مشتريات/فواتير → ماليات/محاسبة','مع سلسلة المشتريات')}
     </div>
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-ghost" onclick="saveLinkSettings(Object.assign({}, DEFAULT_LINK_SETTINGS))">إعادة الافتراضي (BOQ مفصول)</button>
-      <button class="btn btn-primary" onclick="(function(){const p={};LINK_PAIR_DEFS.forEach(x=>p[x.id]=true);p.linkBoqToContract=true;p.linkExtractToBoq=true;p.extractLinkContracts=true;p.autoSyncExtractFinance=true;p.linkPurchaseChain=true;p.autoSyncProcureFinance=true;saveLinkSettings(p);})()">تفعيل كل الروابط</button>
-      <button class="btn btn-amber" onclick="(function(){const p={};LINK_PAIR_DEFS.forEach(x=>p[x.id]=false);p.linkBoqToContract=false;p.boqRequireContract=false;p.linkExtractToBoq=false;p.extractRequireBoq=false;p.extractLinkContracts=false;p.extractRequireContract=false;p.autoSyncExtractFinance=false;p.linkPurchaseChain=false;p.autoSyncProcureFinance=false;saveLinkSettings(p);})()">فصل كل الأقسام</button>
-      <button class="btn btn-ghost" onclick="(function(){const p={};['boq|contracts','boq|extracts','boq|finance','boq|accounting','boq|invoices','boq|purchases'].forEach(k=>p[k]=false);p.linkBoqToContract=false;p.linkExtractToBoq=false;p.boqRequireContract=false;p.extractRequireBoq=false;saveLinkSettings(p);})()">فصل BOQ فقط عن الجميع</button>
+      <button type="button" class="btn btn-primary" onclick="enableAllSectionLinks()" style="font-weight:800">✅ تفعيل كل الروابط</button>
+      <button type="button" class="btn btn-amber" onclick="disableAllSectionLinks()" style="font-weight:800">⛔ فصل كل الأقسام</button>
+      <button type="button" class="btn btn-ghost" onclick="disconnectBoqFromAll()">فصل BOQ فقط عن الجميع</button>
+      <button type="button" class="btn btn-ghost" onclick="saveLinkSettings(Object.assign({}, DEFAULT_LINK_SETTINGS))">إعادة الافتراضي (BOQ مفصول)</button>
     </div>
   </div>
 
@@ -6861,6 +6919,8 @@ function moduleHTML(key, mod){
         <button class="btn ${isSectionLinked('boq','extracts')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','extracts')" title="ربط اختياري BOQ مع المستخلصات">🔗 المستخلصات ${isSectionLinked('boq','extracts')?'✓':'○'}</button>
         <button class="btn ${isSectionLinked('boq','finance')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','finance')" title="ربط اختياري BOQ مع الماليات">🔗 الماليات ${isSectionLinked('boq','finance')?'✓':'○'}</button>
         <button class="btn ${isSectionLinked('boq','accounting')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','accounting')" title="ربط اختياري BOQ مع المحاسبة">🔗 المحاسبة ${isSectionLinked('boq','accounting')?'✓':'○'}</button>
+        <button type="button" class="btn btn-primary" onclick="enableAllSectionLinks()" title="تفعيل كل روابط الأقسام في النظام">✅ تفعيل كل الروابط</button>
+        <button type="button" class="btn btn-amber" onclick="disableAllSectionLinks()" title="فصل كل الأقسام عن بعضها">⛔ فصل كل الأقسام</button>
         `:''}
         ${key==='extracts'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">📒 ترحيل المعتمد → ماليات ومحاسبة</button>`:''}
         ${key==='purchases'||key==='deliveries'||key==='invoices'?`<button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">📒 ترحيل المشتريات/التوريدات/الفواتير → ماليات ومحاسبة</button>`:''}
@@ -7337,7 +7397,41 @@ function modalHTML(){
       </select>
       <div class="section-note" style="margin:8px 0 0">عند اختيار القالب تُملأ كل الحقول تلقائياً. عند التغيير تتحدث الصفحة حسب القالب الجديد. القالب ليس سجلاً محفوظاً — الحفظ ينشئ السجل فقط.</div>
     </div>` : '';
-  const fieldsHTML = mod.fields.map(f=>{
+  // إخفاء حقول BOQ/العقود المرتبطة عندما يكون الربط مفصولاً
+  let fieldsForForm = mod.fields || [];
+  let extractLinkBanner = '';
+  if(moduleKey==='extracts'){
+    const boqLinked = isSectionLinked('boq','extracts') || linkOn('linkExtractToBoq') || linkOn('extractRequireBoq');
+    const ctrLinked = isSectionLinked('extracts','contracts') || linkOn('extractLinkContracts') || linkOn('extractRequireContract') || extractIsLinkedToContract(record);
+    const finLinked = isSectionLinked('extracts','finance') || isSectionLinked('extracts','accounting') || linkOn('autoSyncExtractFinance');
+    const boqOnlyFields = new Set(['boqItemId','previousQuantity','currentQuantity','cumulativeQuantity','contractQuantity','unitPrice','previousAmount']);
+    // عند فصل BOQ: نخفي الحقول التلقائية من BOQ ونُبقي المبلغ والصافي للإدخال اليدوي
+    if(!boqLinked){
+      fieldsForForm = fieldsForForm.filter(f=>!boqOnlyFields.has(f.name));
+      // تعديل تسميات المبالغ لتوضيح أنها يدوية
+      fieldsForForm = fieldsForForm.map(f=>{
+        if(f.name==='currentAmount') return Object.assign({}, f, {label:'قيمة أعمال الفترة الحالية (إدخال يدوي)'});
+        if(f.name==='amount') return Object.assign({}, f, {label:'قيمة الأعمال التراكمية (إدخال يدوي)'});
+        return f;
+      });
+    }
+    // عند فصل العقود وعدم اختيار ربط على السجل: إخفاء حقول العقد
+    if(!ctrLinked && !extractIsLinkedToContract(record)){
+      fieldsForForm = fieldsForForm.filter(f=>!['contractNumber','boqItemId'].includes(f.name));
+    }
+    const msgs=[];
+    if(!boqLinked) msgs.push('الربط مع <b>BOQ</b> مفصول — حقول الكميات وأسعار BOQ التلقائية مخفية. أدخل المبالغ يدوياً أو فعّل الربط من صفحة BOQ / إدارة النظام.');
+    if(!ctrLinked && !extractIsLinkedToContract(record)) msgs.push('الربط مع <b>العقود</b> غير مفعّل لهذا المستخلص.');
+    if(!finLinked) msgs.push('الترحيل التلقائي إلى <b>الماليات والمحاسبة</b> معطّل.');
+    if(msgs.length){
+      extractLinkBanner = `<div class="field full" style="background:#fff8e8;border:1px solid #f0c36d;border-radius:10px;padding:12px;margin-bottom:8px">
+        <b>⚠️ حالة الربط</b>
+        <ul style="margin:8px 0 0;padding-inline-start:18px">${msgs.map(m=>`<li style="margin:4px 0">${m}</li>`).join('')}</ul>
+        <div style="margin-top:8px"><button type="button" class="btn btn-ghost btn-sm" onclick="goRoute('systemManagement')">فتح إعدادات الربط</button></div>
+      </div>`;
+    }
+  }
+  const fieldsHTML = fieldsForForm.map(f=>{
     const isFull = f.type==='textarea';
     const val = record[f.name] !== undefined ? record[f.name] : '';
     let input = '';
@@ -7393,10 +7487,11 @@ function modalHTML(){
       ${formatEditHistoryHTML(record)}
       <div class="form-grid">
         ${projField}
+        ${typeof extractLinkBanner!=='undefined'?extractLinkBanner:''}
         ${sopTemplatePicker}${fieldsHTML}
         ${moduleKey==='projects'&&!isNew&&canView('projectResources')?`<div class="field full"><button type="button" class="btn btn-ghost" onclick="window.__epmsPrefillProjectId='${record.id}';modalState=null;currentRoute='projectResources';openNew('projectResources')">إضافة مهندسين / عمالة / معدات لهذا المشروع</button></div>`:''}
         ${['contracts','salesContracts'].includes(moduleKey)?`<div class="field full" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" onclick="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')">اقتراح بنود حسب نوع العقد</button><button type="button" class="btn btn-primary" onclick="printCurrentContract()">طباعة العقد / حفظ PDF</button></div>`:''}
-        ${moduleKey==='extracts'?extractItemsEditorHTML(record,editable):''}
+        ${moduleKey==='extracts'?(isSectionLinked('boq','extracts')||linkOn('linkExtractToBoq')||linkOn('extractRequireBoq')?extractItemsEditorHTML(record,editable):`<div class="field full section-note" style="background:#f5f7fa;border:1px dashed #b0bec5;border-radius:10px;padding:12px">محرر بنود BOQ غير ظاهر لأن الربط <b>BOQ ↔ المستخلصات</b> مفصول. فعّله من أزرار صفحة BOQ أو من إدارة النظام، أو أدخل <b>قيمة الفترة</b> يدوياً أعلاه.</div>`):''}
         ${moduleKey==='extracts'?`<div class="field full section-note" id="extractLinkHint">${extractIsLinkedToContract(record)?'هذا المستخلص <b>مربوط بعقد</b> — يُفضّل اختيار المقاول ورقم العقد.':'هذا المستخلص <b>بدون ربط بعقد</b> — يمكن الحفظ بالمبلغ وبنود الزيادة دون عقد.'} (غيّر الخيار من حقل «ربط المستخلص بعقد؟» أو من إدارة النظام)</div>`:''}
         <div class="field full">
           <label>${t('المرفقات — يمكن إضافة أكثر من ملف','Attachments — multiple files allowed','Pièces jointes — plusieurs fichiers autorisés')}</label>
