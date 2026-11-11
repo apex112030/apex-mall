@@ -6356,12 +6356,14 @@ function moduleHTML(key, mod){
       </div>
     </div>
     <h3 class="print-only" style="margin:0 0 12px;">${moduleTitle(key)}</h3>
-    <table>
-      <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>${t('الترتيب','#','N°')}</th>${projHead}${headCols}<th>${t('أُضيف بواسطة','Created by','Créé par')}</th><th>${t('المرفقات / المستندات','Attachments','Pièces jointes')}</th>${(key==='siteIncidents'||moduleSupportsApproval(key))?'<th>'+t('حالة الاعتماد','Approval status','Statut d\'approbation')+'</th>':''}<th class="no-print"></th></tr></thead>
-      <tbody>
-        ${rows || `<tr class="empty-row"><td colspan="13">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
-      </tbody>
-    </table>
+    <div class="module-table-scroll ${key==='extracts'?'extracts-scroll':''}" role="region" aria-label="جدول المستخلصات" tabindex="0">
+      <table>
+        <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>${t('الترتيب','#','N°')}</th>${projHead}${headCols}<th>${t('أُضيف بواسطة','Created by','Créé par')}</th><th>${t('المرفقات / المستندات','Attachments','Pièces jointes')}</th>${(key==='siteIncidents'||moduleSupportsApproval(key))?'<th>'+t('حالة الاعتماد','Approval status','Statut d\'approbation')+'</th>':''}<th class="no-print"></th></tr></thead>
+        <tbody>
+          ${rows || `<tr class="empty-row"><td colspan="13">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
+        </tbody>
+      </table>
+    </div>
   `;
 }
 

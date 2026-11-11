@@ -106,7 +106,7 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 .sidebar-foot b{color:#fff;font-size:13px;}
 
 /* Main content area */
-.main{flex:1;min-width:0;background:#eef4fa;overflow:hidden;}
+.main{flex:1;min-width:0;background:#eef4fa;overflow:auto;min-height:0;}
 .content{width:100%;box-sizing:border-box;}
 .topbar{
   background:linear-gradient(90deg,#061c3b 0%,#0b5cae 55%,#078bc7 100%);
@@ -149,6 +149,14 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 
 /* ---------- Table ---------- */
 table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.96);border:1px solid var(--epms-line);border-radius:10px;overflow:hidden;box-shadow:0 3px 12px rgba(20,60,100,.06);}
+/* Horizontal scroll for wide module tables */
+.module-table-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:auto;scrollbar-color:#8aa9c2 #e8f0f7;padding-bottom:8px;}
+.module-table-scroll::-webkit-scrollbar{height:14px;}
+.module-table-scroll::-webkit-scrollbar-track{background:#e8f0f7;border-radius:8px;}
+.module-table-scroll::-webkit-scrollbar-thumb{background:#8aa9c2;border-radius:8px;border:3px solid #e8f0f7;}
+.module-table-scroll.extracts-scroll table{min-width:1900px;}
+.module-table-scroll.extracts-scroll{border-bottom:1px solid #b8c9d8;}
+@media (max-width:900px){.module-table-scroll.extracts-scroll table{min-width:1650px;}}
 thead th{background:#edf5fc;color:#124476;text-align:right;font-size:12.5px;font-weight:800;padding:11px 14px;border-bottom:2px solid #d6e4f0;}
 tbody td{padding:11px 14px;font-size:13.5px;border-bottom:1px solid #e7eef5;color:var(--ink);}
 tbody tr:last-child td{border-bottom:none;}
