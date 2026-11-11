@@ -129,7 +129,7 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 .top-action .tb-badge.bad{background:#e34b57;color:#fff;}
 .top-action.pending-btn{background:rgba(240,161,26,.22);border-color:rgba(240,161,26,.45);}
 .top-action.decided-btn{background:rgba(17,169,107,.18);border-color:rgba(17,169,107,.4);}
-.content{padding:18px 20px 45px;max-width:1600px;margin:auto;}
+.content{padding:18px 20px 45px;max-width:none;margin:0 auto;}
 
 /* ---------- Toolbar ---------- */
 .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;flex-wrap:wrap;}
@@ -6615,12 +6615,16 @@ function moduleHTML(key, mod){
       </div>
     </div>
     <h3 class="print-only" style="margin:0 0 12px;">${moduleTitle(key)}</h3>
-    <table>
+    ${key==='extracts' ? `<div class="module-table-scroll extracts-scroll" role="region" aria-label="جدول مستخلصات المقاولين مع تمرير أفقي"><table>
       <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>${t('الترتيب','#','N°')}</th>${projHead}${headCols}<th>${t('أُضيف بواسطة','Created by','Créé par')}</th><th>${t('المرفقات / المستندات','Attachments','Pièces jointes')}</th>${(key==='siteIncidents'||moduleSupportsApproval(key))?'<th>'+t('حالة الاعتماد','Approval status','Statut d\'approbation')+'</th>':''}<th class="no-print"></th></tr></thead>
       <tbody>
         ${rows || `<tr class="empty-row"><td colspan="13">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
       </tbody>
-    </table>
+    </table></div>` : `<table>
+      <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>${t('الترتيب','#','N°')}</th>${projHead}${headCols}<th>${t('أُضيف بواسطة','Created by','Créé par')}</th><th>${t('المرفقات / المستندات','Attachments','Pièces jointes')}</th>${(key==='siteIncidents'||moduleSupportsApproval(key))?'<th>'+t('حالة الاعتماد','Approval status','Statut d\'approbation')+'</th>':''}<th class="no-print"></th></tr></thead>
+      <tbody>
+        ${rows || `<tr class="empty-row"><td colspan="13">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}</tbody>
+      </table>`}
   `;
 }
 
@@ -6912,6 +6916,18 @@ function printRecordsBatch(key,records){
     .sheet-head{flex-direction:column}
     .head-meta{text-align:right;direction:rtl}
   }
+
+/* V24 UI stabilization */
+#epmsEditModalHost{position:relative;z-index:100000;}
+#epmsEditModalHost .overlay{z-index:100001;}
+.module-table-scroll.extracts-scroll{display:block;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:0 0 10px;margin:0 0 10px;scrollbar-gutter:stable;touch-action:pan-x pan-y;}
+.module-table-scroll.extracts-scroll table{width:max-content;min-width:1900px;margin:0;}
+.module-table-scroll.extracts-scroll::-webkit-scrollbar{height:16px;}
+.module-table-scroll.extracts-scroll::-webkit-scrollbar-track{background:#dfe9f2;border-radius:10px;}
+.module-table-scroll.extracts-scroll::-webkit-scrollbar-thumb{background:#6f93b2;border:3px solid #dfe9f2;border-radius:10px;}
+.module-table-scroll.extracts-scroll{scrollbar-color:#6f93b2 #dfe9f2;scrollbar-width:auto;}
+.topbar{box-sizing:border-box;}
+@media (min-width:1200px){.topbar{padding-inline:22px;} .content{padding-inline:20px;}}
 </style>
 </head>
 <body>${blocks}
@@ -6996,9 +7012,21 @@ function openEdit(key, id){
   if(key==='projects' && !canAccessProject(rec.id)){ alert('هذا المشروع غير ضمن صلاحياتك.'); return; }
   if(rec.projectId && !canAccessProject(rec.projectId)){ alert('هذا المشروع غير ضمن صلاحياتك.'); return; }
   modalState = {moduleKey:key, record:{...rec}, isNew:false};
+  // المستخلصات تحتوي على جدول BOQ داخلي وحقول حسابية كثيرة؛ فتحها داخل DOM الحالي يمنع إعادة رسم الصفحة بالكامل،
+  // وبالتالي لا يتجمد الجدول ولا يفقد المستخدم موضع التمرير.
+  if(key==='extracts'){
+    const old=document.getElementById('epmsEditModalHost'); if(old)old.remove();
+    const host=document.createElement('div'); host.id='epmsEditModalHost'; host.innerHTML=modalHTML();
+    document.body.appendChild(host);
+    return;
+  }
   render();
 }
-function closeModal(){ modalState = null; render(); }
+function closeModal(){
+  const host=document.getElementById('epmsEditModalHost');
+  if(host){host.remove(); modalState=null; return;}
+  modalState = null; render();
+}
 
 const CONTRACT_CLAUSE_TEMPLATES={
  'مقاولة هيكل خرساني':['نطاق الأعمال والرسومات المعتمدة','مستندات العقد وترتيب الأولوية','الموقع وتسليم جبهة العمل','البرنامج الزمني ومراحل التنفيذ','المواد والاختبارات وضبط الجودة','العمالة والمعدات والسلامة','المستخلصات والدفعات والاحتجاز','التغييرات والأعمال الإضافية','التأخير وغرامات التأخير وفق القانون','الاستلام الابتدائي والنهائي','الضمان وإصلاح العيوب','التأمينات والتراخيص','القوة القاهرة','إنهاء العقد وآثاره','تسوية النزاعات والقانون الواجب التطبيق'],
