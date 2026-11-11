@@ -400,12 +400,120 @@ const PERM_LABELS = { sales:'إدارة المبيعات', customerService:'خد
   socialMedia:'التواصل الاجتماعي والمنصات'
 };
 
+const DEFAULT_INTEGRATION_SETTINGS = {
+  // الربط الافتراضي حسب دورة العمل المطلوبة:
+  // BOQ لا يرتبط تلقائياً بأي قسم مالي أو مشتريات، والربط به يتم يدوياً من أزرار BOQ.
+  links: {
+    'extracts|accounting': true,
+    'extracts|finance': true,
+    'invoices|accounting': true,
+    'invoices|finance': true,
+    'boq|contracts': false,
+    'boq|extracts': false,
+    'boq|accounting': false,
+    'boq|finance': false,
+    'boq|purchases': false
+  },
+  numbering: {
+    contracts: true,
+    extracts: true,
+    invoices: true,
+    perContractor: true
+  }
+};
+function integrationPairKey(a,b){ return [String(a),String(b)].sort().join('|'); }
+function getIntegrationSettings(){
+  const s = STATE.integrationSettings;
+  if(!s || typeof s!=='object') STATE.integrationSettings = JSON.parse(JSON.stringify(DEFAULT_INTEGRATION_SETTINGS));
+  STATE.integrationSettings.links = Object.assign({}, DEFAULT_INTEGRATION_SETTINGS.links, STATE.integrationSettings.links||{});
+  STATE.integrationSettings.numbering = Object.assign({}, DEFAULT_INTEGRATION_SETTINGS.numbering, STATE.integrationSettings.numbering||{});
+  return STATE.integrationSettings;
+}
+function isIntegrationEnabled(a,b){
+  const s=getIntegrationSettings();
+  return !!s.links[integrationPairKey(a,b)];
+}
+function setIntegrationEnabled(a,b,on){
+  const s=getIntegrationSettings();
+  s.links[integrationPairKey(a,b)] = !!on;
+}
+function integrationLabel(k){
+  const labels={
+    boq:'BOQ / الكميات', contracts:'العقود', extracts:'المستخلصات',
+    accounting:'المحاسبة', finance:'الماليات', invoices:'الفواتير', purchases:'المشتريات'
+  };
+  return labels[k]||k;
+}
+function integrationSettingsHTML(){
+  if(!currentUser || !currentUser.isAdmin) return noAccessHTML();
+  const s=getIntegrationSettings();
+  const rows=[
+    ['extracts','accounting','المستخلصات ↔ المحاسبة'],
+    ['extracts','finance','المستخلصات ↔ الماليات'],
+    ['invoices','accounting','الفواتير ↔ المحاسبة'],
+    ['invoices','finance','الفواتير ↔ الماليات'],
+    ['boq','contracts','BOQ ↔ العقود (يدوي فقط عند الطلب)'],
+    ['boq','extracts','BOQ ↔ المستخلصات (يدوي فقط عند الطلب)'],
+    ['boq','accounting','BOQ ↔ المحاسبة (يدوي فقط عند الطلب)'],
+    ['boq','finance','BOQ ↔ الماليات (يدوي فقط عند الطلب)'],
+    ['boq','purchases','BOQ ↔ المشتريات']
+  ];
+  return `<div class="hero"><h1>⚙️ إعدادات الربط بين الأقسام</h1>
+    <p>تحكم مركزي في العلاقات بين BOQ والعقود والمستخلصات والمحاسبة والماليات والفواتير والمشتريات. لا يتم إنشاء ربط تلقائي إلا للعلاقات المفعّلة هنا.</p></div>
+    <div class="panel"><div class="section-note">
+      <b>القاعدة الحالية:</b> BOQ مستقل افتراضياً عن المشتريات والمحاسبة والماليات والمستخلصات والعقود.
+      ويمكن فتح الربط من داخل BOQ بالزر الخاص بكل قسم فقط إذا سمحت هذه الإعدادات.
+      <br><b>الربط المالي الافتراضي:</b> المستخلصات ↔ المحاسبة، المستخلصات ↔ الماليات، الفواتير ↔ المحاسبة، الفواتير ↔ الماليات.
+    </div>
+    <table><thead><tr><th>العلاقة</th><th>الحالة</th><th>التحكم</th></tr></thead><tbody>
+    ${rows.map(([a,b,l])=>`<tr><td><b>${escapeHtml(l)}</b></td><td>${isIntegrationEnabled(a,b)?'<span class="badge ok">مفعّل</span>':'<span class="badge">غير مفعّل</span>'}</td><td><button type="button" class="btn ${isIntegrationEnabled(a,b)?'btn-danger':'btn-primary'} btn-sm" onclick="toggleIntegration('${a}','${b}')">${isIntegrationEnabled(a,b)?'تعطيل':'تفعيل'}</button></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="panel"><div class="panel-title"><span>الترقيم التلقائي</span></div>
+      <div class="section-note">عند اختيار/إدخال اسم المقاول في العقود أو الفواتير أو المستخلصات، يبحث النظام عن آخر رقم مستخدم لهذا المقاول ويقترح الرقم التالي تلقائياً. لا يتم تغيير رقم سجل موجود.</div>
+      <div class="form-grid">
+        ${[['contracts','العقود'],['extracts','المستخلصات'],['invoices','الفواتير']].map(([k,l])=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" ${s.numbering[k]?'checked':''} onchange="toggleNumberingSetting('${k}',this.checked)"> ${l} — ترقيم تلقائي</label>`).join('')}
+        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" ${s.numbering.perContractor?'checked':''} onchange="toggleNumberingSetting('perContractor',this.checked)"> التسلسل مستقل لكل مقاول</label>
+      </div>
+    </div>`;
+}
+async function toggleIntegration(a,b){
+  if(!currentUser?.isAdmin){alert('هذه الإعدادات لمدير النظام فقط.');return;}
+  setIntegrationEnabled(a,b,!isIntegrationEnabled(a,b));
+  await dbSet('integrationSettings',getIntegrationSettings());
+  render();
+}
+async function toggleNumberingSetting(k,on){
+  if(!currentUser?.isAdmin)return;
+  getIntegrationSettings().numbering[k]=!!on;
+  await dbSet('integrationSettings',getIntegrationSettings());
+}
+function nextNumberForContractor(moduleKey, contractor, projectId, fieldName){
+  const s=getIntegrationSettings();
+  if(!contractor || !s.numbering[moduleKey]) return '';
+  const arr=Array.isArray(STATE[moduleKey])?STATE[moduleKey]:[];
+  const rows=arr.filter(r=>String(r.contractor||r.party||'').trim()===String(contractor).trim() && (!s.numbering.perContractor || !projectId || String(r.projectId||'')===String(projectId)));
+  let max=0;
+  rows.forEach(r=>{const m=String(r[fieldName]||'').match(/(\d+)\s*$/); if(m) max=Math.max(max,parseInt(m[1],10)||0);});
+  return String(max+1);
+}
+function applyAutoNumbering(moduleKey, record, isNew){
+  if(!isNew) return;
+  const contractor=String(record.contractor||record.party||'').trim();
+  if(!contractor)return;
+  const field=moduleKey==='contracts'?'contractNumber':moduleKey==='extracts'?'number':moduleKey==='invoices'?'number':'';
+  if(!field)return;
+  const n=nextNumberForContractor(moduleKey, contractor, record.projectId, field);
+  if(n && (!String(record[field]||'').trim() || record[field+'_auto']==='1')) {
+    record[field]=n;
+    record[field+'_auto']='1';
+  }
+}
 let STATE = {
   users:[], projects:[], phases:[], siteReports:[], techOffice:[],
   warehouseItems:[], warehouseTx:[], finance:[], extracts:[], contracts:[],
   company:[], planning:[], siteExecution:[], engineersList:[], labor:[], equipment:[],
   boq:[], purchases:[], suppliers:[], deliveries:[], warehousesLoc:[], invoices:[],
-  accounting:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
+  accounting:[], accountingEntries:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
   claims:[], risks:[], specialties:[], handoverRequests:[], handoverInspections:[], handoverPunchList:[], handoverApprovals:[], handoverCloseouts:[], finalHandover:[], postHandoverMaint:[], execReports:[], approvalPolicies:[], approvalWorkflows:[],
   consultantExtracts:[], consultantDirectives:[], contractorRequests:[], jobTasks:[],
   hrEmployees:[], hrOrganization:[], hrRecruitment:[], hrAttendance:[], hrLeaves:[], hrTraining:[], hrEvaluations:[], hrPayroll:[], hrProjectAssignments:[], hrDisciplinary:[], hrExit:[], engArchDesign:[], engStructDesign:[], engElecDesign:[], engMechDesign:[], engPlumbingDesign:[], engCivilInfraDesign:[], engLandscapeDesign:[], engInteriorDesign:[], engShopDrawings:[], engAsBuilt:[], engDesignReview:[], engDesignRfi:[], engSpecs:[], engBim:[], procSopLibrary:[], procWorkStart:[], procPreStart:[], procMethodStatement:[], procSiteReception:[], procDesignHandover:[], procSupervisionStart:[], procDisciplineReceive:[], procStageGate:[], procPartialHandover:[], procSnagClose:[], procLessons:[],
@@ -414,6 +522,7 @@ let STATE = {
   adminMgrDirectives:[], adminMgrApprovalRequests:[],
   surveillanceCameras:[], electronicSignatures:[], companyStamps:[], socialMedia:[], customerService:[], sales:[], customModuleRequests:[], customModuleData:{},
   menuVisibility:{sections:{}, items:{}},
+  integrationSettings:null,
   branding:null
 };
 const DEFAULT_BRANDING = {
@@ -2066,6 +2175,7 @@ const MODULES = {
     title:'الفواتير', permKey:'invoices', hasProject:true,
     fields:[
       {name:'number',label:'رقم الفاتورة',type:'text',required:true},
+      {name:'contractor',label:'اسم المقاول',type:'text',required:true},
       {name:'party',label:'الجهة',type:'text'},
       {name:'amount',label:'المبلغ',type:'number'},
       {name:'date',label:'التاريخ',type:'date'},
@@ -5043,11 +5153,12 @@ async function boot(){
 
 async function loadAllData(){
   const load=async(key)=>{
-    const v=await dbGet(key,[]);
+    const fallback = key==='integrationSettings' ? JSON.parse(JSON.stringify(DEFAULT_INTEGRATION_SETTINGS)) : [];
+    const v=await dbGet(key,fallback);
     if(DB_LOAD_FAILED.has(key)) return STATE[key]||[];   // فشلت القراءة: نُبقي ما هو موجود ولا نكتب فوقه
     DB_LOADED.add(key); return v;
   };
-  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
+  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','integrationSettings','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','accountingEntries','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
   keys.forEach(k=>DB_GUARDED.add(k));
   DB_LOADING=true;
   try{
@@ -5060,6 +5171,7 @@ async function loadAllData(){
   ensureDefaultApprovalPolicies();
   try{ ensureDefaultWorkProcedures(); }catch(e){ console.warn(e); }
   if(!STATE.menuVisibility || typeof STATE.menuVisibility!=='object') STATE.menuVisibility={sections:{},items:{}};
+  getIntegrationSettings();
   if(!STATE.branding || typeof STATE.branding!=='object') STATE.branding=Object.assign({}, DEFAULT_BRANDING);
   else STATE.branding=Object.assign({}, DEFAULT_BRANDING, STATE.branding);
   applyBrandingStyles();
@@ -5388,7 +5500,7 @@ function mainLayout(){
       <div class="content" id="content">${routeContent()}</div>
     </div>
   </div>
-  ${modalState && !modalState.isUserModal && !modalState.isApprovalModal && !modalState.isWorkflowModal ? modalHTML() : ''}${modalState && modalState.isApprovalModal ? approvalPolicyModalHTML() : ''}${modalState && modalState.isWorkflowModal ? workflowModalHTML() : ''}
+  ${modalState && !modalState.isUserModal && !modalState.isApprovalModal && !modalState.isWorkflowModal && !modalState.isBoqLinkModal ? modalHTML() : ''}${modalState && modalState.isApprovalModal ? approvalPolicyModalHTML() : ''}${modalState && modalState.isWorkflowModal ? workflowModalHTML() : ''}${modalState && modalState.isBoqLinkModal ? boqLinkModalHTML() : ''}
   `;
 }
 function toggleSidebar(){ sidebarOpen = !sidebarOpen; render(); }
@@ -5481,6 +5593,7 @@ function routeContent(){
   if(currentRoute==='reportsStats') return reportsStatsHTML();
   if(currentRoute==='projectSummaries') return projectSummariesHTML();
   if(currentRoute==='systemManagement') return systemManagementHTML();
+  if(currentRoute==='integrationSettings') return currentUser.isAdmin ? integrationSettingsHTML() : noAccessHTML();
   if(currentRoute==='approvalSettings') return currentUser.isAdmin ? approvalSettingsHTML() : noAccessHTML();
   if(currentRoute==='listManagement') return listManagementHTML();
   if(currentRoute==='changePassword') return changePasswordHTML();
@@ -5716,6 +5829,7 @@ function systemManagementHTML(){
     <button class="quick-btn" onclick="goRoute('activityLog')"><b>◷</b>سجل العمليات</button>
     <button class="quick-btn" onclick="goRoute('backup')"><b>⇩</b>Backup / Restore</button>
     <button class="quick-btn" onclick="goRoute('approvalSettings')"><b>✓</b>إدارة الاعتمادات</button>
+    <button class="quick-btn" onclick="goRoute('integrationSettings')"><b>🔗</b>إعدادات ربط الأقسام</button>
     <button class="quick-btn" onclick="goRoute('jobTasks')"><b>📋</b>المهام الوظيفية${jobCount?` (${jobCount})`:''}</button>
   </div>
 
@@ -6195,6 +6309,9 @@ function moduleHTML(key, mod){
       ${key==='siteIncidents'?`<td><span class="badge ${r.approvalStatus==='معتمد'?'ok':r.approvalStatus==='مرفوض'?'bad':'warn'}">${escapeHtml(incidentApprovalSummary(r))}</span>${(Array.isArray(r.requiredSections)?r.requiredSections:[]).map(sec=>`<div style="font-size:10px;margin-top:3px"><b>${escapeHtml((incidentApprovalSections().find(x=>x[0]===sec)||['',sec])[1])}</b>: ${escapeHtml(r.incidentApprovals&&r.incidentApprovals[sec]?r.incidentApprovals[sec].status:'قيد الاعتماد')}${canApproveIncidentSection(r,sec)?` <button class="link-btn" onclick="approveIncidentSection('${r.id}','${sec}','اعتماد')">اعتماد</button><button class="link-btn danger" onclick="approveIncidentSection('${r.id}','${sec}','رفض')">رفض</button>`:''}</div>`).join('')}</td>`:(approvalRequired(key)?`<td>${formatApprovalBadge(key,r)}</td>`:'')}
       <td class="no-print"><div class="row-actions">
         ${key==='surveillanceCameras'&&r.streamUrl?`<button class="link-btn" onclick="openCameraStream('${r.id}')">📹 فتح البث</button>`:''}
+        ${key==='boq'?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px;">
+          ${[['contracts','العقود','▧'],['extracts','المستخلصات','▣'],['accounting','المحاسبة','¤'],['finance','الماليات','₤']].map(([tk,tl,ic])=>isIntegrationEnabled('boq',tk)?`<button class="link-btn" onclick="openBoqLinkModal('${r.id}','${tk}')">${ic} ${tl}</button>`:`<button class="link-btn" disabled title="فعّل الربط من إعدادات ربط الأقسام">${ic} ${tl}</button>`).join('')}
+        </div>`:''}
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?t('تعديل','Edit','Modifier'):t('عرض','View','Voir')}</button>
         <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ ${t('طباعة','Print','Imprimer')}</button>
         ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${canApproveRecord(key,r)?`<button class="link-btn" onclick="approveRecord('${key}','${r.id}','اعتماد')">${t('اعتماد','Approve','Approuver')}</button><button class="link-btn danger" onclick="approveRecord('${key}','${r.id}','رفض')">${t('رفض','Reject','Rejeter')}</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">${t('حذف','Delete','Supprimer')}</button>`:''}
@@ -6707,7 +6824,17 @@ function modalHTML(){
     } else if(f.type==='textarea'){
       input = `<textarea id="f_${f.name}" rows="3" ${!editable?'disabled':''}>${escapeHtml(val)}</textarea>`;
     } else {
-      input = `<input type="${f.type}" id="f_${f.name}" value="${escapeHtml(val)}" ${!editable?'disabled':''}>`;
+      const partyPicker = (['contracts','invoices'].includes(moduleKey) && f.name==='contractor');
+      if(partyPicker){
+        const names=[...new Set((STATE.suppliers||[]).map(s=>String(s.name||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar',{numeric:true,sensitivity:'base'}));
+        let opts=names.map(n=>`<option value="${escapeHtml(n)}" ${String(val)===n?'selected':''}>${escapeHtml(n)}</option>`).join('');
+        if(val && !names.includes(String(val))) opts=`<option value="${escapeHtml(String(val))}" selected>${escapeHtml(String(val))}</option>`+opts;
+        input = `<select id="f_${f.name}" onchange="epmsSuggestPartyNumber('${moduleKey}')" ${!editable?'disabled':''}>
+          <option value="">— اختر المقاول —</option>${opts}
+        </select>`;
+      }else{
+        input = `<input type="${f.type}" id="f_${f.name}" value="${escapeHtml(val)}" ${!editable?'disabled':''}>`;
+      }
     }
     return `<div class="field ${isFull?'full':''}"><label>${fieldLabel(f.label)}${f.required?' *':''}</label>${input}</div>`;
   }).join('');
@@ -6805,6 +6932,15 @@ function suggestNextExtractNumber(){
  let max=0; nums.forEach(n=>{const m=n.match(/(\d+)\s*$/);if(m)max=Math.max(max,parseInt(m[1],10));});
  if(!numberEl.value||numberEl.dataset.auto==='1'){numberEl.value=String(max+1);numberEl.dataset.auto='1';}
 }
+function epmsSuggestPartyNumber(moduleKey){
+  const contractor=document.getElementById('f_contractor')?.value?.trim()||'';
+  if(!contractor)return;
+  const field=moduleKey==='contracts'?'contractNumber':moduleKey==='invoices'?'number':'';
+  if(!field)return;
+  const el=document.getElementById('f_'+field); if(!el)return;
+  const n=nextNumberForContractor(moduleKey,contractor,document.getElementById('f_projectId')?.value||'',field);
+  if(n && (!el.value.trim() || el.dataset.auto==='1')){el.value=n;el.dataset.auto='1';}
+}
 async function saveRecord(){
   const {moduleKey, record, isNew} = modalState;
   const mod = MODULES[moduleKey];
@@ -6836,6 +6972,9 @@ async function saveRecord(){
       if(pid && !canAccessProject(pid)){ alert('المشروع المختار غير ضمن صلاحياتك.'); return; }
       record.projectId = pid;
     }
+  }
+  if(['contracts','extracts','invoices'].includes(moduleKey)){
+    applyAutoNumbering(moduleKey, record, isNew);
   }
   if(moduleKey==='siteIncidents'){
     record.requiredSections=Array.isArray(record.requiredSections)?record.requiredSections:[];
@@ -6921,11 +7060,87 @@ async function saveRecord(){
       await dbSet('sales',STATE.sales);
     }
   }
+  // الربط المالي يتم فقط إذا كان مفعّلاً من إعدادات الربط:
+  // المستخلصات -> المحاسبة والماليات، والفواتير -> المحاسبة والماليات.
+  if(moduleKey==='extracts' && isIntegrationEnabled('extracts','accounting')){
+    const entries=Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
+    const sourceKey='extract:'+String(record.id||record.number||'')+'|'+String(record.contractor||'');
+    if(record.status==='معتمد' && !entries.some(e=>e.sourceKey===sourceKey)){
+      entries.push({id:'JE-'+genId(),date:record.date||todayISO(),sourceKey,sourceType:'extract',contractor:record.contractor,contractNumber:record.contractNumber,projectId:record.projectId||'',description:'مستخلص مقاول '+(record.number||''),debitAccount:'تكلفة المشروع',creditAccount:'مستحقات المقاولين',debit:Number(record.currentAmount)||0,credit:Number(record.currentAmount)||0,status:'مرحّل'});
+      STATE.accountingEntries=entries; await dbSet('accountingEntries',entries);
+    }
+  }
+  if(moduleKey==='invoices' && isIntegrationEnabled('invoices','accounting')){
+    const entries=Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
+    const sourceKey='invoice:'+String(record.id||record.number||'');
+    if(record.status==='مدفوعة' && !entries.some(e=>e.sourceKey===sourceKey)){
+      const amount=Number(record.amount)||0;
+      entries.push({id:'JE-'+genId(),date:record.date||todayISO(),sourceKey,sourceType:'invoice',contractor:record.contractor||record.party||'',projectId:record.projectId||'',description:'فاتورة '+(record.number||''),debitAccount:'مصروفات / تكلفة',creditAccount:'البنك / الخزينة',debit:amount,credit:amount,status:'مرحّل'});
+      STATE.accountingEntries=entries; await dbSet('accountingEntries',entries);
+    }
+  }
+  if(moduleKey==='extracts' && isIntegrationEnabled('extracts','finance')){
+    const fin=Array.isArray(STATE.finance)?STATE.finance:[];
+    const sourceKey='extract:'+String(record.id||record.number||'');
+    if(record.status==='مصروف' && !fin.some(e=>e.sourceKey===sourceKey)){
+      fin.push({id:genId(),projectId:record.projectId||'',type:'مصروف',category:'صرف مستخلص مقاول '+(record.number||''),amount:Number(record.paidAmount)||Number(record.netAmount)||0,date:record.date||todayISO(),sourceKey,notes:'ترحيل تلقائي من المستخلص — الربط مفعّل'});
+      STATE.finance=fin; await dbSet('finance',fin);
+    }
+  }
+  if(moduleKey==='invoices' && isIntegrationEnabled('invoices','finance')){
+    const fin=Array.isArray(STATE.finance)?STATE.finance:[];
+    const sourceKey='invoice:'+String(record.id||record.number||'');
+    if(record.status==='مدفوعة' && !fin.some(e=>e.sourceKey===sourceKey)){
+      fin.push({id:genId(),projectId:record.projectId||'',type:'مصروف',category:'فاتورة '+(record.number||''),amount:Number(record.amount)||0,date:record.date||todayISO(),sourceKey,notes:'ترحيل تلقائي من الفاتورة — الربط مفعّل'});
+      STATE.finance=fin; await dbSet('finance',fin);
+    }
+  }
   await dbSet(moduleKey, STATE[moduleKey]);
   modalState = null;
   render();
 }
 
+function boqLinkTargetRecords(target, boqRecord){
+  const pid=String(boqRecord?.projectId||'');
+  const arr=Array.isArray(STATE[target])?STATE[target]:[];
+  return arr.filter(r=>!pid || String(r.projectId||'')===pid || !r.projectId);
+}
+function boqLinkModalHTML(){
+  if(!modalState?.isBoqLinkModal)return '';
+  const r=modalState.record||{}, target=modalState.target;
+  const labels={contracts:'العقود',extracts:'المستخلصات',accounting:'المحاسبة',finance:'الماليات'};
+  const rows=boqLinkTargetRecords(target,r);
+  const current=r.links&&r.links[target]||'';
+  let opts='<option value="">— بدون ربط —</option>';
+  opts+=rows.map(x=>{
+    const id=String(x.id||''); const label=target==='contracts'?(x.contractNumber||x.contractor||id):target==='extracts'?(x.number||x.contractor||id):target==='accounting'?(x.entryType||x.account||id):((x.category||x.type||'حركة مالية')+' — '+(x.amount||0));
+    return `<option value="${escapeHtml(id)}" ${String(current)===id?'selected':''}>${escapeHtml(label)}</option>`;
+  }).join('');
+  return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:650px">
+    <h3>ربط BOQ مع ${escapeHtml(labels[target]||target)}</h3>
+    <div class="section-note">هذا الربط يدوي لهذا البند فقط، ولا يتم إنشاؤه تلقائياً. يمكن إلغاؤه باختيار «بدون ربط».</div>
+    <div class="field"><label>السجل المرتبط</label><select id="boqLinkSelect">${opts}</select></div>
+    <div class="section-note">البند: <b>${escapeHtml(r.itemName||'—')}</b> · المشروع: <b>${escapeHtml(projectName(r.projectId)||'—')}</b></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">إلغاء</button><button class="btn btn-primary" onclick="saveBoqLink()">حفظ الربط</button></div>
+  </div></div>`;
+}
+function openBoqLinkModal(boqId,target){
+  if(!isIntegrationEnabled('boq',target)){alert('هذا الربط غير مفعّل من إعدادات ربط الأقسام.');return;}
+  const r=(STATE.boq||[]).find(x=>String(x.id)===String(boqId)); if(!r)return;
+  modalState={isBoqLinkModal:true,isUserModal:false,isApprovalModal:false,isWorkflowModal:false,moduleKey:'boq',record:JSON.parse(JSON.stringify(r)),target};
+  render();
+}
+async function saveBoqLink(){
+  if(!modalState?.isBoqLinkModal)return;
+  const target=modalState.target, r=modalState.record||{};
+  const real=(STATE.boq||[]).find(x=>String(x.id)===String(r.id)); if(!real)return;
+  real.links=real.links||{};
+  const id=document.getElementById('boqLinkSelect')?.value||'';
+  if(id) real.links[target]=id; else delete real.links[target];
+  real.linkUpdatedAt=new Date().toISOString();
+  await dbSet('boq',STATE.boq);
+  modalState=null; render();
+}
 function renderAttachmentList(moduleKey, record){
   const arr=Array.isArray(record.attachments)?record.attachments:(record.hasAttachment?[{id:'legacy',name:record.attachmentName||'المرفق'}]:[]);
   if(!arr.length) return '<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">'+t('لا توجد مرفقات.','No attachments.','Aucune pièce jointe.')+'</div>';

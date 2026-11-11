@@ -20,10 +20,10 @@
   --epms-line:#d9e5f2;--epms-text:#102b4d;--epms-muted:#6c7d91;
 }
 *{box-sizing:border-box;}
-html,html,body{height:100%;margin:0;padding:0;overflow-x:hidden;}body{min-height:100%;}
+html,body{margin:0;padding:0;}
 body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms-text);min-height:100vh;}
-.main{background:transparent !important;flex:1 1 auto;min-width:0;width:auto;max-width:100%;display:flex;flex-direction:column;overflow-x:hidden;}
-.content{position:relative;z-index:1;width:100%;max-width:100%;box-sizing:border-box;flex:1 1 auto;}
+.main{background:transparent !important;}
+.content{position:relative;z-index:1;}
 #app{min-height:100vh;}
 
 /* ---------- Login ---------- */
@@ -55,13 +55,11 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 .btn-sm{padding:6px 12px;font-size:13px;}
 
 /* ---------- Main layout ---------- */
-.layout{display:flex;align-items:stretch;min-height:100vh;min-height:100dvh;width:100%;max-width:100%;overflow-x:hidden;background:var(--app-overlay),var(--app-bg-image) center center / cover no-repeat fixed;}
+.layout{display:flex;min-height:100vh;background:var(--app-overlay),var(--app-bg-image) center center / cover no-repeat fixed;}
 .sidebar{
-  width:300px;flex:0 0 300px;flex-shrink:0;background:linear-gradient(180deg,#071d3a 0%,#082a50 42%,#061a34 100%);
+  width:300px;flex-shrink:0;background:linear-gradient(180deg,#071d3a 0%,#082a50 42%,#061a34 100%);
   color:#fff;border-left:1px solid rgba(255,255,255,.08);box-shadow:-4px 0 18px rgba(2,24,48,.18);
-  display:flex;flex-direction:column;position:sticky;top:0;align-self:flex-start;
-  height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;overflow-x:hidden;overflow-y:auto;z-index:20;
-  box-sizing:border-box;
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:20;
 }
 .sidebar .brand{padding:16px 18px 13px;text-align:right;border-bottom:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(9,76,143,.72),rgba(4,39,76,.72));}
 .brand-top{display:flex;align-items:center;gap:10px;}
@@ -108,12 +106,11 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 .sidebar-foot b{color:#fff;font-size:13px;}
 
 /* Main content area */
-.main{flex:1 1 auto;min-width:0;background:#eef4fa;display:flex;flex-direction:column;}
+.main{flex:1;min-width:0;background:#eef4fa;}
 .topbar{
   background:linear-gradient(90deg,#061c3b 0%,#0b5cae 55%,#078bc7 100%);
-  color:#fff;border:0;padding:0 16px;min-height:72px;position:sticky;top:0;z-index:15;
+  color:#fff;border:0;padding:0 22px;min-height:88px;position:sticky;top:0;z-index:15;
   box-shadow:0 3px 16px rgba(4,29,58,.18);display:flex;align-items:center;justify-content:space-between;
-  gap:10px;flex-wrap:wrap;width:100%;box-sizing:border-box;flex:0 0 auto;
 }
 .topbar:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.17;background:repeating-linear-gradient(90deg,transparent 0 75px,rgba(255,255,255,.14) 76px 78px),linear-gradient(180deg,transparent 0 55%,rgba(255,255,255,.12) 56% 58%,transparent 59%);}
 .topbar>*{position:relative;z-index:1;}
@@ -131,36 +128,12 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 .top-action .tb-badge.bad{background:#e34b57;color:#fff;}
 .top-action.pending-btn{background:rgba(240,161,26,.22);border-color:rgba(240,161,26,.45);}
 .top-action.decided-btn{background:rgba(17,169,107,.18);border-color:rgba(17,169,107,.4);}
-.content{padding:16px 18px 48px;width:100%;max-width:100%;margin:0;box-sizing:border-box;flex:1 1 auto;min-height:0;overflow-x:auto;}
+.content{padding:18px 20px 45px;max-width:1600px;margin:auto;}
 
 /* ---------- Toolbar ---------- */
-.toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;width:100%;box-sizing:border-box;}.toolbar .filters{flex:1 1 320px;min-width:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}.toolbar .filters select,.toolbar .filters input[type=search]{max-width:100%;box-sizing:border-box;}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px;flex-wrap:wrap;}
 .toolbar .filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .toolbar select{padding:8px 10px;border:1.5px solid var(--epms-line);border-radius:8px;font-family:inherit;background:#fff;font-size:13.5px;}
-/* Consistent module list layout */
-.module-list-wrap{display:flex;flex-direction:column;gap:0;min-height:calc(100vh - 140px);}
-.toolbar + table, .toolbar ~ table{width:100%;}
-table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.92);border-radius:10px;}.table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:8px;}
-.filters select, .filters input[type=search]{padding:8px 10px;border:1.5px solid var(--epms-line);border-radius:8px;font-family:inherit;background:#fff;font-size:13.5px;min-height:38px;}
-.module-global-search{flex:1 1 200px;min-width:180px;}
-/* منع قص الواجهة من اليسار أو الأسفل */
-.layout > .main{min-width:0;overflow:visible;}
-#content{padding-bottom:max(48px, env(safe-area-inset-bottom, 0px));}
-.table-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border-radius:10px;}
-.table-scroll table{min-width:720px;}
-.row-actions{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start;}
-@media (min-width:821px){
-  .sidebar{transform:none!important;}
-  .layout{flex-direction:row;}
-}
-
-@media (max-width:900px){
-  .toolbar{flex-direction:column;align-items:stretch;}
-  .toolbar .filters{width:100%;}
-  .modal.modal-wide{max-width:100%!important;}
-  .modal.modal-wide .form-grid{grid-template-columns:1fr 1fr;}
-}
-
 
 /* ---------- Stat Cards ---------- */
 .cards-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px;margin-bottom:15px;}
@@ -243,7 +216,7 @@ tbody tr:hover{background:#f7fbff;}
 .hero:after{content:"";position:absolute;inset:auto -20px -48px -20px;height:110px;opacity:.28;background:linear-gradient(180deg,transparent 0 28%,rgba(255,255,255,.16) 29% 34%,transparent 35%),repeating-linear-gradient(90deg,transparent 0 35px,rgba(255,255,255,.16) 36px 40px);transform:skewX(-16deg);}
 .hero h1{margin:0;font-size:27px;font-weight:900;position:relative;z-index:1;}
 .hero p{margin:5px 0 0;color:#d9f1ff;position:relative;z-index:1;font-size:13px;}
-.hero.reference-hero{min-height:120px;border-radius:12px;margin:0 0 16px;padding:22px 26px 18px;background:linear-gradient(180deg,rgba(3,32,68,.96),rgba(8,98,171,.96));border-bottom:3px solid #1eb4e8;box-shadow:0 7px 18px rgba(0,35,70,.16);}
+.hero.reference-hero{min-height:140px;border-radius:0;margin:-18px -20px 17px;padding:25px 28px 20px;background:linear-gradient(180deg,rgba(3,32,68,.96),rgba(8,98,171,.96));border-bottom:3px solid #1eb4e8;box-shadow:0 7px 18px rgba(0,35,70,.16);}
 .reference-hero:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 0 35%,rgba(255,255,255,.10) 36% 36.4%,transparent 36.5% 45%,rgba(255,255,255,.08) 45.2% 45.8%,transparent 46%),repeating-linear-gradient(90deg,transparent 0 48px,rgba(255,255,255,.06) 49px 51px);opacity:.75;}
 .reference-hero:after{height:55px;bottom:0;opacity:.22;}
 .reference-hero h1{font-size:28px;text-shadow:0 2px 5px rgba(0,0,0,.22);}
@@ -336,14 +309,11 @@ tbody tr:hover{background:#f7fbff;}
   .topbar h2{font-size:17px;}
   .topbar-actions{gap:4px;flex-wrap:wrap;justify-content:flex-end;}
   .top-action.has-label{font-size:11px;padding:6px 8px;}
-  .content{padding:12px 10px 56px;overflow-x:auto;}
-  .layout{width:100%;}
-  .main{width:100%;min-width:0;}
-  .table-scroll{overflow-x:auto;}
+  .content{padding:12px 10px 35px;overflow-x:hidden;}
   .form-grid{grid-template-columns:1fr;}
   .hero{min-height:112px;padding:18px;}
   .hero h1{font-size:21px;}
-  .hero.reference-hero{margin:0 0 12px;padding:18px;}
+  .hero.reference-hero{margin:-12px -10px 14px;padding:20px;}
   .dashboard-grid{grid-template-columns:1fr;}
   .cards-row.reference-stats{grid-template-columns:repeat(2,1fr);}
   .dashboard-sections{grid-template-columns:1fr;}
@@ -2226,18 +2196,13 @@ const MODULES = {
   finance:{
     title:'الماليات', permKey:'finance', hasProject:true,
     fields:[
-      {name:'type',label:'النوع',type:'select',options:['إيراد','مصروف','مستحق مقاول','صرف مستخلص','استقطاع','ضريبة','مشتريات','توريد','فاتورة','صرف فاتورة']},
-      {name:'category',label:'البند / التصنيف',type:'text'},
+      {name:'type',label:'النوع',type:'select',options:['إيراد','مصروف']},
+      {name:'category',label:'البند',type:'text'},
       {name:'amount',label:'المبلغ',type:'number',required:true},
       {name:'date',label:'التاريخ',type:'date'},
-      {name:'contractor',label:'المقاول',type:'text'},
-      {name:'contractNumber',label:'رقم العقد',type:'text'},
-      {name:'extractNumber',label:'رقم المستخلص',type:'text'},
-      {name:'sourceType',label:'مصدر القيد',type:'select',options:['يدوي','مستخلص مقاول','عقد','BOQ','بند زيادة','مشتريات','توريد','فاتورة']},
-      {name:'sourceId',label:'معرّف المصدر',type:'text'},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['date','التاريخ'],['type','النوع'],['category','البند'],['contractor','المقاول'],['extractNumber','المستخلص'],['amount','المبلغ'],['sourceType','المصدر']]
+    columns:[['date','التاريخ'],['type','النوع'],['category','البند'],['amount','المبلغ']]
   },
   consultantExtracts:{
     title:'مستخلص الاستشاري', permKey:'consultantExtracts', hasProject:true,
@@ -2274,7 +2239,6 @@ const MODULES = {
       {name:'periodFrom',label:'عن الفترة من',type:'date'},
       {name:'periodTo',label:'إلى',type:'date'},
       {name:'owner',label:'اسم المالك',type:'text'},
-      {name:'linkToContract',label:'ربط المستخلص بعقد؟',type:'select',options:['نعم — مربوط بعقد','لا — بدون عقد']},
       {name:'contractor',label:'اسم المقاول',type:'select',options:[]},
       {name:'contractNumber',label:'رقم العقد',type:'select',options:[]},
       {name:'activityType',label:'نوع النشاط',type:'select',options:['أعمال مدنية','هيكل خرساني','مباني','تشطيبات','أعمال معمارية','كهرباء','ميكانيكا وتكييف','أعمال صحية','MEP','لاندسكيب','طرق وبنية تحتية','خوازيق وأساسات','أعمال معدنية','توريدات','أعمال أخرى']},
@@ -2304,7 +2268,7 @@ const MODULES = {
       {name:'status',label:'الحالة',type:'select',options:['قيد الإعداد','مقدم للعميل','مراجع','معتمد','مصروف جزئياً','مصروف','مرفوض']},
       {name:'notes',label:'ملاحظات وشروط الدفع',type:'textarea'}
     ],
-    columns:[['number','رقم المستخلص'],['date','التاريخ'],['linkToContract','ربط بعقد'],['contractor','المقاول'],['contractNumber','رقم العقد'],['itemCount','عدد البنود'],['currentAmount','قيمة الفترة'],['netAmount','الصافي'],['status','الحالة']]
+    columns:[['number','رقم المستخلص'],['date','التاريخ'],['owner','المالك'],['contractor','المقاول'],['contractNumber','رقم العقد'],['activityType','نوع النشاط'],['itemCount','عدد بنود BOQ'],['currentQuantity','إجمالي كمية الفترة'],['cumulativeQuantity','الكمية التراكمية'],['currentAmount','قيمة الفترة'],['amount','قيمة تراكمية'],['netAmount','الصافي'],['status','الحالة']]
   },
   contracts:{
     title:'عقود المالك والمقاول', permKey:'contracts', hasProject:true,
@@ -2428,31 +2392,23 @@ const MODULES = {
       {name:'activityType',label:'نوع النشاط',type:'select',options:['أعمال مدنية','هيكل خرساني','مباني','تشطيبات','أعمال معمارية','كهرباء','ميكانيكا وتكييف','أعمال صحية','MEP','لاندسكيب','طرق وبنية تحتية','خوازيق وأساسات','أعمال معدنية','توريدات','أعمال أخرى']},
       {name:'itemName',label:'البند',type:'text',required:true},
       {name:'unit',label:'الوحدة',type:'text'},
-      {name:'quantity',label:'الكمية التعاقدية',type:'number'},
+      {name:'quantity',label:'الكمية',type:'number'},
       {name:'unitPrice',label:'سعر الوحدة',type:'number'},
-      {name:'totalAmount',label:'إجمالي البند (كمية × سعر)',type:'number'},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['itemCode','الكود'],['itemName','البند'],['contractor','المقاول'],['contractNumber','رقم العقد'],['unit','الوحدة'],['quantity','الكمية'],['unitPrice','سعر الوحدة'],['totalAmount','الإجمالي']]
+    columns:[['itemName','البند'],['unit','الوحدة'],['quantity','الكمية'],['unitPrice','سعر الوحدة']]
   },
   purchases:{
     title:'المشتريات', permKey:'purchases', hasProject:true,
     fields:[
-      {name:'orderNumber',label:'رقم أمر الشراء',type:'text'},
       {name:'itemName',label:'الصنف',type:'text',required:true},
-      {name:'itemCode',label:'كود الصنف',type:'text'},
       {name:'quantity',label:'الكمية',type:'number'},
-      {name:'unit',label:'الوحدة',type:'text'},
-      {name:'unitPrice',label:'سعر الوحدة',type:'number'},
-      {name:'totalAmount',label:'الإجمالي',type:'number'},
-      {name:'supplier',label:'المورد',type:'text',required:true},
+      {name:'supplier',label:'المورد',type:'text'},
       {name:'orderDate',label:'تاريخ الطلب',type:'date'},
-      {name:'expectedDate',label:'تاريخ التوريد المتوقع',type:'date'},
-      {name:'status',label:'الحالة',type:'select',options:['طلب جديد','تم الطلب','تم التوريد جزئياً','تم الاستلام','ملغي']},
-      {name:'invoiceNumber',label:'رقم الفاتورة المرتبطة',type:'text'},
+      {name:'status',label:'الحالة',type:'select',options:['طلب جديد','تم الطلب','تم الاستلام']},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['orderNumber','أمر الشراء'],['itemName','الصنف'],['supplier','المورد'],['quantity','الكمية'],['totalAmount','الإجمالي'],['status','الحالة'],['invoiceNumber','الفاتورة']]
+    columns:[['itemName','الصنف'],['quantity','الكمية'],['supplier','المورد'],['status','الحالة']]
   },
   suppliers:{
     title:'الموردون والمقاولون', permKey:'suppliers',
@@ -2467,23 +2423,14 @@ const MODULES = {
   deliveries:{
     title:'التوريدات والاستلام', permKey:'deliveries', hasProject:true,
     fields:[
-      {name:'deliveryNumber',label:'رقم إذن التوريد',type:'text'},
-      {name:'purchaseOrderNumber',label:'رقم أمر الشراء المرتبط',type:'text'},
       {name:'itemName',label:'الصنف',type:'text',required:true},
-      {name:'itemCode',label:'كود الصنف',type:'text'},
-      {name:'quantity',label:'الكمية المستلمة',type:'number'},
-      {name:'unit',label:'الوحدة',type:'text'},
-      {name:'unitPrice',label:'سعر الوحدة',type:'number'},
-      {name:'totalAmount',label:'قيمة التوريد',type:'number'},
-      {name:'supplier',label:'المورد',type:'text',required:true},
-      {name:'date',label:'تاريخ الاستلام',type:'date'},
+      {name:'quantity',label:'الكمية',type:'number'},
+      {name:'supplier',label:'المورد',type:'text'},
+      {name:'date',label:'التاريخ',type:'date'},
       {name:'receivedBy',label:'استلمها',type:'text'},
-      {name:'warehouse',label:'المخزن',type:'text'},
-      {name:'invoiceNumber',label:'رقم الفاتورة المرتبطة',type:'text'},
-      {name:'status',label:'الحالة',type:'select',options:['تم الاستلام','استلام جزئي','مرفوض','قيد الفحص']},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['date','التاريخ'],['deliveryNumber','إذن التوريد'],['purchaseOrderNumber','أمر الشراء'],['itemName','الصنف'],['supplier','المورد'],['quantity','الكمية'],['totalAmount','القيمة'],['invoiceNumber','الفاتورة'],['status','الحالة']]
+    columns:[['date','التاريخ'],['itemName','الصنف'],['quantity','الكمية'],['supplier','المورد']]
   },
   warehousesLoc:{
     title:'المخازن', permKey:'warehousesLoc',
@@ -2499,39 +2446,24 @@ const MODULES = {
     title:'الفواتير', permKey:'invoices', hasProject:true,
     fields:[
       {name:'number',label:'رقم الفاتورة',type:'text',required:true},
-      {name:'invoiceType',label:'نوع الفاتورة',type:'select',options:['مشتريات','توريد','مقاول','مبيعات','أخرى']},
-      {name:'party',label:'الجهة / المورد',type:'text',required:true},
-      {name:'purchaseOrderNumber',label:'رقم أمر الشراء',type:'text'},
-      {name:'deliveryNumber',label:'رقم إذن التوريد',type:'text'},
-      {name:'itemDescription',label:'بيان الأصناف / الوصف',type:'textarea'},
-      {name:'amount',label:'المبلغ قبل الضريبة',type:'number'},
-      {name:'vatAmount',label:'ضريبة القيمة المضافة',type:'number'},
-      {name:'totalAmount',label:'الإجمالي شامل الضريبة',type:'number'},
-      {name:'paidAmount',label:'المبلغ المدفوع',type:'number'},
-      {name:'remainingAmount',label:'المتبقي',type:'number'},
-      {name:'date',label:'تاريخ الفاتورة',type:'date'},
-      {name:'dueDate',label:'تاريخ الاستحقاق',type:'date'},
-      {name:'status',label:'الحالة',type:'select',options:['غير مدفوعة','مدفوعة جزئياً','مدفوعة','ملغاة']},
+      {name:'party',label:'الجهة',type:'text'},
+      {name:'amount',label:'المبلغ',type:'number'},
+      {name:'date',label:'التاريخ',type:'date'},
+      {name:'status',label:'الحالة',type:'select',options:['غير مدفوعة','مدفوعة جزئياً','مدفوعة']},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['number','رقم الفاتورة'],['invoiceType','النوع'],['party','الجهة'],['purchaseOrderNumber','أمر الشراء'],['deliveryNumber','التوريد'],['totalAmount','الإجمالي'],['paidAmount','المدفوع'],['status','الحالة']]
+    columns:[['number','رقم الفاتورة'],['party','الجهة'],['amount','المبلغ'],['status','الحالة']]
   },
   accounting:{
     title:'المحاسبة', permKey:'accounting', hasProject:true,
     fields:[
-      {name:'entryType',label:'نوع القيد',type:'select',options:['قيد يومية','سند قبض','سند صرف','ترحيل مستخلص','صرف مستخلص','بند زيادة','فاتورة مشتريات','صرف فاتورة','توريد مخزني']},
+      {name:'entryType',label:'نوع القيد',type:'select',options:['قيد يومية','سند قبض','سند صرف']},
       {name:'account',label:'الحساب',type:'text'},
-      {name:'contraAccount',label:'الحساب المقابل',type:'text'},
       {name:'amount',label:'المبلغ',type:'number',required:true},
       {name:'date',label:'التاريخ',type:'date'},
-      {name:'contractor',label:'المقاول',type:'text'},
-      {name:'contractNumber',label:'رقم العقد',type:'text'},
-      {name:'extractNumber',label:'رقم المستخلص',type:'text'},
-      {name:'sourceType',label:'مصدر القيد',type:'select',options:['يدوي','مستخلص مقاول','عقد','BOQ','بند زيادة','مشتريات','توريد','فاتورة']},
-      {name:'sourceId',label:'معرّف المصدر',type:'text'},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['date','التاريخ'],['entryType','النوع'],['account','الحساب'],['contractor','المقاول'],['extractNumber','المستخلص'],['amount','المبلغ'],['sourceType','المصدر']]
+    columns:[['date','التاريخ'],['entryType','النوع'],['account','الحساب'],['amount','المبلغ']]
   },
   qaqc:{
     title:'QA/QC والجودة', permKey:'qaqc', hasProject:true,
@@ -5495,7 +5427,7 @@ async function loadAllData(){
     if(DB_LOAD_FAILED.has(key)) return STATE[key]||[];   // فشلت القراءة: نُبقي ما هو موجود ولا نكتب فوقه
     DB_LOADED.add(key); return v;
   };
-  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps','linkSettings'];
+  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps'];
   keys.forEach(k=>DB_GUARDED.add(k));
   DB_LOADING=true;
   try{
@@ -5505,11 +5437,6 @@ async function loadAllData(){
     if(i===0) render();
   }
   } finally { DB_LOADING=false; }
-  if(!STATE.linkSettings || Array.isArray(STATE.linkSettings) || typeof STATE.linkSettings!=='object'){
-    STATE.linkSettings = Object.assign({}, DEFAULT_LINK_SETTINGS);
-  } else {
-    STATE.linkSettings = Object.assign({}, DEFAULT_LINK_SETTINGS, STATE.linkSettings);
-  }
   ensureDefaultApprovalPolicies();
   try{ ensureDefaultWorkProcedures(); }catch(e){ console.warn(e); }
   if(!STATE.menuVisibility || typeof STATE.menuVisibility!=='object') STATE.menuVisibility={sections:{},items:{}};
@@ -5856,10 +5783,6 @@ function setExtractFilter(kind,value){
   projectFilter['extracts_'+kind]=value||'';
   render();
 }
-function setModuleFieldFilter(key,field,value){
-  projectFilter[key+'_'+field]=value||'';
-  render();
-}
 function setModuleSearch(key,value){
   projectFilter[key+'_q']=value||'';
   render();
@@ -6161,43 +6084,11 @@ function clearableDataModules(){
   return list;
 }
 
-function linkSettingToggle(key,label,hint){
-  const on = linkOn(key);
-  return `<label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--epms-line);border-radius:10px;background:${on?'#f0f9f4':'#fafbfc'};margin:0">
-    <input type="checkbox" ${on?'checked':''} onchange="setLinkSetting('${key}', this.checked)" style="margin-top:3px;width:18px;height:18px;">
-    <span><b>${escapeHtml(label)}</b><br><small style="color:#6b7c8f">${escapeHtml(hint)}</small></span>
-  </label>`;
-}
 function systemManagementHTML(){
   if(!currentUser || !currentUser.isAdmin) return noAccessHTML();
   const moduleOptions = clearableDataModules().map(m=>`<option value="${m.key}">${escapeHtml(m.title)}</option>`).join('');
   const jobCount = (STATE.jobTasks||[]).length;
-  const ls = getLinkSettings();
   return `<div class="hero"><h1>إدارة النظام</h1><p>إدارة المستخدمين والصلاحيات والنسخ الاحتياطية والقوائم وسجل العمليات والمهام الوظيفية وضبط المصنع.</p></div>
-
-  <div class="panel" style="margin-bottom:16px">
-    <div class="panel-title"><span>🔗 إعدادات ربط BOQ / العقود / المستخلصات / المشتريات / الماليات / المحاسبة</span>
-      <small>عطّل أي بند إذا كان عندك مستخلصات بلا عقد أو عقود بلا BOQ</small></div>
-    <div class="section-note" style="margin-bottom:12px">الافتراضي: الربط <b>اختياري</b> (غير إلزامي). عند التفعيل يُفرض التحقق أو الترحيل التلقائي حسب البند.</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      ${linkSettingToggle('linkBoqToContract','ربط BOQ بالعقود عند توفرهما','عند تعبئة مقاول + رقم عقد في BOQ يُحفظ contractId دون إلزام')}
-      ${linkSettingToggle('boqRequireContract','إلزام ربط كل بند BOQ بعقد','لا يُحفظ BOQ بدون مقاول ورقم عقد مسجّل')}
-      ${linkSettingToggle('linkExtractToBoq','تفعيل بنود BOQ داخل المستخلص','التحقق من تبعية بند BOQ للمقاول/العقد عند الربط')}
-      ${linkSettingToggle('extractRequireBoq','إلزام وجود بند BOQ في المستخلص','امنع حفظ مستخلص بمبلغ إجمالي فقط بدون بنود')}
-      ${linkSettingToggle('extractLinkContracts','السماح بربط المستخلصات بالعقود','إظهار حقول المقاول ورقم العقد وتفعيل الربط عند اختيار «نعم»')}
-      ${linkSettingToggle('extractRequireContract','إلزام ربط كل المستخلصات بعقد (عام)','عند التفعيل: لا يُحفظ أي مستخلص بدون مقاول ورقم عقد — حتى لو اختير «بدون عقد» على السجل')}
-      ${linkSettingToggle('allowExtraWithoutContract','السماح ببند زيادة بدون عقد','بند خارج BOQ وخارج العقود')}
-      ${linkSettingToggle('autoSyncExtractFinance','ترحيل تلقائي للمستخلصات → ماليات ومحاسبة','عند الاعتماد أو الصرف')}
-      ${linkSettingToggle('linkPurchaseChain','تفعيل سلسلة المشتريات → التوريد → الفاتورة','ربط أرقام أوامر الشراء والتوريد')}
-      ${linkSettingToggle('autoSyncProcureFinance','ترحيل تلقائي للمشتريات/الفواتير → ماليات ومحاسبة','قيود مالية ومحاسبية عند الحفظ')}
-    </div>
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-ghost" onclick="saveLinkSettings(DEFAULT_LINK_SETTINGS)">إعادة الافتراضي (مرن)</button>
-      <button class="btn btn-primary" onclick="saveLinkSettings({boqRequireContract:true,extractRequireContract:true,extractRequireBoq:true,linkBoqToContract:true,linkExtractToBoq:true,autoSyncExtractFinance:true,linkPurchaseChain:true,autoSyncProcureFinance:true})">تفعيل الربط الإلزامي الكامل</button>
-      <button class="btn btn-amber" onclick="saveLinkSettings({boqRequireContract:false,extractRequireContract:false,extractRequireBoq:false,linkBoqToContract:false,linkExtractToBoq:false,autoSyncExtractFinance:false,linkPurchaseChain:false,autoSyncProcureFinance:false})">تعطيل كل الربط</button>
-    </div>
-  </div>
-
   <div class="quick-grid">
     <button class="quick-btn" onclick="goRoute('admin')"><b>♙</b>المستخدمون والصلاحيات</button>
     <button class="quick-btn" onclick="goRoute('listManagement')"><b>☷</b>إدارة القوائم</button>
@@ -6603,40 +6494,7 @@ function moduleHTML(key, mod){
       else filtered = list.filter(r=>recProjectIds(r).includes(String(effectivePid)));
     }
   }
-
-  // —— بحث متقدم موحّد لكل الواجهات (حالة + حقول اختيار شائعة) مع الإبقاء على فلاتر المستخلصات الخاصة
-  if(key!=='extracts' && key!=='suppliers'){
-    const statusField = (mod.fields||[]).find(f=>f.name==='status' && f.type==='select');
-    if(statusField){
-      const st = String(projectFilter[key+'_status']||'');
-      const statusOpts = [...new Set((statusField.options||[]).concat(filtered.map(r=>r.status).filter(Boolean)))];
-      filterBar += `<select onchange="setModuleFieldFilter('${key}','status',this.value)" title="الحالة">
-        <option value="">كل الحالات</option>${statusOpts.map(o=>`<option value="${escapeHtml(String(o))}" ${st===String(o)?'selected':''}>${escapeHtml(optionLabel(o))}</option>`).join('')}
-      </select>`;
-      if(st) filtered = filtered.filter(r=>String(r.status||'')===st);
-    }
-    // فلتر المقاول للعقود وBOQ
-    if(['contracts','boq'].includes(key)){
-      const ctr = String(projectFilter[key+'_contractor']||'');
-      const contractors=[...new Set((STATE[key]||[]).map(r=>r.contractor).concat((STATE.contracts||[]).map(c=>c.contractor)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar',{numeric:true,sensitivity:'base'}));
-      filterBar += `<select onchange="setModuleFieldFilter('${key}','contractor',this.value)" title="المقاول">
-        <option value="">كل المقاولين</option>${contractors.map(c=>`<option value="${escapeHtml(c)}" ${ctr===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
-      </select>`;
-      if(ctr) filtered = filtered.filter(r=>String(r.contractor||'').trim()===ctr.trim());
-    }
-    // فلتر نوع النشاط إن وُجد
-    const actField = (mod.fields||[]).find(f=>f.name==='activityType' && f.type==='select');
-    if(actField){
-      const act = String(projectFilter[key+'_activityType']||'');
-      const acts=[...new Set((actField.options||[]).concat(filtered.map(r=>r.activityType).filter(Boolean)))];
-      filterBar += `<select onchange="setModuleFieldFilter('${key}','activityType',this.value)" title="نوع النشاط">
-        <option value="">كل الأنشطة</option>${acts.map(a=>`<option value="${escapeHtml(String(a))}" ${act===String(a)?'selected':''}>${escapeHtml(a)}</option>`).join('')}
-      </select>`;
-      if(act) filtered = filtered.filter(r=>String(r.activityType||'')===act);
-    }
-  }
-
-    if(key==='suppliers'){
+  if(key==='suppliers'){
     const sg=projectFilter.suppliers_group||'', st=projectFilter.suppliers_type||'';
     const g=SUPPLIER_TYPE_GROUPS.find(x=>x[0]===sg);
     const typeOpts=(g?[g]:SUPPLIER_TYPE_GROUPS).map(gr=>`<optgroup label="${escapeHtml(gr[0])}">${gr[1].map(o=>`<option value="${escapeHtml(o)}" ${st===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}</optgroup>`).join('');
@@ -6730,28 +6588,23 @@ function moduleHTML(key, mod){
   return `
     <div class="toolbar no-print">
       <div class="filters">${filterBar}
-        ${key==='extracts'?'':`<input type="search" class="module-global-search" placeholder="بحث في ${escapeHtml(moduleTitle(key))}..." value="${escapeHtml(projectFilter[key+'_q']||'')}" oninput="setModuleSearch('${key}',this.value)" style="padding:8px 10px;border:1px solid #d6dbe3;border-radius:8px;min-width:220px;">`}
+        <input type="search" class="module-global-search" placeholder="بحث في ${escapeHtml(moduleTitle(key))}..." value="${escapeHtml(projectFilter[key+'_q']||'')}" oninput="setModuleSearch('${key}',this.value)" style="padding:8px 10px;border:1px solid #d6dbe3;border-radius:8px;min-width:220px;">
         ${dateFields.length?`<span class="sort-label">ترتيب البنود:</span><select onchange="setSort('${key}',this.value)"><option value="">بدون ترتيب زمني</option>${dateFields.map(([f,l])=>`<option value="${f}" ${sortField===f?'selected':''}>حسب ${l}</option>`).join('')}</select><select onchange="setSortDir('${key}',this.value)"><option value="desc" ${sortDir==='desc'?'selected':''}>الأحدث أولاً ↓</option><option value="asc" ${sortDir==='asc'?'selected':''}>الأقدم أولاً ↑</option></select><span class="sort-current">${sortField ? (sortDir==='desc'?'الأحدث ← الأقدم':'الأقدم ← الأحدث') : 'الترتيب الافتراضي'}</span>`:''}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-ghost" onclick="window.print()">🖨️ ${t('طباعة الصفحة','Print page','Imprimer la page')}</button>
         <button class="btn btn-primary" onclick="printSelectedRecords('${key}')">📑 ${t('طباعة المحدد','Print selected','Imprimer la sélection')}</button>
         ${(key==='contracts'||key==='extracts') && filtered.length ? `<button class="btn btn-primary" onclick="printDocument('${key}','${filtered[0].id}')">📄 طباعة نموذج كامل</button>`:''}
-        ${key==='extracts'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">📒 ترحيل المعتمد → ماليات ومحاسبة</button>`:''}
-        ${key==='purchases'||key==='deliveries'||key==='invoices'?`<button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">📒 ترحيل المشتريات/التوريدات/الفواتير → ماليات ومحاسبة</button>`:''}
-        ${key==='accounting'||key==='finance'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">🔄 مزامنة من المستخلصات</button><button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">🔄 مزامنة من المشتريات والفواتير</button>`:''}
         ${editable ? `<button class="btn btn-amber" onclick="openNew('${key}')">+ ${t('إضافة','Add','Ajouter')}</button>` : ''}
       </div>
     </div>
     <h3 class="print-only" style="margin:0 0 12px;">${moduleTitle(key)}</h3>
-    <div class="table-scroll">
     <table>
       <thead><tr><th class="no-print"><input type="checkbox" onclick="toggleAllPrintChecks(this)" aria-label="تحديد الكل للطباعة"></th><th>${t('الترتيب','#','N°')}</th>${projHead}${headCols}<th>${t('أُضيف بواسطة','Created by','Créé par')}</th><th>${t('المرفقات / المستندات','Attachments','Pièces jointes')}</th>${(key==='siteIncidents'||moduleSupportsApproval(key))?'<th>'+t('حالة الاعتماد','Approval status','Statut d\'approbation')+'</th>':''}<th class="no-print"></th></tr></thead>
       <tbody>
         ${rows || `<tr class="empty-row"><td colspan="13">لا توجد بيانات بعد${editable?' — اضغط «إضافة» لبدء الإدخال':''}</td></tr>`}
       </tbody>
     </table>
-    </div>
   `;
 }
 
@@ -7119,7 +6972,7 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<
 
 /* ---------- Modal (create/edit record) ---------- */
 window.__epmsPrefillProjectId='';
-function openNew(key){ if(!canEdit((MODULES[key]||{}).permKey||key)||!routeActionAllowed('add',key)){alert('ليس لديك صلاحية إضافة سجل في هذا البند.');return;} modalState = {moduleKey:key, record:{...(key==='projectResources'&&window.__epmsPrefillProjectId?{projectId:window.__epmsPrefillProjectId}:{}), ...(key==='extracts'?{linkToContract: (linkOn('extractRequireContract')||linkOn('extractLinkContracts')!==false)?'نعم — مربوط بعقد':'لا — بدون عقد'}:{})}, isNew:true}; window.__epmsPrefillProjectId=''; render(); }
+function openNew(key){ if(!canEdit((MODULES[key]||{}).permKey||key)||!routeActionAllowed('add',key)){alert('ليس لديك صلاحية إضافة سجل في هذا البند.');return;} modalState = {moduleKey:key, record:{...(key==='projectResources'&&window.__epmsPrefillProjectId?{projectId:window.__epmsPrefillProjectId}:{})}, isNew:true}; window.__epmsPrefillProjectId=''; render(); }
 function openEdit(key, id){
   if(!routeActionAllowed('view',key)){alert('ليس لديك صلاحية مشاهدة هذا البند.');return;}
   const rec = (STATE[key]||[]).find(r=>r.id===id);
@@ -7238,7 +7091,7 @@ function modalHTML(){
       } else {
         _opts=(f.name==='specialty'||f.name==='discipline'?specialtyList():f.options).map(_optHTML).join('');
       }
-      input = `<select id="f_${f.name}" ${moduleKey==='extracts'&&f.name==='linkToContract'?`onchange="extractLinkToContractChanged()"`:''} ${moduleKey==='extracts'&&f.name==='contractor'?`onchange="extractContractorChanged();refreshAllExtractItemRows()"`:''} ${moduleKey==='extracts'&&f.name==='contractNumber'?`onchange="extractContractChanged();refreshAllExtractItemRows()"`:''} ${moduleKey==='extracts'&&f.name==='boqItemId'?`onchange="extractBOQChanged()"`:''} ${moduleKey==='extracts'&&f.name==='currentQuantity'?`oninput="refreshExtractQuantityPreview()"`:''} ${moduleKey==='boq'&&f.name==='contractor'?`onchange="boqContractorChanged()"`:''} ${moduleKey==='boq'&&f.name==='contractNumber'?`onchange="boqContractChanged()"`:''} ${f.name==='contractType'?`onchange="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')"`:''} ${!editable?'disabled':''}>
+      input = `<select id="f_${f.name}" ${moduleKey==='extracts'&&f.name==='contractor'?`onchange="extractContractorChanged();refreshAllExtractItemRows()"`:''} ${moduleKey==='extracts'&&f.name==='contractNumber'?`onchange="extractContractChanged();refreshAllExtractItemRows()"`:''} ${moduleKey==='extracts'&&f.name==='boqItemId'?`onchange="extractBOQChanged()"`:''} ${moduleKey==='extracts'&&f.name==='currentQuantity'?`oninput="refreshExtractQuantityPreview()"`:''} ${moduleKey==='boq'&&f.name==='contractor'?`onchange="boqContractorChanged()"`:''} ${moduleKey==='boq'&&f.name==='contractNumber'?`onchange="boqContractChanged()"`:''} ${f.name==='contractType'?`onchange="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')"`:''} ${!editable?'disabled':''}>
         <option value="">—</option>
         ${_opts}
       </select>`;
@@ -7250,10 +7103,9 @@ function modalHTML(){
     return `<div class="field ${isFull?'full':''}"><label>${fieldLabel(f.label)}${f.required?' *':''}</label>${input}</div>`;
   }).join('');
 
-  const wideModal = ['extracts','contracts','boq','salesContracts'].includes(moduleKey);
   return `
   <div class="overlay" onclick="if(event.target===this) closeModal()">
-    <div class="modal${wideModal?' modal-wide':''}">
+    <div class="modal">
       <h3>${isNew ? t('إضافة سجل — ','Add record — ','Ajouter un enregistrement — ') : (editable?t('تعديل سجل — ','Edit record — ','Modifier l\'enregistrement — '):t('عرض سجل — ','View record — ','Voir l\'enregistrement — '))}${moduleTitle(moduleKey)}</h3>
       ${!editable && !isNew ? `<div class="section-note">وضع العرض فقط — يمكنك مشاهدة الطلب${canApproveHere?' واعتماده أو رفضه':''} دون تعديل بياناته.</div>` : ''}
       ${formatEditHistoryHTML(record)}
@@ -7263,7 +7115,6 @@ function modalHTML(){
         ${moduleKey==='projects'&&!isNew&&canView('projectResources')?`<div class="field full"><button type="button" class="btn btn-ghost" onclick="window.__epmsPrefillProjectId='${record.id}';modalState=null;currentRoute='projectResources';openNew('projectResources')">إضافة مهندسين / عمالة / معدات لهذا المشروع</button></div>`:''}
         ${['contracts','salesContracts'].includes(moduleKey)?`<div class="field full" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-ghost" onclick="applyContractTemplate('${moduleKey==='salesContracts'?'sales':'construction'}')">اقتراح بنود حسب نوع العقد</button><button type="button" class="btn btn-primary" onclick="printCurrentContract()">طباعة العقد / حفظ PDF</button></div>`:''}
         ${moduleKey==='extracts'?extractItemsEditorHTML(record,editable):''}
-        ${moduleKey==='extracts'?`<div class="field full section-note" id="extractLinkHint">${extractIsLinkedToContract(record)?'هذا المستخلص <b>مربوط بعقد</b> — يُفضّل اختيار المقاول ورقم العقد.':'هذا المستخلص <b>بدون ربط بعقد</b> — يمكن الحفظ بالمبلغ وبنود الزيادة دون عقد.'} (غيّر الخيار من حقل «ربط المستخلص بعقد؟» أو من إدارة النظام)</div>`:''}
         <div class="field full">
           <label>${t('المرفقات — يمكن إضافة أكثر من ملف','Attachments — multiple files allowed','Pièces jointes — plusieurs fichiers autorisés')}</label>
           ${editable ? `<input type="file" id="f_attachments" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">` : ''}
@@ -7308,246 +7159,10 @@ function epmsContractorStatement(){
  const lines=Object.entries(groups).map(([k,a])=>{const gross=a.reduce((v,x)=>v+(Number(x.currentAmount)||0),0);const net=a.reduce((v,x)=>v+(Number(x.netAmount)||0),0);const paid=a.reduce((v,x)=>v+(Number(x.paidAmount)||0),0);return `<tr><td>${escapeHtml(k)}</td><td>${a.length}</td><td>${gross.toFixed(2)}</td><td>${net.toFixed(2)}</td><td>${paid.toFixed(2)}</td><td>${(net-paid).toFixed(2)}</td></tr>`;}).join('');
  const w=window.open('','_blank');if(!w){alert('اسمح بالنوافذ المنبثقة لعرض كشف الحساب.');return;}w.document.write(`<html lang="ar" dir="rtl"><meta charset="utf-8"><title>كشف حساب المقاولين</title><style>body{font-family:Arial;padding:24px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:8px;text-align:center}th{background:#eee}h2{text-align:center}</style><h2>كشف حساب المقاولين والعقود</h2><p><button onclick="window.opener.epmsPostContractorAccounting()">ترحيل المستخلصات المعتمدة إلى الحسابات</button> <button onclick="window.opener.epmsShowAccountingLedger()">عرض دفتر يومية المقاولين</button></p><table><thead><tr><th>المقاول | العقد | المشروع</th><th>عدد المستخلصات</th><th>إجمالي الأعمال</th><th>صافي المستخلصات</th><th>المصروف</th><th>الرصيد المستحق</th></tr></thead><tbody>${lines||'<tr><td colspan="6">لا توجد بيانات</td></tr>'}</tbody></table><p>تاريخ التقرير: ${new Date().toLocaleDateString('ar-EG')}</p><button onclick="print()">طباعة</button></html>`);w.document.close();
 }
-
-
-/** سلسلة المشتريات → التوريدات → الفواتير → الماليات → المحاسبة */
-async function epmsSyncProcurementToFinanceAndAccounting(moduleKey, record){
-  if(!record) return;
-  STATE.finance = Array.isArray(STATE.finance)?STATE.finance:[];
-  STATE.accounting = Array.isArray(STATE.accounting)?STATE.accounting:[];
-  STATE.accountingEntries = Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
-
-  const upsertFinance = (srcKey, type, category, amount, date, party, extra={})=>{
-    if(!(Number(amount)>0)) return;
-    let f = STATE.finance.find(x=>x.sourceId===srcKey && x.type===type && x.category===category);
-    if(f){
-      Object.assign(f, {amount:Number(amount), date:date||f.date, contractor:party||f.contractor, projectId:record.projectId||f.projectId, updatedAt:new Date().toISOString()}, extra);
-    } else {
-      STATE.finance.push({
-        id:genId(), projectId:record.projectId||'', type, category, amount:Number(amount), date:date||new Date().toISOString().slice(0,10),
-        contractor:party||'', contractNumber:extra.contractNumber||'', extractNumber:extra.extractNumber||'',
-        sourceType:extra.sourceType||'مشتريات', sourceId:srcKey, notes:extra.notes||'',
-        createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:new Date().toISOString()
-      });
-    }
-  };
-  const upsertAcc = (srcKey, entryType, account, contra, amount, date, party, extra={})=>{
-    if(!(Number(amount)>0)) return;
-    let a = STATE.accounting.find(x=>x.sourceId===srcKey && x.entryType===entryType && x.account===account);
-    if(a){
-      Object.assign(a, {amount:Number(amount), date:date||a.date, contractor:party||a.contractor, projectId:record.projectId||a.projectId, contraAccount:contra}, extra);
-    } else {
-      STATE.accounting.push({
-        id:genId(), projectId:record.projectId||'', entryType, account, contraAccount:contra, amount:Number(amount),
-        date:date||new Date().toISOString().slice(0,10), contractor:party||'',
-        contractNumber:extra.contractNumber||'', extractNumber:extra.extractNumber||'',
-        sourceType:extra.sourceType||'مشتريات', sourceId:srcKey, notes:extra.notes||'',
-        createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:new Date().toISOString()
-      });
-    }
-  };
-  const pushJE = (sourceKey, kind, debitAccount, creditAccount, amount, date, party, desc)=>{
-    if(!(Number(amount)>0)) return;
-    const entries=STATE.accountingEntries;
-    const existing=entries.find(e=>e.sourceKey===sourceKey && e.kind===kind);
-    if(existing){
-      existing.debit=Number(amount); existing.credit=Number(amount); existing.date=date; existing.description=desc; existing.contractor=party;
-      return;
-    }
-    entries.push({
-      id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
-      date:date||new Date().toISOString().slice(0,10), sourceKey, sourceType:'procurement', kind,
-      contractor:party||'', projectId:record.projectId||'', description:desc,
-      debitAccount, creditAccount, debit:Number(amount), credit:Number(amount), status:'مرحّل'
-    });
-  };
-
-  if(moduleKey==='purchases'){
-    const src='purchase:'+(record.id||record.orderNumber);
-    const amt=Number(record.totalAmount)||((Number(record.quantity)||0)*(Number(record.unitPrice)||0));
-    const date=record.orderDate||new Date().toISOString().slice(0,10);
-    const party=record.supplier||'';
-    // التزام مشتريات عند الطلب/التعميد
-    if(/تم الطلب|تم التوريد|تم الاستلام/i.test(String(record.status||''))){
-      upsertFinance(src,'مشتريات','أمر شراء — '+ (record.itemName||record.orderNumber||''), amt, date, party, {sourceType:'مشتريات', notes:'أمر شراء '+(record.orderNumber||'')});
-      upsertAcc(src,'فاتورة مشتريات','مخزون / مشتريات تحت الاستلام','مستحقات الموردين', amt, date, party, {sourceType:'مشتريات', notes:'أمر شراء '+(record.orderNumber||'')});
-      pushJE(src,'purchase','مخزون / مشتريات تحت الاستلام','مستحقات الموردين', amt, date, party, 'أمر شراء '+(record.orderNumber||'')+' — '+(record.itemName||''));
-    }
-  }
-
-  if(moduleKey==='deliveries'){
-    const src='delivery:'+(record.id||record.deliveryNumber);
-    const amt=Number(record.totalAmount)||((Number(record.quantity)||0)*(Number(record.unitPrice)||0));
-    const date=record.date||new Date().toISOString().slice(0,10);
-    const party=record.supplier||'';
-    upsertFinance(src,'توريد','توريد واستلام — '+(record.itemName||record.deliveryNumber||''), amt, date, party, {sourceType:'توريد', notes:'إذن توريد '+(record.deliveryNumber||'')+' / أمر '+(record.purchaseOrderNumber||'')});
-    upsertAcc(src,'توريد مخزني','مخزون المواد','مشتريات تحت الاستلام', amt, date, party, {sourceType:'توريد', notes:'استلام '+(record.deliveryNumber||'')});
-    pushJE(src,'delivery','مخزون المواد','مشتريات تحت الاستلام', amt, date, party, 'توريد '+(record.deliveryNumber||'')+' — '+(record.itemName||''));
-  }
-
-  if(moduleKey==='invoices'){
-    const src='invoice:'+(record.id||record.number);
-    const total=Number(record.totalAmount)||Number(record.amount)||0;
-    const vat=Number(record.vatAmount)||0;
-    const base=Number(record.amount)|| (total-vat);
-    const paid=Number(record.paidAmount)||0;
-    const date=record.date||new Date().toISOString().slice(0,10);
-    const party=record.party||'';
-    const isPurchase = /مشتريات|توريد|مقاول/i.test(String(record.invoiceType||'مشتريات'));
-
-    if(isPurchase){
-      upsertFinance(src,'فاتورة','فاتورة مشتريات رقم '+(record.number||''), total, date, party, {sourceType:'فاتورة', notes:(record.purchaseOrderNumber?'أمر '+(record.purchaseOrderNumber)+' — ':'')+(record.itemDescription||'')});
-      if(vat>0) upsertFinance(src,'ضريبة','ضريبة فاتورة '+(record.number||''), vat, date, party, {sourceType:'فاتورة'});
-      upsertAcc(src,'فاتورة مشتريات','مشتريات / مصروف','مستحقات الموردين', base, date, party, {sourceType:'فاتورة', notes:'فاتورة '+(record.number||'')});
-      if(vat>0) upsertAcc(src,'فاتورة مشتريات','ضريبة قيمة مضافة recoverable','مستحقات الموردين', vat, date, party, {sourceType:'فاتورة'});
-      pushJE(src,'invoice', 'مشتريات / مصروف', 'مستحقات الموردين', base, date, party, 'فاتورة مشتريات رقم '+(record.number||''));
-      if(vat>0) pushJE(src,'invoice_vat','ضريبة قيمة مضافة','مستحقات الموردين', vat, date, party, 'ضريبة فاتورة '+(record.number||''));
-    } else {
-      // مبيعات / إيراد
-      upsertFinance(src,'إيراد','فاتورة مبيعات رقم '+(record.number||''), total, date, party, {sourceType:'فاتورة'});
-      upsertAcc(src,'سند قبض','ذمم مدينة','إيرادات', total, date, party, {sourceType:'فاتورة'});
-      pushJE(src,'invoice_sales','ذمم مدينة','إيرادات', total, date, party, 'فاتورة مبيعات رقم '+(record.number||''));
-    }
-
-    if(paid>0){
-      upsertFinance(src,'صرف فاتورة','صرف/تحصيل فاتورة '+(record.number||''), paid, date, party, {sourceType:'فاتورة'});
-      if(isPurchase){
-        upsertAcc(src,'صرف فاتورة','مستحقات الموردين','البنك / الخزينة', paid, date, party, {sourceType:'فاتورة'});
-        pushJE(src,'invoice_pay','مستحقات الموردين','البنك / الخزينة', paid, date, party, 'صرف فاتورة رقم '+(record.number||''));
-      } else {
-        upsertAcc(src,'سند قبض','البنك / الخزينة','ذمم مدينة', paid, date, party, {sourceType:'فاتورة'});
-        pushJE(src,'invoice_collect','البنك / الخزينة','ذمم مدينة', paid, date, party, 'تحصيل فاتورة رقم '+(record.number||''));
-      }
-    }
-  }
-
-  await dbSet('finance', STATE.finance);
-  await dbSet('accounting', STATE.accounting);
-  await dbSet('accountingEntries', STATE.accountingEntries);
-}
-
-async function epmsPostProcurementAccounting(){
-  let n=0;
-  for(const p of (STATE.purchases||[])){
-    if(/تم الطلب|تم التوريد|تم الاستلام/i.test(String(p.status||''))){ await epmsSyncProcurementToFinanceAndAccounting('purchases', p); n++; }
-  }
-  for(const d of (STATE.deliveries||[])){ await epmsSyncProcurementToFinanceAndAccounting('deliveries', d); n++; }
-  for(const inv of (STATE.invoices||[])){ await epmsSyncProcurementToFinanceAndAccounting('invoices', inv); n++; }
-  alert('تمت مزامنة سلسلة المشتريات/التوريدات/الفواتير ('+n+' سجل) إلى الماليات والمحاسبة.');
-  render();
-}
-
-/** مزامنة سلسلة: مستخلص → ماليات → محاسبة */
-async function epmsSyncExtractToFinanceAndAccounting(extract){
-  if(!extract || !extract.id) return;
-  const status=String(extract.status||extract.approvalStatus||'');
-  const approved=/معتمد|مصروف|approved|مكتمل/i.test(status);
-  const paid=Number(extract.paidAmount)>0 || /مصروف/i.test(status);
-  if(!approved && !paid) return; // لا ترحيل قبل الاعتماد أو الصرف
-  STATE.finance = Array.isArray(STATE.finance)?STATE.finance:[];
-  STATE.accounting = Array.isArray(STATE.accounting)?STATE.accounting:[];
-  STATE.accountingEntries = Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
-  const srcKey = 'extract:'+extract.id;
-  const date = extract.date || new Date().toISOString().slice(0,10);
-  const net = Number(extract.netAmount)||0;
-  const gross = Number(extract.currentAmount)||0;
-  const paidAmt = Number(extract.paidAmount)||0;
-  const extraAmt = Number(extract.extraAmount)||0;
-  const ensureFinance=(type, category, amount, note)=>{
-    if(!(amount>0)) return;
-    const exists=STATE.finance.find(f=>f.sourceId===srcKey && f.type===type && f.category===category);
-    if(exists){
-      exists.amount=amount; exists.date=date; exists.contractor=extract.contractor||''; exists.contractNumber=extract.contractNumber||'';
-      exists.extractNumber=extract.number||''; exists.projectId=extract.projectId||''; exists.notes=note||exists.notes;
-      exists.updatedAt=new Date().toISOString();
-    } else {
-      STATE.finance.push({
-        id: genId(), projectId:extract.projectId||'', type, category, amount, date,
-        contractor:extract.contractor||'', contractNumber:extract.contractNumber||'',
-        extractNumber:extract.number||'', sourceType: extraAmt>0 && category.includes('زيادة') ? 'بند زيادة' : 'مستخلص مقاول',
-        sourceId:srcKey, notes:note||'', createdBy:currentUser?.username, createdByName:currentUser?.name,
-        createdAt:new Date().toISOString()
-      });
-    }
-  };
-  ensureFinance('مستحق مقاول','مستخلص مقاول — إجمالي الفترة', gross, 'إثبات أعمال مستخلص رقم '+(extract.number||''));
-  if(Number(extract.deductions)>0) ensureFinance('استقطاع','استقطاعات مستخلص', Number(extract.deductions), 'استقطاعات مستخلص رقم '+(extract.number||''));
-  if(Number(extract.vatAmount)>0) ensureFinance('ضريبة','ضريبة قيمة مضافة على مستخلص', Number(extract.vatAmount), 'ضريبة مستخلص رقم '+(extract.number||''));
-  if(extraAmt>0) ensureFinance('مستحق مقاول','بند زيادة خارج BOQ/العقود', extraAmt, 'بنود زيادة في مستخلص رقم '+(extract.number||''));
-  if(net>0) ensureFinance('مستحق مقاول','صافي المستخلص المستحق', net, 'صافي مستخلص رقم '+(extract.number||''));
-  if(paidAmt>0) ensureFinance('صرف مستخلص','صرف مستخلص مقاول', paidAmt, 'صرف مستخلص رقم '+(extract.number||''));
-  await dbSet('finance', STATE.finance);
-
-  const ensureAcc=(entryType, account, contra, amount, note)=>{
-    if(!(amount>0)) return;
-    const exists=STATE.accounting.find(a=>a.sourceId===srcKey && a.entryType===entryType && a.account===account);
-    if(exists){
-      exists.amount=amount; exists.date=date; exists.contractor=extract.contractor||''; exists.contractNumber=extract.contractNumber||'';
-      exists.extractNumber=extract.number||''; exists.projectId=extract.projectId||''; exists.notes=note||exists.notes;
-    } else {
-      STATE.accounting.push({
-        id:genId(), projectId:extract.projectId||'', entryType, account, contraAccount:contra, amount, date,
-        contractor:extract.contractor||'', contractNumber:extract.contractNumber||'', extractNumber:extract.number||'',
-        sourceType:'مستخلص مقاول', sourceId:srcKey, notes:note||'',
-        createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:new Date().toISOString()
-      });
-    }
-  };
-  ensureAcc('ترحيل مستخلص','أعمال تحت التنفيذ / تكلفة المشروع','مستحقات المقاولين', gross, 'ترحيل مستخلص رقم '+(extract.number||''));
-  if(extraAmt>0) ensureAcc('بند زيادة','أعمال إضافية / أوامر تغيير','مستحقات المقاولين', extraAmt, 'بند زيادة مستخلص رقم '+(extract.number||''));
-  if(paidAmt>0) ensureAcc('صرف مستخلص','مستحقات المقاولين','البنك / الخزينة', paidAmt, 'صرف مستخلص رقم '+(extract.number||''));
-  await dbSet('accounting', STATE.accounting);
-
-  // قيود اليومية التفصيلية (دفتر اليومية)
-  const ledgerKey = epmsLedgerKey(extract);
-  const entries=STATE.accountingEntries;
-  const pushJE=(kind, debitAccount, creditAccount, amount, desc)=>{
-    if(!(amount>0)) return;
-    if(entries.some(e=>e.sourceKey===ledgerKey && e.kind===kind)){
-      const e=entries.find(x=>x.sourceKey===ledgerKey && x.kind===kind);
-      e.debit=amount; e.credit=amount; e.date=date; e.description=desc;
-      return;
-    }
-    entries.push({
-      id:'JE-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
-      date, sourceKey:ledgerKey, sourceType:'extract', kind,
-      contractor:extract.contractor, contractNumber:extract.contractNumber, projectId:extract.projectId||'',
-      extractNumber:extract.number||'', description:desc,
-      debitAccount, creditAccount, debit:amount, credit:amount, status:'مرحّل'
-    });
-  };
-  pushJE('extract','أعمال تحت التنفيذ / تكلفة المشروع','مستحقات المقاولين', gross, 'إثبات مستخلص مقاول رقم '+(extract.number||''));
-  if(extraAmt>0) pushJE('extra','أعمال إضافية / أوامر تغيير','مستحقات المقاولين', extraAmt, 'بند زيادة خارج BOQ — مستخلص '+(extract.number||''));
-  if(Number(extract.retention)>0) pushJE('retention','مستحقات المقاولين','محتجز ضمان أعمال', Number(extract.retention), 'محتجز ضمان مستخلص '+(extract.number||''));
-  if(paidAmt>0) pushJE('payment','مستحقات المقاولين','البنك / الخزينة', paidAmt, 'صرف مستخلص مقاول رقم '+(extract.number||''));
-  STATE.accountingEntries=entries;
-  await dbSet('accountingEntries', entries);
-}
-
-/** تحديث إجماليات العقد من بنود BOQ المرتبطة */
-async function epmsSyncBoqTotalsToContract(boqItem){
-  if(!boqItem || !boqItem.contractId && !(boqItem.contractor&&boqItem.contractNumber)) return;
-  const cid=boqItem.contractId;
-  const related=(STATE.boq||[]).filter(b=>{
-    if(cid && String(b.contractId)===String(cid)) return true;
-    return b.contractor===boqItem.contractor && String(b.contractNumber)===String(boqItem.contractNumber) && (!boqItem.projectId || String(b.projectId)===String(boqItem.projectId));
-  });
-  const total=related.reduce((s,b)=>s+(Number(b.totalAmount)||((Number(b.quantity)||0)*(Number(b.unitPrice)||0))),0);
-  const contract=(STATE.contracts||[]).find(x=> (cid && String(x.id)===String(cid)) || (x.contractor===boqItem.contractor && String(x.contractNumber)===String(boqItem.contractNumber)));
-  if(contract){
-    contract.boqItemsCount=related.length;
-    contract.boqTotalAmount=total;
-    if(!contract.value || Number(contract.value)===0){ /* لا نفرض قيمة العقد تلقائياً إن كانت مُدخلة */ }
-    contract.updatedAt=new Date().toISOString();
-    await dbSet('contracts', STATE.contracts);
-  }
-}
-
 function epmsLedgerKey(x){return String(x.id||x._id||x.number||'')+'|'+String(x.contractor||'')+'|'+String(x.contractNumber||'');}
 async function epmsPostContractorAccounting(){
- const approved=(STATE.extracts||[]).filter(x=>/معتمد|مصروف|approved|مكتمل/i.test(String(x.status||x.approvalStatus||x.state||'')));
- if(!approved.length){alert('لا توجد مستخلصات معتمدة أو مصروفة قابلة للترحيل. تأكد من حالة الاعتماد أولاً.');return;}
- for(const x of approved){ try{ await epmsSyncExtractToFinanceAndAccounting(x); }catch(e){ console.error(e); } }
+ const approved=(STATE.extracts||[]).filter(x=>/معتمد|approved|مكتمل/i.test(String(x.status||x.approvalStatus||x.state||'')));
+ if(!approved.length){alert('لا توجد مستخلصات معتمدة قابلة للترحيل. تأكد من حالة الاعتماد أولاً.');return;}
  const entries=Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
  let added=0;
  approved.forEach(x=>{
@@ -7578,34 +7193,6 @@ function contractsFor(contractor,projectId){
 }
 function boqFor(contractor,contractNo,projectId){
  return (STATE.boq||[]).filter(b=>b.contractor===contractor&&String(b.contractNumber)===String(contractNo)&&(!projectId||String(b.projectId)===String(projectId)));
-}
-
-function extractIsLinkedToContract(record){
-  const v = record && record.linkToContract != null ? record.linkToContract : (document.getElementById('f_linkToContract')?.value||'');
-  if(!v) return linkOn('extractRequireContract'); // الافتراضي حسب الإعداد العام
-  return !/^لا/.test(String(v).trim());
-}
-function extractLinkToContractChanged(){
-  const linked = extractIsLinkedToContract({linkToContract: document.getElementById('f_linkToContract')?.value});
-  const ctr = document.getElementById('f_contractor');
-  const cno = document.getElementById('f_contractNumber');
-  const wrap = (el)=>{
-    if(!el) return;
-    const field = el.closest('.field');
-    if(field){ field.style.opacity = linked ? '1' : '0.55'; field.style.outline = linked ? '' : '1px dashed #c4a35a'; }
-    el.disabled = !linked && !linkOn('extractRequireContract');
-    if(!linked){
-      // لا نفرغ القيم القديمة حتى لا يضيع البيانات إن أُعيد التفعيل
-      el.title = 'المستخلص غير مربوط بعقد — الحقل اختياري';
-    } else {
-      el.disabled = false;
-      el.title = '';
-    }
-  };
-  wrap(ctr); wrap(cno);
-  if(linked){
-    try{ extractContractorChanged(); }catch(e){}
-  }
 }
 function extractContractorChanged(){
  const contractor=document.getElementById('f_contractor')?.value||'';
@@ -7661,10 +7248,10 @@ function boqContractorChanged(){
  const current=sel.value; const cs=contractsFor(contractor,projectId); sel.innerHTML='<option value="">—</option>'+[...new Set(cs.map(c=>c.contractNumber).filter(Boolean))].map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join(''); if(cs.some(c=>c.contractNumber===current))sel.value=current;
 }
 function boqContractChanged(){ /* contract is now the primary link; validation occurs on save */ }
-function extractItemsSource(record){
+async function extractItemsSource(record){
   if(Array.isArray(record&&record.items)&&record.items.length) return record.items.map(x=>({...x}));
-  if(record&&record.boqItemId) return [{boqItemId:String(record.boqItemId),currentQuantity:Number(record.currentQuantity)||0,isExtra:false}];
-  return [{boqItemId:'',currentQuantity:0,isExtra:false}];
+  if(record&&record.boqItemId) return [{boqItemId:String(record.boqItemId),currentQuantity:Number(record.currentQuantity)||0}];
+  return [{boqItemId:'',currentQuantity:0}];
 }
 function extractBoqOptions(contractor,contractNumber,projectId,selected){
   const bs=(STATE.boq||[]).filter(b=>b.contractor===contractor&&String(b.contractNumber)===String(contractNumber)&&(!projectId||String(b.projectId)===String(projectId)));
@@ -7672,81 +7259,47 @@ function extractBoqOptions(contractor,contractNumber,projectId,selected){
 }
 function extractItemsEditorHTML(record,editable){
   const items=extractItemsSource(record); const projectId=record.projectId||''; const contractor=record.contractor||''; const contract=record.contractNumber||'';
-  const linkHint = [
-    linkOn('extractRequireContract') ? '<b style="color:#b45309">العقد إلزامي.</b>' : '<span style="color:#176b50">العقد اختياري.</span>',
-    linkOn('extractRequireBoq') ? '<b style="color:#b45309">BOQ إلزامي.</b>' : '<span style="color:#176b50">BOQ اختياري (مبلغ إجمالي مسموح).</span>',
-    linkOn('allowExtraWithoutContract') ? 'بند زيادة بدون عقد مسموح.' : '',
-    linkOn('autoSyncExtractFinance') ? 'الترحيل للماليات/المحاسبة مفعّل.' : 'الترحيل التلقائي معطّل.'
-  ].filter(Boolean).join(' ');
   return `<div class="field full" style="margin-top:10px;border:2px solid #d9e8f5;border-radius:12px;padding:12px;background:#fbfdff">
-    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>بنود المستخلص</b><div class="section-note" style="margin:4px 0 0">${linkHint} يمكن إضافة بنود BOQ أو بند زيادة خارج BOQ/العقود. غيّر الإعدادات من إدارة النظام.</div></div>${editable?`<div style="display:flex;gap:6px;flex-wrap:wrap">${linkOn('linkExtractToBoq')||!linkOn('extractRequireBoq')?`<button type="button" class="btn btn-primary btn-sm" onclick="addExtractItemRow(false)">+ بند من BOQ</button>`:''}<button type="button" class="btn btn-amber btn-sm" onclick="addExtractItemRow(true)">+ بند زيادة (خارج BOQ/العقود)</button></div>`:''}</div>
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>بنود المستخلص</b><div class="section-note" style="margin:4px 0 0">يمكن إضافة عدة بنود BOQ داخل نفس المستخلص. الكميات والأسعار السابقة والحالية والتراكمية تُحسب لكل بند تلقائياً.</div></div>${editable?'<button type="button" class="btn btn-primary btn-sm" onclick="addExtractItemRow()">+ إضافة بند</button>':''}</div>
     <div id="extractItemsEditor" style="margin-top:10px">${items.map((it,i)=>extractItemRowHTML(it,i,projectId,contractor,contract,editable)).join('')}</div>
     <div id="extractItemsSummary" class="section-note" style="margin-top:10px;font-weight:700">سيتم حساب إجمالي بنود المستخلص تلقائياً عند الحفظ.</div>
   </div>`;
 }
 function extractItemRowHTML(it,i,projectId,contractor,contract,editable){
-  const isExtra = !!(it.isExtra || it.itemType==='extra' || it.boqItemId==='__EXTRA__');
-  const boq=(!isExtra && it.boqItemId)?(STATE.boq||[]).find(b=>String(b.id)===String(it.boqItemId||'')):null;
-  const cq=boq?Number(boq.quantity)||0:(Number(it.contractQuantity)||0);
-  const up=boq?Number(boq.unitPrice)||0:(Number(it.unitPrice)||0);
-  const border = isExtra ? 'border:1px solid #f0c36d;background:#fffbf2' : 'border:1px solid #e2eaf2;background:#fff';
-  const boqSelect = isExtra
-    ? `<input type="hidden" class="ei-boq" value="__EXTRA__"><input type="hidden" class="ei-isextra" value="1"><div><label>نوع البند</label><input type="text" value="بند زيادة — خارج BOQ والعقود" readonly style="background:#fff3d6;font-weight:700"></div>`
-    : `<div><label>بند BOQ</label><select class="ei-boq" data-i="${i}" onchange="refreshExtractItemRow(${i})" ${!editable?'disabled':''}>${extractBoqOptions(contractor,contract,projectId,it.boqItemId||'')}</select><input type="hidden" class="ei-isextra" value="0"></div>`;
-  const nameField = isExtra
-    ? `<div><label>وصف بند الزيادة *</label><input class="ei-extraname" data-i="${i}" type="text" value="${escapeHtml(it.boqItemName||it.extraName||'')}" ${!editable?'readonly':''} placeholder="مثال: أعمال إضافية — طبقة عزل"></div>`
-    : '';
-  const unitEditable = isExtra
-    ? `<div><label>الوحدة</label><input class="ei-extraunit" data-i="${i}" type="text" value="${escapeHtml(it.unit||'')}" ${!editable?'readonly':''}></div>`
-    : `<div><label>الوحدة / النشاط</label><input class="ei-meta" data-i="${i}" type="text" value="${escapeHtml((boq?.unit||'')+(boq?.activityType?' / '+boq.activityType:''))}" readonly></div>`;
-  const priceReadonly = isExtra ? '' : 'readonly';
-  return `<div class="extract-item-row" data-index="${i}" data-extra="${isExtra?1:0}" style="${border};border-radius:10px;padding:10px;margin:8px 0">
-    <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1fr auto;gap:7px;align-items:end">
-      ${boqSelect}
+  const boq=(STATE.boq||[]).find(b=>String(b.id)===String(it.boqItemId||''));
+  const cq=boq?Number(boq.quantity)||0:0, up=boq?Number(boq.unitPrice)||0:0;
+  return `<div class="extract-item-row" data-index="${i}" style="border:1px solid #e2eaf2;border-radius:10px;padding:10px;margin:8px 0;background:#fff">
+    <div style="display:grid;grid-template-columns:2.4fr 1.1fr 1fr 1fr 1fr 1fr auto;gap:7px;align-items:end">
+      <div><label>بند BOQ</label><select class="ei-boq" data-i="${i}" onchange="refreshExtractItemRow(${i})" ${!editable?'disabled':''}>${extractBoqOptions(contractor,contract,projectId,it.boqItemId||'')}</select></div>
       <div><label>الكمية السابقة</label><input class="ei-prev" data-i="${i}" type="number" step="any" value="${escapeHtml(it.previousQuantity??'0')}" readonly></div>
       <div><label>كمية الفترة</label><input class="ei-current" data-i="${i}" type="number" step="any" min="0" value="${escapeHtml(it.currentQuantity??'0')}" oninput="refreshExtractItemRow(${i})" ${!editable?'disabled':''}></div>
-      <div><label>الكمية التراكمية</label><input class="ei-cum" data-i="${i}" type="number" step="any" value="${escapeHtml(it.cumulativeQuantity??'0')}" readonly></div>
-      <div><label>${isExtra?'كمية مرجعية':'كمية العقد'}</label><input class="ei-contractqty" data-i="${i}" type="number" step="any" value="${cq}" ${isExtra&&editable?'':'readonly'}></div>
-      <div><label>سعر الوحدة</label><input class="ei-unit" data-i="${i}" type="number" step="any" value="${up}" oninput="refreshExtractItemRow(${i})" ${!editable?'disabled':''} ${priceReadonly}></div>
+      <div><label>الكمية التراكمية</label><input class="ei-cum" data-i="${i}" type="number" step="any" value="0" readonly></div>
+      <div><label>كمية العقد</label><input class="ei-contractqty" data-i="${i}" type="number" step="any" value="${cq}" readonly></div>
+      <div><label>سعر الوحدة</label><input class="ei-unit" data-i="${i}" type="number" step="any" value="${up}" readonly></div>
       <div>${editable?`<button type="button" class="btn btn-danger btn-sm" onclick="removeExtractItemRow(${i})">حذف</button>`:''}</div>
     </div>
-    <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:7px;margin-top:7px">
-      ${nameField || '<div></div>'}
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;margin-top:7px">
       <div><label>قيمة السابقة</label><input class="ei-prevamt" data-i="${i}" type="number" step="any" value="0" readonly></div>
       <div><label>قيمة الفترة الحالية</label><input class="ei-currentamt" data-i="${i}" type="number" step="any" value="0" readonly></div>
       <div><label>القيمة التراكمية</label><input class="ei-amt" data-i="${i}" type="number" step="any" value="0" readonly></div>
-      ${unitEditable}
+      <div><label>الوحدة / النشاط</label><input class="ei-meta" data-i="${i}" type="text" value="${escapeHtml((boq?.unit||'')+(boq?.activityType?' / '+boq.activityType:''))}" readonly></div>
     </div>
   </div>`;
 }
 function currentExtractItemRows(){
-  return [...document.querySelectorAll('#extractItemsEditor .extract-item-row')].map((row,i)=>{
-    const isExtra = row.getAttribute('data-extra')==='1' || row.querySelector('.ei-isextra')?.value==='1' || row.querySelector('.ei-boq')?.value==='__EXTRA__';
-    return {
-      isExtra,
-      boqItemId: isExtra ? '__EXTRA__' : (row.querySelector('.ei-boq')?.value||''),
-      boqItemName: isExtra ? (row.querySelector('.ei-extraname')?.value||'') : '',
-      unit: isExtra ? (row.querySelector('.ei-extraunit')?.value||'') : (row.querySelector('.ei-meta')?.value||''),
-      currentQuantity:Number(row.querySelector('.ei-current')?.value)||0,
-      previousQuantity:Number(row.querySelector('.ei-prev')?.value)||0,
-      cumulativeQuantity:Number(row.querySelector('.ei-cum')?.value)||0,
-      contractQuantity:Number(row.querySelector('.ei-contractqty')?.value)||0,
-      unitPrice:Number(row.querySelector('.ei-unit')?.value)||0,
-      previousAmount:Number(row.querySelector('.ei-prevamt')?.value)||0,
-      currentAmount:Number(row.querySelector('.ei-currentamt')?.value)||0,
-      amount:Number(row.querySelector('.ei-amt')?.value)||0
-    };
-  });
+  return [...document.querySelectorAll('#extractItemsEditor .extract-item-row')].map((row,i)=>({
+    boqItemId:row.querySelector('.ei-boq')?.value||'', currentQuantity:Number(row.querySelector('.ei-current')?.value)||0,
+    previousQuantity:Number(row.querySelector('.ei-prev')?.value)||0, cumulativeQuantity:Number(row.querySelector('.ei-cum')?.value)||0,
+    contractQuantity:Number(row.querySelector('.ei-contractqty')?.value)||0, unitPrice:Number(row.querySelector('.ei-unit')?.value)||0,
+    previousAmount:Number(row.querySelector('.ei-prevamt')?.value)||0, currentAmount:Number(row.querySelector('.ei-currentamt')?.value)||0,
+    amount:Number(row.querySelector('.ei-amt')?.value)||0
+  }));
 }
-function addExtractItemRow(isExtra){
+function addExtractItemRow(){
   const ed=document.getElementById('extractItemsEditor'); if(!ed)return;
-  const rows=currentExtractItemRows();
-  rows.push(isExtra
-    ? {boqItemId:'__EXTRA__',isExtra:true,currentQuantity:0,unitPrice:0,boqItemName:'',unit:''}
-    : {boqItemId:'',isExtra:false,currentQuantity:0});
+  const rows=currentExtractItemRows(); rows.push({boqItemId:'',currentQuantity:0});
   const projectId=document.getElementById('f_projectId')?.value||''; const contractor=document.getElementById('f_contractor')?.value||''; const contract=document.getElementById('f_contractNumber')?.value||'';
-  ed.innerHTML=rows.map((it,i)=>extractItemRowHTML(it,i,projectId,contractor,contract,true)).join('');
-  rows.forEach((_,i)=>refreshExtractItemRow(i));
+  ed.innerHTML=rows.map((it,i)=>extractItemRowHTML(it,i,projectId,contractor,contract,true)).join(''); rows.forEach((_,i)=>refreshExtractItemRow(i));
 }
 function removeExtractItemRow(i){
   const rows=currentExtractItemRows(); if(rows.length<=1){alert('يجب أن يحتوي المستخلص على بند واحد على الأقل.');return;} rows.splice(i,1);
@@ -7755,46 +7308,23 @@ function removeExtractItemRow(i){
 }
 function refreshExtractItemRow(i){
   const row=document.querySelector(`#extractItemsEditor .extract-item-row[data-index="${i}"]`); if(!row)return;
-  const isExtra = row.getAttribute('data-extra')==='1' || row.querySelector('.ei-isextra')?.value==='1';
-  const boqId=row.querySelector('.ei-boq')?.value||'';
-  const boq=(!isExtra && boqId && boqId!=='__EXTRA__')?(STATE.boq||[]).find(b=>String(b.id)===String(boqId)):null;
+  const boqId=row.querySelector('.ei-boq')?.value||''; const boq=(STATE.boq||[]).find(b=>String(b.id)===String(boqId));
   const contractor=document.getElementById('f_contractor')?.value||''; const contract=document.getElementById('f_contractNumber')?.value||''; const projectId=document.getElementById('f_projectId')?.value||'';
-  let prev=0;
-  if(isExtra){
-    const name=(row.querySelector('.ei-extraname')?.value||'').trim().toLowerCase();
-    prev=(STATE.extracts||[]).filter(x=>x.id!==modalState?.record?.id&&x.status!=='مرفوض'&&(!projectId||String(x.projectId)===String(projectId))).reduce((sum,x)=>{
-      if(!Array.isArray(x.items)) return sum;
-      return sum+x.items.filter(it=>(it.isExtra||it.boqItemId==='__EXTRA__') && String(it.boqItemName||'').trim().toLowerCase()===name).reduce((a,it)=>a+(Number(it.currentQuantity)||0),0);
-    },0);
-  } else {
-    prev=(STATE.extracts||[]).filter(x=>x.id!==modalState?.record?.id&&x.contractor===contractor&&String(x.contractNumber)===String(contract)&&(!projectId||String(x.projectId)===String(projectId))&&x.status!=='مرفوض').reduce((sum,x)=>{
-      if(Array.isArray(x.items)) return sum+x.items.filter(it=>String(it.boqItemId)===String(boqId)).reduce((a,it)=>a+(Number(it.currentQuantity)||0),0);
-      return sum+(String(x.boqItemId)===String(boqId)?Number(x.currentQuantity)||0:0);
-    },0);
-  }
-  const cur=Math.max(0,Number(row.querySelector('.ei-current')?.value)||0);
-  const cq=boq?Number(boq.quantity)||0:(Number(row.querySelector('.ei-contractqty')?.value)||0);
-  let up=Number(row.querySelector('.ei-unit')?.value);
-  if(!isExtra && boq) up=Number(boq.unitPrice)||0;
-  if(!Number.isFinite(up)) up=0;
-  const cum=prev+cur;
+  const prev=(STATE.extracts||[]).filter(x=>x.id!==modalState?.record?.id&&x.contractor===contractor&&String(x.contractNumber)===String(contract)&&(!projectId||String(x.projectId)===String(projectId))&&x.status!=='مرفوض').reduce((sum,x)=>{
+    if(Array.isArray(x.items)) return sum+x.items.filter(it=>String(it.boqItemId)===String(boqId)).reduce((a,it)=>a+(Number(it.currentQuantity)||0),0);
+    return sum+(String(x.boqItemId)===String(boqId)?Number(x.currentQuantity)||0:0);
+  },0);
+  const cur=Math.max(0,Number(row.querySelector('.ei-current')?.value)||0), cq=boq?Number(boq.quantity)||0:0, up=boq?Number(boq.unitPrice)||0:0, cum=prev+cur;
   const set=(sel,v)=>{const e=row.querySelector(sel);if(e)e.value=Number(v||0).toFixed(3).replace(/\.000$/,'');};
-  set('.ei-prev',prev);set('.ei-cum',cum);
-  if(!isExtra){ set('.ei-contractqty',cq); set('.ei-unit',up); }
-  else { /* keep user unit price */ }
-  const unitPrice=Number(row.querySelector('.ei-unit')?.value)||0;
-  set('.ei-prevamt',prev*unitPrice);set('.ei-currentamt',cur*unitPrice);set('.ei-amt',cum*unitPrice);
-  const meta=row.querySelector('.ei-meta');if(meta && boq)meta.value=(boq.unit||'')+(boq.activityType?' / '+boq.activityType:'');
-  const sum=[...document.querySelectorAll('#extractItemsEditor .ei-currentamt')].reduce((a,e)=>a+(Number(e.value)||0),0);
-  const sm=document.getElementById('extractItemsSummary');
-  if(sm)sm.textContent='إجمالي قيمة بنود الفترة الحالية: '+sum.toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2});
+  set('.ei-prev',prev);set('.ei-cum',cum);set('.ei-contractqty',cq);set('.ei-unit',up);set('.ei-prevamt',prev*up);set('.ei-currentamt',cur*up);set('.ei-amt',cum*up);
+  const meta=row.querySelector('.ei-meta');if(meta)meta.value=(boq?.unit||'')+(boq?.activityType?' / '+boq.activityType:'');
+  const sum=[...document.querySelectorAll('#extractItemsEditor .ei-currentamt')].reduce((a,e)=>a+(Number(e.value)||0),0); const sm=document.getElementById('extractItemsSummary');if(sm)sm.textContent='إجمالي قيمة بنود الفترة الحالية: '+sum.toLocaleString('ar-EG',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 function refreshAllExtractItemRows(){
   const contractor=document.getElementById('f_contractor')?.value||'', contract=document.getElementById('f_contractNumber')?.value||'', projectId=document.getElementById('f_projectId')?.value||'';
   const rows=currentExtractItemRows(); const ed=document.getElementById('extractItemsEditor'); if(!ed)return;
   ed.innerHTML=rows.map((it,i)=>extractItemRowHTML(it,i,projectId,contractor,contract,true)).join(''); rows.forEach((_,i)=>refreshExtractItemRow(i));
 }
-
 async function saveRecord(){
   const {moduleKey, record, isNew} = modalState;
   const mod = MODULES[moduleKey];
@@ -7840,136 +7370,30 @@ async function saveRecord(){
     record.approvalStatus=vals.length?(allApproved?'معتمد':anyRejected?'مرفوض':'قيد الاعتماد'):'بدون اعتماد';
   }
   if(moduleKey==='extracts'){
+    const linked=(STATE.contracts||[]).find(c=>c.contractor===record.contractor&&String(c.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(c.projectId)===String(record.projectId))&&c.status!=='ملغي');
+    if(!record.contractor||!record.contractNumber){alert('يرجى اختيار المقاول ورقم العقد من العقود المسجلة.');return;}
+    if(!linked){alert('العقد المختار غير مرتبط بالمقاول أو المشروع المحدد.');return;}
+    record.contractId=linked.id;
     const itemEls=[...document.querySelectorAll('#extractItemsEditor .extract-item-row')];
-    if(!itemEls.length){
-      if(linkOn('extractRequireBoq')){ alert('يجب إضافة بند BOQ واحد على الأقل (أو عطّل «إلزام BOQ للمستخلص» من إعدادات الربط).'); return; }
-      // مستخلص بدون بنود: مبلغ إجمالي فقط — شائع عندما لا يوجد BOQ
-      record.items=[]; record.itemCount=0; record.boqItemsCount=0; record.extraItemsCount=0;
-      record.hasExtraItems=false; record.boqAmount=0; record.extraAmount=0;
-      if(record.contractor&&record.contractNumber){
-        const L=(STATE.contracts||[]).find(c=>c.contractor===record.contractor&&String(c.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(c.projectId)===String(record.projectId))&&c.status!=='ملغي');
-        if(L) record.contractId=L.id;
-      } else if(linkOn('extractRequireContract')){
-        alert('إعدادات الربط تفرض اختيار عقد للمستخلص.'); return;
-      }
-      const gross=Number(record.currentAmount)||Number(record.amount)||0;
-      record.currentAmount=gross; record.amount=gross;
-      const pct=(n)=>Math.max(0,Number(record[n])||0);
-      if(pct('advanceRecoveryRate')>0) record.advanceRecovery=gross*pct('advanceRecoveryRate')/100;
-      if(pct('retentionRate')>0) record.retention=gross*pct('retentionRate')/100;
-      if(pct('taxRate')>0) record.taxDeduction=gross*pct('taxRate')/100;
-      if(pct('vatRate')>0) record.vatAmount=gross*pct('vatRate')/100;
-      record.deductions=(Number(record.advanceRecovery)||0)+(Number(record.retention)||0)+(Number(record.taxDeduction)||0)+(Number(record.otherDeductions)||0);
-      record.netAmount=gross-record.deductions+(Number(record.vatAmount)||0);
-      record.remainingAmount=record.netAmount-(Number(record.paidAmount)||0);
-      record._epmsSyncChain=true;
-    } else {
-    const items=[]; const usedBoq=new Set();
-    let hasBoqItem=false, hasExtraItem=false;
+    if(!itemEls.length){alert('يجب إضافة بند BOQ واحد على الأقل إلى المستخلص.');return;}
+    const items=[]; const used=new Set();
     for(const row of itemEls){
-      const isExtra = row.getAttribute('data-extra')==='1' || row.querySelector('.ei-isextra')?.value==='1' || row.querySelector('.ei-boq')?.value==='__EXTRA__';
-      const cur=Math.max(0,Number(row.querySelector('.ei-current')?.value)||0);
-      if(isExtra){
-        hasExtraItem=true;
-        const name=(row.querySelector('.ei-extraname')?.value||'').trim();
-        if(!name){alert('يجب إدخال وصف بند الزيادة.');return;}
-        const unit=(row.querySelector('.ei-extraunit')?.value||'').trim();
-        const unitPrice=Math.max(0,Number(row.querySelector('.ei-unit')?.value)||0);
-        const contractQty=Math.max(0,Number(row.querySelector('.ei-contractqty')?.value)||0);
-        const prev=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.status!=='مرفوض'&&(!record.projectId||String(x.projectId)===String(record.projectId))).reduce((sum,x)=>{
-          if(!Array.isArray(x.items)) return sum;
-          return sum+x.items.filter(it=>(it.isExtra||it.boqItemId==='__EXTRA__')&&String(it.boqItemName||'').trim().toLowerCase()===name.toLowerCase()).reduce((a,it)=>a+(Number(it.currentQuantity)||0),0);
-        },0);
-        const cum=prev+cur;
-        items.push({
-          isExtra:true, itemType:'extra', boqItemId:'__EXTRA__',
-          boqItemName:name, extraName:name, boqItemCode:'EXTRA',
-          unit, activityType:record.activityType||'أعمال إضافية',
-          previousQuantity:prev, currentQuantity:cur, cumulativeQuantity:cum,
-          contractQuantity:contractQty, unitPrice,
-          previousAmount:prev*unitPrice, currentAmount:cur*unitPrice, amount:cum*unitPrice,
-          outsideContract:true, outsideBoq:true
-        });
-      } else {
-        hasBoqItem=true;
-        const boqId=row.querySelector('.ei-boq')?.value||'';
-        if(!boqId){alert('يوجد بند BOQ غير مختار في المستخلص.');return;}
-        if(usedBoq.has(String(boqId))){alert('لا يمكن تكرار نفس بند BOQ داخل المستخلص نفسه.');return;} usedBoq.add(String(boqId));
-        const boq=(STATE.boq||[]).find(b=>String(b.id)===String(boqId));
-        if(!boq){alert('بند BOQ غير موجود.');return;}
-        if(linkOn('linkExtractToBoq') && linkOn('linkBoqToContract')){
-          if(record.contractor && boq.contractor && boq.contractor!==record.contractor){alert('بند BOQ لا يتبع المقاول المحدد.');return;}
-          if(record.contractNumber && boq.contractNumber && String(boq.contractNumber)!==String(record.contractNumber)){alert('بند BOQ لا يتبع رقم العقد المحدد.');return;}
-          if(record.projectId && boq.projectId && String(boq.projectId)!==String(record.projectId)){alert('بند BOQ لا يتبع المشروع المحدد.');return;}
-        }
-        const previous=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(x.projectId)===String(record.projectId))&&x.status!=='مرفوض').reduce((sum,x)=>{
-          if(Array.isArray(x.items)) return sum+x.items.filter(it=>String(it.boqItemId)===String(boqId)).reduce((a,it)=>a+(Number(it.currentQuantity)||0),0);
-          return sum+(String(x.boqItemId)===String(boqId)?Number(x.currentQuantity)||0:0);
-        },0);
-        const contractQty=Number(boq.quantity)||0, unitPrice=Number(boq.unitPrice)||0, cum=previous+cur;
-        if(contractQty>0 && cum>contractQty){const extra=cum-contractQty;if(!confirm('البند '+(boq.itemCode||boq.itemName||boqId)+' سيتجاوز كمية BOQ التعاقدية بمقدار '+extra+'. هل تريد الاستمرار؟'))return;}
-        items.push({
-          isExtra:false, itemType:'boq', boqItemId:String(boqId),
-          boqItemName:boq.itemName||'', boqItemCode:boq.itemCode||'',
-          unit:boq.unit||'', activityType:boq.activityType||'',
-          previousQuantity:previous, currentQuantity:cur, cumulativeQuantity:cum,
-          contractQuantity:contractQty, unitPrice,
-          previousAmount:previous*unitPrice, currentAmount:cur*unitPrice, amount:cum*unitPrice,
-          outsideContract:false, outsideBoq:false, contractId:boq.contractId||''
-        });
-      }
+      const boqId=row.querySelector('.ei-boq')?.value||''; const cur=Math.max(0,Number(row.querySelector('.ei-current')?.value)||0);
+      if(!boqId){alert('يوجد بند BOQ غير مختار في المستخلص.');return;}
+      if(used.has(String(boqId))){alert('لا يمكن تكرار نفس بند BOQ داخل المستخلص نفسه.');return;} used.add(String(boqId));
+      const boq=(STATE.boq||[]).find(b=>String(b.id)===String(boqId));
+      if(!boq||boq.contractor!==record.contractor||String(boq.contractNumber)!==String(record.contractNumber)|| (record.projectId && String(boq.projectId)!==String(record.projectId))){alert('بند BOQ المختار لا يتبع العقد أو المقاول أو المشروع المحدد.');return;}
+      const previous=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&String(x.contractId||'')===String(linked.id)&&(!record.projectId||String(x.projectId)===String(record.projectId))&&x.status!=='مرفوض').reduce((sum,x)=>{
+        if(Array.isArray(x.items)) return sum+x.items.filter(it=>String(it.boqItemId)===String(boqId)).reduce((a,it)=>a+(Number(it.currentQuantity)||0),0);
+        return sum+(String(x.boqItemId)===String(boqId)?Number(x.currentQuantity)||0:0);
+      },0);
+      const contractQty=Number(boq.quantity)||0, unitPrice=Number(boq.unitPrice)||0, cum=previous+cur;
+      if(contractQty>0 && cum>contractQty){const extra=cum-contractQty;if(!confirm('البند '+(boq.itemCode||boq.itemName||boqId)+' سيتجاوز كمية BOQ التعاقدية بمقدار '+extra+'. هل تريد الاستمرار؟'))return;}
+      items.push({boqItemId:String(boqId),boqItemName:boq.itemName||'',boqItemCode:boq.itemCode||'',unit:boq.unit||'',activityType:boq.activityType||'',previousQuantity:previous,currentQuantity:cur,cumulativeQuantity:cum,contractQuantity:contractQty,unitPrice:unitPrice,previousAmount:previous*unitPrice,currentAmount:cur*unitPrice,amount:cum*unitPrice});
     }
-    // ربط العقد اختيارياً حسب الإعدادات — بعض المستخلصات بلا عقد وبعض العقود بلا BOQ
-    let linked=null;
-    const needBoq = linkOn('extractRequireBoq');
-    const linkBoq = linkOn('linkExtractToBoq');
-    // خيار المستخلص نفسه يتقدّم على الإعداد العام (إلا إذا الإعداد العام إلزامي)
-    const recordWantsLink = extractIsLinkedToContract(record);
-    const needContract = linkOn('extractRequireContract') || (recordWantsLink && linkOn('extractRequireContract'));
-    // إذا المستخدم اختار «لا — بدون عقد» لا نُلزم العقد ما لم يكن الإعداد العام إلزامياً
-    const forceNoContract = !recordWantsLink && !linkOn('extractRequireContract');
-    if(needBoq && !hasBoqItem){
-      alert('إعدادات الربط تفرض وجود بند BOQ واحد على الأقل في المستخلص.');return;
-    }
-    if(!forceNoContract && linkOn('extractRequireContract') && (!record.contractor||!record.contractNumber)){
-      alert('إعدادات الربط تفرض اختيار المقاول ورقم العقد للمستخلص. أو اختر «لا — بدون عقد» إذا كان الإلزام العام مغلقاً.');return;
-    }
-    if(recordWantsLink && !forceNoContract && (!record.contractor||!record.contractNumber) && hasBoqItem){
-      // تنبيه اختياري فقط عند بنود BOQ
-      if(!confirm('اخترت ربط المستخلص بعقد لكن المقاول/رقم العقد فارغان. هل تريد الحفظ بدون عقد؟')) return;
-      record.linkToContract = 'لا — بدون عقد';
-    }
-    if(forceNoContract){
-      // مستخلص صراحة بدون عقد
-      record.contractId = '';
-      // نبقي المقاول كنص حر إن وُجد
-    }
-    if(hasBoqItem && linkBoq){
-      if(needContract || (record.contractor&&record.contractNumber)){
-        if(record.contractor&&record.contractNumber){
-          linked=(STATE.contracts||[]).find(c=>c.contractor===record.contractor&&String(c.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(c.projectId)===String(record.projectId))&&c.status!=='ملغي');
-          if(!linked && needContract){alert('العقد المختار غير مرتبط بالمقاول أو المشروع المحدد.');return;}
-          if(linked) record.contractId=linked.id;
-        } else if(needContract){
-          alert('بنود BOQ تتطلب اختيار المقاول ورقم العقد (أو عطّل «إلزام العقد للمستخلص» من إعدادات الربط).');return;
-        }
-      }
-    } else if(record.contractor && record.contractNumber){
-      linked=(STATE.contracts||[]).find(c=>c.contractor===record.contractor&&String(c.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(c.projectId)===String(record.projectId))&&c.status!=='ملغي');
-      if(linked) record.contractId=linked.id;
-    }
-    // السماح بمستخلص بنود زيادة فقط بدون عقد
-    if(hasExtraItem && !hasBoqItem && !linkOn('allowExtraWithoutContract') && !record.contractNumber){
-      alert('إعدادات الربط لا تسمح ببند زيادة بدون عقد. فعّل «السماح ببند زيادة بدون عقد» أو اختر عقداً.');return;
-    }
-    if(hasExtraItem) record.hasExtraItems=true;
     record.items=items;
     record.itemCount=items.length;
-    record.extraItemsCount=items.filter(x=>x.isExtra).length;
-    record.boqItemsCount=items.filter(x=>!x.isExtra).length;
-    const firstBoq=items.find(x=>!x.isExtra) || items[0];
-    record.boqItemId=firstBoq.boqItemId; record.boqItemName=firstBoq.boqItemName; record.boqItemCode=firstBoq.boqItemCode;
-    record.unit=firstBoq.unit; record.activityType=record.activityType||firstBoq.activityType;
+    record.boqItemId=items[0].boqItemId; record.boqItemName=items[0].boqItemName; record.boqItemCode=items[0].boqItemCode; record.unit=items[0].unit; record.activityType=record.activityType||items[0].activityType;
     record.previousQuantity=items.reduce((a,x)=>a+x.previousQuantity,0);
     record.currentQuantity=items.reduce((a,x)=>a+x.currentQuantity,0);
     record.cumulativeQuantity=items.reduce((a,x)=>a+x.cumulativeQuantity,0);
@@ -7977,8 +7401,8 @@ async function saveRecord(){
     record.previousAmount=items.reduce((a,x)=>a+x.previousAmount,0);
     record.currentAmount=items.reduce((a,x)=>a+x.currentAmount,0);
     record.amount=items.reduce((a,x)=>a+x.amount,0);
-    record.extraAmount=items.filter(x=>x.isExtra).reduce((a,x)=>a+x.currentAmount,0);
-    record.boqAmount=items.filter(x=>!x.isExtra).reduce((a,x)=>a+x.currentAmount,0);
+    // Load commercial/financial terms from the linked contract as the default source.
+    // Preserve an explicit certificate override only when the user has deliberately entered one.
     if(linked){
       const contractRates=['advanceRecoveryRate','retentionRate','taxRate','vatRate'];
       contractRates.forEach(k=>{const v=linked[k]; if(v!==undefined&&v!==null&&v!=='' ) record[k]=Number(v)||0;});
@@ -7986,9 +7410,8 @@ async function saveRecord(){
       record.contractAdvanceRecoveryCap=Number(linked.advanceRecoveryCap)||0;
       record.contractRetentionCap=Number(linked.retentionCap)||0;
       record.financialTermsSource='العقد المرتبط';
-    } else if(hasExtraItem && !hasBoqItem){
-      record.financialTermsSource='بند زيادة خارج العقد';
     }
+    // Recalculate certificate deductions and VAT from the current-period BOQ valuation.
     const gross=Number(record.currentAmount)||0;
     const pct=(name)=>Math.max(0,Number(record[name])||0);
     if(pct('advanceRecoveryRate')>0)record.advanceRecovery=gross*pct('advanceRecoveryRate')/100;
@@ -8000,97 +7423,17 @@ async function saveRecord(){
     record.deductions=(Number(record.advanceRecovery)||0)+(Number(record.retention)||0)+(Number(record.taxDeduction)||0)+(Number(record.otherDeductions)||0);
     record.netAmount=gross-record.deductions+(Number(record.vatAmount)||0);
     record.remainingAmount=record.netAmount-(Number(record.paidAmount)||0);
-    record.financialBreakdown={termsSource:record.financialTermsSource||'إدخال المستخلص',contractAdvanceAmount:Number(record.contractAdvanceAmount)||0,advanceRecoveryRate:pct('advanceRecoveryRate'),retentionRate:pct('retentionRate'),taxRate:pct('taxRate'),vatRate:pct('vatRate'),grossCurrent:gross,boqAmount:Number(record.boqAmount)||0,extraAmount:Number(record.extraAmount)||0,advanceRecovery:Number(record.advanceRecovery)||0,retention:Number(record.retention)||0,taxDeduction:Number(record.taxDeduction)||0,otherDeductions:Number(record.otherDeductions)||0,totalDeductions:record.deductions,vatAmount:Number(record.vatAmount)||0,netAmount:record.netAmount,paidAmount:Number(record.paidAmount)||0,remainingAmount:record.remainingAmount};
-    if(linked){
-      const previousForNumber=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&String(x.contractId||'')===String(linked.id)&&(!record.projectId||String(x.projectId)===String(record.projectId))&&x.status!=='مرفوض');
-      const nums=previousForNumber.map(x=>parseInt(String(x.number||'').match(/(\d+)\s*$/)?.[1]||'0',10)).filter(Number.isFinite); const expected=nums.length?Math.max(...nums)+1:1;
-      if(isNew && String(record.number)!==String(expected) && !confirm('رقم المستخلص التالي حسب سجل هذا المقاول والعقد هو '+expected+'. هل تريد الاحتفاظ بالرقم الذي أدخلته؟')) record.number=String(expected);
-    }
-    // علّم للمزامنة مع الماليات والمحاسبة بعد الحفظ
-    record._epmsSyncChain=true;
-    } // end else itemEls.length
+    record.financialBreakdown={termsSource:record.financialTermsSource||'إدخال المستخلص',contractAdvanceAmount:Number(record.contractAdvanceAmount)||0,advanceRecoveryRate:pct('advanceRecoveryRate'),retentionRate:pct('retentionRate'),taxRate:pct('taxRate'),vatRate:pct('vatRate'),grossCurrent:gross,advanceRecovery:Number(record.advanceRecovery)||0,retention:Number(record.retention)||0,taxDeduction:Number(record.taxDeduction)||0,otherDeductions:Number(record.otherDeductions)||0,totalDeductions:record.deductions,vatAmount:Number(record.vatAmount)||0,netAmount:record.netAmount,paidAmount:Number(record.paidAmount)||0,remainingAmount:record.remainingAmount};
+    const previousForNumber=(STATE.extracts||[]).filter(x=>x.id!==record.id&&x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&String(x.contractId||'')===String(linked.id)&&(!record.projectId||String(x.projectId)===String(record.projectId))&&x.status!=='مرفوض');
+    const nums=previousForNumber.map(x=>parseInt(String(x.number||'').match(/(\d+)\s*$/)?.[1]||'0',10)).filter(Number.isFinite); const expected=nums.length?Math.max(...nums)+1:1;
+    if(isNew && String(record.number)!==String(expected) && !confirm('رقم المستخلص التالي حسب سجل هذا المقاول والعقد هو '+expected+'. هل تريد الاحتفاظ بالرقم الذي أدخلته؟')) record.number=String(expected);
   }
   if(moduleKey==='boq'){
-    const requireCtr = linkOn('boqRequireContract');
-    const doLink = linkOn('linkBoqToContract');
-    if(requireCtr && (!record.contractor || !record.contractNumber)){
-      alert('إعدادات الربط تفرض ربط بند BOQ بعقد: اختر المقاول ورقم العقد.');return;
-    }
-    if(doLink && record.contractor&&record.contractNumber){
+    if(record.contractor&&record.contractNumber){
       const c=(STATE.contracts||[]).find(x=>x.contractor===record.contractor&&String(x.contractNumber)===String(record.contractNumber)&&(!record.projectId||String(x.projectId)===String(record.projectId))&&x.status!=='ملغي');
-      if(!c){
-        if(requireCtr){ alert('لا يمكن حفظ بند BOQ: المقاول ورقم العقد غير مرتبطين بعقد مسجل في المشروع.'); return; }
-        // ربط اختياري: نحفظ بدون contractId
-      } else {
-        record.contractId=c.id;
-      }
-    } else if(requireCtr && (record.contractor||record.contractNumber)){
-      alert('يرجى اختيار المقاول ورقم العقد المرتبطين ببند BOQ.'); return;
-    }
-    const q=Number(record.quantity)||0, p=Number(record.unitPrice)||0;
-    record.totalAmount=q*p;
-  }
-  if(moduleKey==='purchases'){
-    const q=Number(record.quantity)||0, p=Number(record.unitPrice)||0;
-    record.totalAmount = (record.totalAmount!==undefined && record.totalAmount!=='' && Number(record.totalAmount)>0) ? Number(record.totalAmount) : (q*p);
-    if(!record.orderNumber) record.orderNumber = 'PO-'+Date.now().toString().slice(-8);
-    // ربط فاتورة إن وُجد رقمها
-    if(record.invoiceNumber){
-      const inv=(STATE.invoices||[]).find(x=>String(x.number)===String(record.invoiceNumber)&&(!record.projectId||String(x.projectId)===String(record.projectId)));
-      if(inv){ record.invoiceId=inv.id; inv.purchaseOrderNumber=inv.purchaseOrderNumber||record.orderNumber; }
-    }
-    record._epmsProcureSync=true;
-  }
-  if(moduleKey==='deliveries'){
-    const q=Number(record.quantity)||0, p=Number(record.unitPrice)||0;
-    record.totalAmount = (record.totalAmount!==undefined && record.totalAmount!=='' && Number(record.totalAmount)>0) ? Number(record.totalAmount) : (q*p);
-    if(!record.deliveryNumber) record.deliveryNumber = 'DN-'+Date.now().toString().slice(-8);
-    // ربط أمر الشراء
-    if(record.purchaseOrderNumber){
-      const po=(STATE.purchases||[]).find(x=>String(x.orderNumber)===String(record.purchaseOrderNumber)&&(!record.projectId||String(x.projectId)===String(record.projectId)));
-      if(po){
-        record.purchaseId=po.id;
-        record.supplier=record.supplier||po.supplier;
-        record.itemName=record.itemName||po.itemName;
-        record.itemCode=record.itemCode||po.itemCode;
-        record.unit=record.unit||po.unit;
-        if(!record.unitPrice) record.unitPrice=po.unitPrice;
-        if(!record.totalAmount) record.totalAmount=(Number(record.quantity)||0)*(Number(record.unitPrice)||0);
-        // تحديث حالة أمر الشراء
-        const ordered=Number(po.quantity)||0;
-        const delivered=(STATE.deliveries||[]).filter(d=>d.id!==record.id&&String(d.purchaseOrderNumber)===String(record.purchaseOrderNumber)).reduce((s,d)=>s+(Number(d.quantity)||0),0)+(Number(record.quantity)||0);
-        if(delivered>=ordered && ordered>0) po.status='تم الاستلام';
-        else if(delivered>0) po.status='تم التوريد جزئياً';
-      }
-    }
-    if(record.invoiceNumber){
-      const inv=(STATE.invoices||[]).find(x=>String(x.number)===String(record.invoiceNumber));
-      if(inv){ record.invoiceId=inv.id; inv.deliveryNumber=inv.deliveryNumber||record.deliveryNumber; inv.purchaseOrderNumber=inv.purchaseOrderNumber||record.purchaseOrderNumber; }
-    }
-    record._epmsProcureSync=true;
-  }
-  if(moduleKey==='invoices'){
-    const base=Number(record.amount)||0, vat=Number(record.vatAmount)||0;
-    record.totalAmount = (record.totalAmount!==undefined && record.totalAmount!=='' && Number(record.totalAmount)>0) ? Number(record.totalAmount) : (base+vat);
-    const paid=Number(record.paidAmount)||0;
-    record.remainingAmount = record.totalAmount - paid;
-    if(paid<=0) record.status = record.status||'غير مدفوعة';
-    else if(paid>=record.totalAmount) record.status='مدفوعة';
-    else record.status='مدفوعة جزئياً';
-    // ربط عكسي مع المشتريات والتوريدات
-    if(record.purchaseOrderNumber){
-      (STATE.purchases||[]).filter(p=>String(p.orderNumber)===String(record.purchaseOrderNumber)).forEach(p=>{ p.invoiceNumber=record.number; p.invoiceId=record.id||p.invoiceId; });
-    }
-    if(record.deliveryNumber){
-      (STATE.deliveries||[]).filter(d=>String(d.deliveryNumber)===String(record.deliveryNumber)).forEach(d=>{ d.invoiceNumber=record.number; d.invoiceId=record.id||d.invoiceId; });
-    }
-    // إن لم يُحدد المبلغ من أوامر مرتبطة
-    if(!base && record.purchaseOrderNumber){
-      const pos=(STATE.purchases||[]).filter(p=>String(p.orderNumber)===String(record.purchaseOrderNumber));
-      const sum=pos.reduce((s,p)=>s+(Number(p.totalAmount)||0),0);
-      if(sum>0){ record.amount=sum; record.totalAmount=sum+vat; record.remainingAmount=record.totalAmount-paid; }
-    }
-    record._epmsProcureSync=true;
+      if(!c){alert('لا يمكن حفظ بند BOQ: المقاول ورقم العقد غير مرتبطين بعقد مسجل في المشروع.');return;}
+      record.contractId=c.id;
+    } else if(record.contractor||record.contractNumber){ alert('يرجى اختيار المقاول ورقم العقد المرتبطين ببند BOQ.'); return; }
   }
   if(moduleSupportsApproval(moduleKey)){
     // أي سجل جديد أو معدّل بعد اعتماد سابق يعود لقيد الاعتماد
@@ -8150,26 +7493,6 @@ async function saveRecord(){
     }
   }
   await dbSet(moduleKey, STATE[moduleKey]);
-  if(moduleKey==='extracts' && record._epmsSyncChain){
-    if(linkOn('autoSyncExtractFinance')){
-      try{ await epmsSyncExtractToFinanceAndAccounting(record); }catch(e){ console.error('chain sync', e); }
-    }
-    delete record._epmsSyncChain;
-  }
-  if(moduleKey==='boq'){
-    try{ await epmsSyncBoqTotalsToContract(record); }catch(e){ console.error('boq contract sync', e); }
-  }
-  if(['purchases','deliveries','invoices'].includes(moduleKey) && record._epmsProcureSync){
-    try{
-      if(moduleKey==='purchases') await dbSet('purchases', STATE.purchases);
-      if(moduleKey==='deliveries'){ await dbSet('deliveries', STATE.deliveries); await dbSet('purchases', STATE.purchases); }
-      if(moduleKey==='invoices'){ await dbSet('invoices', STATE.invoices); await dbSet('purchases', STATE.purchases); await dbSet('deliveries', STATE.deliveries); }
-      if(linkOn('autoSyncProcureFinance') && linkOn('linkPurchaseChain')){
-        await epmsSyncProcurementToFinanceAndAccounting(moduleKey, record);
-      }
-    }catch(e){ console.error('procure sync', e); }
-    delete record._epmsProcureSync;
-  }
   modalState = null;
   render();
 }
@@ -10247,9 +9570,6 @@ function render(){
     ? window.__epmsSidebarScroll
     : (document.getElementById('sidebar') ? document.getElementById('sidebar').scrollTop : 0);
   app.innerHTML = mainLayout();
-  if(modalState && modalState.moduleKey==='extracts'){
-    try{ extractLinkToContractChanged(); }catch(e){}
-  }
   const sb = document.getElementById('sidebar');
   if(sb && prevScroll>0){
     sb.scrollTop = prevScroll;
