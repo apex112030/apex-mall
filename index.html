@@ -27,7 +27,7 @@ body{font-family:'Tajawal','Zain',sans-serif;background:#eef4fa;color:var(--epms
 #app{min-height:100vh;}
 
 /* ---------- Login ---------- */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--login-overlay),var(--login-bg-image) center center / cover no-repeat fixed;padding:24px;}
+.login-wrap{min-height:100vh;overflow:auto;display:flex;align-items:center;justify-content:center;background:var(--login-overlay),var(--login-bg-image) center center / cover no-repeat fixed;padding:24px;}
 .login-card{background:rgba(255,255,255,.96);width:100%;max-width:420px;border-radius:12px;padding:36px 32px 30px;box-shadow:0 20px 50px rgba(0,0,0,0.45);border-top:5px solid var(--amber);backdrop-filter:blur(8px);}
 .login-card h1{font-size:18px !important;line-height:1.45;}
 .brand-mark{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
@@ -10509,6 +10509,103 @@ boot();
 #epmsTestLauncher{position:fixed;bottom:14px;left:14px;z-index:99999;background:#183b56;color:#fff;border:0;border-radius:12px;padding:11px 14px;font-weight:700;box-shadow:0 4px 18px #0003;cursor:pointer}
 #epmsTestPanel{position:fixed;inset:4vh 3vw;z-index:100000;background:#fff;color:#17212b;border:1px solid #ccd5df;border-radius:16px;box-shadow:0 15px 55px #0005;display:none;overflow:auto;padding:18px;font-family:Arial,sans-serif;direction:rtl}
 #epmsTestPanel table{width:100%;border-collapse:collapse;margin-top:12px}#epmsTestPanel th,#epmsTestPanel td{border:1px solid #dbe2e8;padding:7px;text-align:right;font-size:13px}#epmsTestPanel th{background:#edf3f7}#epmsTestPanel .epmsTBtn{border:0;border-radius:8px;padding:9px 12px;margin:4px;cursor:pointer;background:#e8eef4;color:#17212b;font-weight:700}#epmsTestPanel .epmsTPrimary{background:#176b50;color:white}#epmsTestPanel .epmsTWarn{background:#9b332d;color:white}#epmsTestSummary{padding:10px;background:#f2f6f9;border-radius:8px;margin-top:10px}
+
+/* ===== ثبات الهيكل: قائمة جانبية ثابتة + تمرير المحتوى فقط ===== */
+html,body{#app{height:100%;}}
+html,body{height:100%;margin:0;overflow:hidden;}
+#app{height:100%;min-height:100%;overflow:hidden;}
+.layout{
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:stretch !important;
+  width:100% !important;
+  max-width:100% !important;
+  height:100vh !important;
+  height:100dvh !important;
+  min-height:100vh !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+.sidebar{
+  position:relative !important;
+  top:auto !important;
+  align-self:stretch !important;
+  width:300px !important;
+  flex:0 0 300px !important;
+  height:100% !important;
+  max-height:100% !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  z-index:30 !important;
+  box-sizing:border-box !important;
+}
+.main{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  width:auto !important;
+  max-width:100% !important;
+  height:100% !important;
+  max-height:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+.topbar{
+  position:sticky !important;
+  top:0 !important;
+  flex:0 0 auto !important;
+  z-index:25 !important;
+}
+.content{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  min-width:0 !important;
+  width:100% !important;
+  max-width:100% !important;
+  overflow-x:auto !important;
+  overflow-y:auto !important;
+  padding:12px 14px 20px !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+  scrollbar-gutter:stable both-edges;
+  scrollbar-width:auto;
+  scrollbar-color:#0b63d8 #d9e6f5;
+}
+.content::-webkit-scrollbar{height:14px;width:12px;}
+.content::-webkit-scrollbar-thumb{background:#0b63d8;border-radius:8px;border:2px solid #d9e6f5;}
+.content::-webkit-scrollbar-track{background:#d9e6f5;border-radius:8px;}
+/* جدول: صندوق بارتفاع محدود حتى يبقى شريط التمرير الأفقي أسفل المنطقة المرئية */
+.table-scroll{
+  width:100% !important;
+  max-width:100% !important;
+  max-height:calc(100vh - 220px) !important;
+  max-height:calc(100dvh - 220px) !important;
+  overflow:auto !important;
+  -webkit-overflow-scrolling:touch;
+  border:1px solid #d5e2f0;
+  border-radius:10px;
+  background:#fff;
+  padding-bottom:0 !important;
+  margin-bottom:12px;
+  scrollbar-width:auto;
+  scrollbar-color:#0b63d8 #e8eef5;
+  box-sizing:border-box;
+}
+.table-scroll::-webkit-scrollbar{height:16px;width:12px;}
+.table-scroll::-webkit-scrollbar-track{background:#e8eef5;border-radius:8px;}
+.table-scroll::-webkit-scrollbar-thumb{background:#0b63d8;border-radius:8px;border:2px solid #e8eef5;}
+.table-scroll::-webkit-scrollbar-thumb:hover{background:#074a9e;}
+.table-scroll table{min-width:max(960px,100%);width:max-content;border-collapse:collapse;}
+/* هوامش يمين/يسار متسقة */
+.panel,.filters-bar,.module-toolbar,.hero{max-width:100%;box-sizing:border-box;}
+@media (max-width:980px){
+  .sidebar{position:fixed !important;inset:0 auto 0 0;height:100% !important;transform:translateX(-105%);transition:transform .25s ease;z-index:100 !important;}
+  html[dir="rtl"] .sidebar{inset:0 0 0 auto;transform:translateX(105%);}
+  .sidebar.open, body.sidebar-open .sidebar{transform:translateX(0) !important;}
+  .layout{height:100vh !important;}
+  .table-scroll{max-height:calc(100vh - 180px) !important;}
+}
 </style>
 <button id="epmsTestLauncher" type="button" onclick="epmsOpenTestPanel()">🧪 اختبار الأقسام</button>
 <div id="epmsTestPanel" role="dialog" aria-modal="true" aria-label="اختبار أقسام EPMS">
