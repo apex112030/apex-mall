@@ -975,47 +975,6 @@ async function toggleSectionLink(from, to){
   await setLinkSetting(id, !cur);
   alert((!cur?'تم تفعيل':'تم تعطيل')+' الربط: '+(LINK_PAIR_DEFS.find(p=>p.id===id||p.id===(to+'|'+from))||{label:from+' ↔ '+to}).label);
 }
-/** تفعيل كل روابط الأقسام */
-async function enableAllSectionLinks(){
-  const p = {};
-  (LINK_PAIR_DEFS||[]).forEach(x=>{ p[x.id]=true; });
-  p.linkBoqToContract=true;
-  p.linkExtractToBoq=true;
-  p.extractLinkContracts=true;
-  p.autoSyncExtractFinance=true;
-  p.linkPurchaseChain=true;
-  p.autoSyncProcureFinance=true;
-  p.allowExtraWithoutContract=true;
-  await saveLinkSettings(p);
-  alert('تم تفعيل كل الروابط بين الأقسام.');
-}
-/** فصل كل الأقسام عن بعضها */
-async function disableAllSectionLinks(){
-  const p = {};
-  (LINK_PAIR_DEFS||[]).forEach(x=>{ p[x.id]=false; });
-  p.linkBoqToContract=false;
-  p.boqRequireContract=false;
-  p.linkExtractToBoq=false;
-  p.extractRequireBoq=false;
-  p.extractLinkContracts=false;
-  p.extractRequireContract=false;
-  p.autoSyncExtractFinance=false;
-  p.linkPurchaseChain=false;
-  p.autoSyncProcureFinance=false;
-  await saveLinkSettings(p);
-  alert('تم فصل كل الأقسام — لا يوجد ربط إلزامي أو تلقائي.');
-}
-/** فصل BOQ فقط عن الجميع مع الإبقاء على باقي الروابط */
-async function disconnectBoqFromAll(){
-  const p = {
-    'boq|contracts':false, 'boq|extracts':false, 'boq|finance':false,
-    'boq|accounting':false, 'boq|invoices':false, 'boq|purchases':false,
-    linkBoqToContract:false, linkExtractToBoq:false,
-    boqRequireContract:false, extractRequireBoq:false
-  };
-  await saveLinkSettings(p);
-  alert('تم فصل BOQ عن العقود والمستخلصات والماليات والمحاسبة والفواتير والمشتريات.');
-}
 
 
 /* ===================== i18n (Arabic / English) ===================== */
@@ -6351,10 +6310,10 @@ function systemManagementHTML(){
       ${linkSettingToggle('autoSyncProcureFinance','ترحيل مشتريات/فواتير → ماليات/محاسبة','مع سلسلة المشتريات')}
     </div>
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button type="button" class="btn btn-primary" onclick="enableAllSectionLinks()" style="font-weight:800">✅ تفعيل كل الروابط</button>
-      <button type="button" class="btn btn-amber" onclick="disableAllSectionLinks()" style="font-weight:800">⛔ فصل كل الأقسام</button>
-      <button type="button" class="btn btn-ghost" onclick="disconnectBoqFromAll()">فصل BOQ فقط عن الجميع</button>
-      <button type="button" class="btn btn-ghost" onclick="saveLinkSettings(Object.assign({}, DEFAULT_LINK_SETTINGS))">إعادة الافتراضي (BOQ مفصول)</button>
+      <button class="btn btn-ghost" onclick="saveLinkSettings(Object.assign({}, DEFAULT_LINK_SETTINGS))">إعادة الافتراضي (BOQ مفصول)</button>
+      <button class="btn btn-primary" onclick="(function(){const p={};LINK_PAIR_DEFS.forEach(x=>p[x.id]=true);p.linkBoqToContract=true;p.linkExtractToBoq=true;p.extractLinkContracts=true;p.autoSyncExtractFinance=true;p.linkPurchaseChain=true;p.autoSyncProcureFinance=true;saveLinkSettings(p);})()">تفعيل كل الروابط</button>
+      <button class="btn btn-amber" onclick="(function(){const p={};LINK_PAIR_DEFS.forEach(x=>p[x.id]=false);p.linkBoqToContract=false;p.boqRequireContract=false;p.linkExtractToBoq=false;p.extractRequireBoq=false;p.extractLinkContracts=false;p.extractRequireContract=false;p.autoSyncExtractFinance=false;p.linkPurchaseChain=false;p.autoSyncProcureFinance=false;saveLinkSettings(p);})()">فصل كل الأقسام</button>
+      <button class="btn btn-ghost" onclick="(function(){const p={};['boq|contracts','boq|extracts','boq|finance','boq|accounting','boq|invoices','boq|purchases'].forEach(k=>p[k]=false);p.linkBoqToContract=false;p.linkExtractToBoq=false;p.boqRequireContract=false;p.extractRequireBoq=false;saveLinkSettings(p);})()">فصل BOQ فقط عن الجميع</button>
     </div>
   </div>
 
@@ -6902,8 +6861,6 @@ function moduleHTML(key, mod){
         <button class="btn ${isSectionLinked('boq','extracts')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','extracts')" title="ربط اختياري BOQ مع المستخلصات">🔗 المستخلصات ${isSectionLinked('boq','extracts')?'✓':'○'}</button>
         <button class="btn ${isSectionLinked('boq','finance')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','finance')" title="ربط اختياري BOQ مع الماليات">🔗 الماليات ${isSectionLinked('boq','finance')?'✓':'○'}</button>
         <button class="btn ${isSectionLinked('boq','accounting')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','accounting')" title="ربط اختياري BOQ مع المحاسبة">🔗 المحاسبة ${isSectionLinked('boq','accounting')?'✓':'○'}</button>
-        <button type="button" class="btn btn-primary" onclick="enableAllSectionLinks()" title="تفعيل كل روابط الأقسام في النظام">✅ تفعيل كل الروابط</button>
-        <button type="button" class="btn btn-amber" onclick="disableAllSectionLinks()" title="فصل كل الأقسام عن بعضها">⛔ فصل كل الأقسام</button>
         `:''}
         ${key==='extracts'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">📒 ترحيل المعتمد → ماليات ومحاسبة</button>`:''}
         ${key==='purchases'||key==='deliveries'||key==='invoices'?`<button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">📒 ترحيل المشتريات/التوريدات/الفواتير → ماليات ومحاسبة</button>`:''}
