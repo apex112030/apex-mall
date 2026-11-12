@@ -2333,6 +2333,8 @@ const MODULES = {
       {name:'projectSubtype',label:'وصف تفصيلي / تخصص المشروع',type:'text'},
       {name:'resourceSummary',label:'ملخص الموارد المطلوبة (مهندسون / عمالة / معدات)',type:'textarea'},
       {name:'status',label:'الحالة',type:'select',options:['لم يبدأ','قيد التنفيذ','متوقف مؤقتاً','منتهي']},
+      {name:'progressMethod',label:'طريقة حساب نسبة الإنجاز',type:'select',options:['تلقائي','مالي','متوسط المراحل','يدوي']},
+      {name:'manualPercent',label:'نسبة الإنجاز اليدوية % (عند اختيار يدوي)',type:'number'},
       {name:'budget',label:'الميزانية التقديرية',type:'number'},
       {name:'startDate',label:'تاريخ البدء',type:'date'},
       {name:'endDate',label:'تاريخ الانتهاء المتوقع',type:'date'},
@@ -3957,7 +3959,7 @@ function workflowCanUserApproveStage(stage,user=currentUser){
   if(!pk) return false;
   return !!(user.permissions&&user.permissions[pk]==='approve');
 }
-function workflowEnabled(moduleKey){ return !!approvalWorkflow(moduleKey).enabled; }
+function workflowEnabled(moduleKey){ if(epmsApprovalStopped(moduleKey)) return false; return !!approvalWorkflow(moduleKey).enabled; }
 function workflowStageNumber(record){ return Math.max(1,Number(record&&record.approvalStageNumber||1)||1); }
 function workflowStageLabel(moduleKey,record){
   const w=approvalWorkflow(moduleKey), n=workflowStageNumber(record), st=(w.stages||[])[n-1];
@@ -4060,7 +4062,7 @@ function centralApprovalHistoryHTML(record){
 }
 
 function approvalPolicy(moduleKey){ return approvalPolicyLegacy(moduleKey); }
-function approvalRequired(moduleKey){ return !!approvalPolicy(moduleKey).enabled; }
+function approvalRequired(moduleKey){ if(epmsApprovalStopped(moduleKey)) return false; return !!approvalPolicy(moduleKey).enabled; }
 function userHasApprovalPermission(user, policy){
   if(!user) return false;
   if(user.isAdmin) return true;
@@ -4100,9 +4102,11 @@ const NATIVE_APPROVAL_MODULES=[
   'engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim'
 ];
 function isNativeApprovalModule(moduleKey){
+  if(epmsApprovalStopped(moduleKey)) return false;
   return NATIVE_APPROVAL_MODULES.includes(moduleKey);
 }
 function moduleSupportsApproval(moduleKey){
+  if(epmsApprovalStopped(moduleKey)) return false;
   // إما سياسة اعتماد مفعّلة، أو قسم طلب اعتماد/توجيهات أصلي، أو لدى المستخدم صلاحية اعتماد على القسم
   if(approvalRequired(moduleKey)) return true;
   if(isNativeApprovalModule(moduleKey)) return true;
@@ -4129,6 +4133,7 @@ function recordApprovalStatus(moduleKey,record){
   return record.approvalStatus || '';
 }
 function isRecordPendingApproval(moduleKey,record){
+  if(epmsApprovalStopped(moduleKey)) return false;
   const st=recordApprovalStatus(moduleKey,record);
   if(!st) return moduleSupportsApproval(moduleKey);
   return st!=='معتمد' && st!=='مرفوض';
@@ -4136,6 +4141,7 @@ function isRecordPendingApproval(moduleKey,record){
 function canApproveRecord(moduleKey,record){
   if(!record) return false;
   if(moduleKey==='disbursements') return false;
+  if(epmsApprovalStopped(moduleKey)) return false;
   if(workflowEnabled(moduleKey)){
     const st=workflowStageForRecord(moduleKey,record);
     return !!st && record.approvalStatus!=='معتمد' && workflowCanUserApproveStage(st,currentUser);
@@ -5688,7 +5694,7 @@ async function loadAllData(){
     if(DB_LOAD_FAILED.has(key)) return STATE[key]||[];   // فشلت القراءة: نُبقي ما هو موجود ولا نكتب فوقه
     DB_LOADED.add(key); return v;
   };
-  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','disbursements','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps','linkSettings'];
+  const keys=['approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','disbursements','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps','linkSettings','approvalStopped'];
   keys.forEach(k=>DB_GUARDED.add(k));
   DB_LOADING=true;
   try{
@@ -6241,7 +6247,9 @@ async function epmsPostAccountingToDisbursementAndProject(acc){
   }
   const payable = (acc.entryType==='ترحيل مستخلص') || ['بند زيادة','فاتورة مشتريات','سند صرف','توريد مخزني'].includes(acc.entryType);
   const disb=epmsArr('disbursements');
-  if(payable && !disb.some(d=>d.accountingId===acc.id)){
+  const _pre = disb.find(d=>!d.accountingId && acc.financeId && d.financeId===acc.financeId);
+  if(_pre){ _pre.accountingId=acc.id; if(!acc.disburseStatus && _pre.disburseStatus) acc.disburseStatus=_pre.disburseStatus; }
+  if(payable && !_pre && !disb.some(d=>d.accountingId===acc.id)){
     const due = (acc.entryType==='ترحيل مستخلص' && Number(acc.netAmount)>0) ? Number(acc.netAmount) : (Number(acc.amount)||0);
     disb.push({id:genId(), chainRow:true, accountingId:acc.id, financeId:acc.financeId||'', extractId:acc.extractId||'', projectId:acc.projectId||'',
       payee:acc.contractor||'', amount:due, date:todayISO(), contractNumber:acc.contractNumber||'', extractNumber:acc.extractNumber||'',
@@ -6278,32 +6286,41 @@ async function epmsApplyDisburse(moduleKey, rec, decision){
   rec.disburseStatus=decision; rec.disburseBy=by; rec.disburseAt=now;
   epmsHistory(rec, 'قرار الصرف: '+decision);
   const touched=new Set([moduleKey]);
-  const finIds = new Set(), accIds = new Set();
+  const finIds=new Set(), accIds=new Set();
   if(moduleKey==='finance'){ finIds.add(rec.id); epmsArr('accounting').forEach(a=>{ if(a.financeId===rec.id) accIds.add(a.id); }); }
   if(moduleKey==='accounting'){ accIds.add(rec.id); if(rec.financeId) finIds.add(rec.financeId); }
   if(moduleKey==='disbursements'){ if(rec.accountingId) accIds.add(rec.accountingId); if(rec.financeId) finIds.add(rec.financeId); }
   epmsArr('finance').forEach(f=>{ if(finIds.has(f.id) && f!==rec){ f.disburseStatus=decision; touched.add('finance'); } });
-  epmsArr('accounting').forEach(a=>{
-    if((accIds.has(a.id) || (moduleKey==='finance' && a.financeId===rec.id)) && a!==rec){ a.disburseStatus=decision; touched.add('accounting'); }
-  });
-  // سجل الصرف
+  epmsArr('accounting').forEach(a=>{ if(accIds.has(a.id) && a!==rec){ a.disburseStatus=decision; touched.add('accounting'); } });
+  // سجل الصرف: يُنشأ دائماً عند اتخاذ القرار (مالية أو محاسبة) حتى تظهر النتيجة في الصرف والملخص المالي وبيانات المشروع
   const disb=epmsArr('disbursements');
   const relatedAcc = moduleKey==='accounting' ? rec : epmsArr('accounting').find(a=>accIds.has(a.id));
-  let d = moduleKey==='disbursements' ? rec : disb.find(x=>relatedAcc && x.accountingId===relatedAcc.id);
-  if(!d && moduleKey==='accounting' && (rec.approvalStatus==='معتمد' || !rec.approvalStatus) && Number(rec.amount)>0){
-    d={id:genId(), chainRow:!!rec.chainRow, accountingId:rec.id, financeId:rec.financeId||'', extractId:rec.extractId||'', projectId:rec.projectId||'',
-       payee:rec.contractor||'', amount:(rec.entryType==='ترحيل مستخلص'&&Number(rec.netAmount)>0)?Number(rec.netAmount):Number(rec.amount),
-       date:todayISO(), contractNumber:rec.contractNumber||'', extractNumber:rec.extractNumber||'', sourceType:rec.sourceType||'يدوي',
-       notes:'قرار صرف من المحاسبة', createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:now};
-    disb.push(d);
+  const relatedFin = moduleKey==='finance' ? rec : epmsArr('finance').find(f=>finIds.has(f.id));
+  let d = moduleKey==='disbursements' ? rec
+        : disb.find(x=>relatedAcc && x.accountingId===relatedAcc.id)
+        || disb.find(x=>relatedFin && x.financeId===relatedFin.id);
+  const src = moduleKey==='disbursements' ? null : rec;
+  const nonPayable = src && ((moduleKey==='finance' && src.type==='إيراد') || (moduleKey==='accounting' && src.entryType==='سند قبض'));
+  if(!d && src && !nonPayable){
+    const net=Number(src.netAmount)||0;
+    const due = ((src.entryType==='ترحيل مستخلص'||src.type==='مستحق مقاول') && net>0) ? net : (Number(src.amount)||0);
+    const sid=String(src.sourceId||'');
+    const extId = src.extractId || (sid.startsWith('extract:') ? sid.slice(8) : '');
+    if(due>0){
+      d={id:genId(), chainRow:!!src.chainRow, accountingId:relatedAcc?relatedAcc.id:'', financeId:relatedFin?relatedFin.id:'', extractId:extId||'',
+         projectId:src.projectId||'', payee:src.contractor||'', amount:due, date:todayISO(), contractNumber:src.contractNumber||'',
+         extractNumber:src.extractNumber||'', sourceType:src.sourceType||'يدوي', notes:'قرار صرف من '+(moduleKey==='finance'?'الماليات':'المحاسبة')+(src.category?' — '+src.category:''),
+         createdBy:currentUser?.username, createdByName:currentUser?.name, createdAt:now};
+      disb.push(d);
+    }
   }
   if(d){
     d.disburseStatus=decision; d.disburseBy=by; d.disburseAt=now;
     d.paidDate = decision==='صرف' ? todayISO() : '';
     touched.add('disbursements');
-    // انعكاس الصرف على المستخلص المصدر
+    if(relatedAcc && relatedAcc!==rec){ relatedAcc.disburseStatus=decision; touched.add('accounting'); }
     try{
-      const ext = (STATE.extracts||[]).find(x=>String(x.id)===String(d.extractId||(relatedAcc&&relatedAcc.extractId)||''));
+      const ext = (STATE.extracts||[]).find(x=>String(x.id)===String(d.extractId||''));
       if(ext){
         const applied=Number(d.extractPaidApplied)||0;
         if(decision==='صرف' && !applied){
@@ -6324,6 +6341,7 @@ async function epmsApplyDisburse(moduleKey, rec, decision){
   for(const k of touched){ await dbSet(k, STATE[k]); }
   const pid = rec.projectId || (d&&d.projectId) || '';
   if(pid) await epmsRecalcProject(pid);
+  return d;
 }
 async function epmsSetDisburse(moduleKey, id, decision){
   const mod=MODULES[moduleKey]; const rec=(STATE[moduleKey]||[]).find(x=>String(x.id)===String(id));
@@ -6332,7 +6350,10 @@ async function epmsSetDisburse(moduleKey, id, decision){
   if(rec.approvalStatus==='مرفوض'){ alert('لا يمكن تسجيل قرار صرف لمعاملة مرفوضة.'); return; }
   if(decision==='صرف' && !confirm('تأكيد قرار «صرف» لهذه المعاملة؟')) return;
   if(decision==='عدم الصرف' && !confirm('تأكيد قرار «عدم الصرف» لهذه المعاملة؟')) return;
-  await epmsApplyDisburse(moduleKey, rec, decision);
+  const _d = await epmsApplyDisburse(moduleKey, rec, decision);
+  const _msg = _d ? ('تم تسجيل «'+decision+'» وظهر في: شاشة الصرف'+(decision==='صرف'?'، الملخص المالي (المصروفات)':'')+'، وبيانات المشروع.')
+                  : 'تم تسجيل «'+decision+'» على المعاملة (لا مبلغ مستحق للصرف فيها).';
+  alert(_msg);
   render();
 }
 /** قرار عام — يُطبّق فقط على المعاملات التي لم يُتخذ فيها قرار بعد */
@@ -6351,14 +6372,38 @@ async function epmsBulkDisburse(moduleKey){
 }
 
 /** نسبة إنجاز المشروع من مراحله (آخر تحديث لكل مرحلة) */
-function epmsProjectProgress(pid){
-  const ph=(STATE.phases||[]).filter(x=>String(x.projectId)===String(pid));
-  if(!ph.length) return null;
-  const latest={};
-  ph.forEach(x=>{ const k=String(x.phase||x.id); const prev=latest[k]; if(!prev || String(x.date||'')>=String(prev.date||'')) latest[k]=x; });
-  const vals=Object.values(latest).map(x=>Math.max(0,Math.min(100,Number(x.percent)||0)));
-  return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+function epmsApprovedWorksValue(pid){
+  return (STATE.extracts||[]).filter(x=>String(x.projectId)===String(pid) && x.approvalStatus!=='مرفوض' &&
+    (x.approvalStatus==='معتمد' || /معتمد|مصروف/.test(String(x.status||''))))
+    .reduce((a,x)=>a+(Number(x.currentAmount)||0),0);
 }
+function epmsProjectProgressDetail(pid){
+  const p=(STATE.projects||[]).find(x=>String(x.id)===String(pid))||{};
+  const ph=(STATE.phases||[]).filter(x=>String(x.projectId)===String(pid));
+  let phasesPct=null, phaseCount=0;
+  if(ph.length){
+    const latest={};
+    ph.forEach(x=>{ const k=String(x.phase||x.id); const prev=latest[k]; if(!prev || String(x.date||'')>=String(prev.date||'')) latest[k]=x; });
+    const vals=Object.values(latest).map(x=>Math.max(0,Math.min(100,Number(x.percent)||0)));
+    phaseCount=vals.length; phasesPct=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:null;
+  }
+  const contractsVal=(STATE.contracts||[]).filter(c=>String(c.projectId)===String(pid) && c.status!=='ملغي' && c.status!=='مسودة').reduce((a,c)=>a+(Number(c.value)||0),0);
+  const base = contractsVal>0 ? contractsVal : (Number(p.budget)||0);
+  const baseLabel = contractsVal>0 ? 'قيمة العقود' : 'الميزانية التقديرية';
+  const certified=epmsApprovedWorksValue(pid);
+  const finPct = base>0 ? Math.max(0,Math.min(100,Math.round(certified/base*1000)/10)) : null;
+  const method = p.progressMethod || 'تلقائي';
+  let value=null, used='';
+  if(method==='يدوي' && p.manualPercent!==undefined && p.manualPercent!==''){ value=Math.max(0,Math.min(100,Number(p.manualPercent)||0)); used='يدوي'; }
+  else if(method==='متوسط المراحل'){ value=phasesPct; used='متوسط المراحل'; }
+  else if(method==='مالي'){ value=finPct; used='مالي'; }
+  else { // تلقائي: الإنجاز المالي (قيمة الأعمال المعتمدة ÷ العقود/الميزانية) إن وُجدت أعمال معتمدة، وإلا متوسط المراحل
+    if(finPct!==null && certified>0){ value=finPct; used='مالي (تلقائي)'; } else { value=phasesPct; used='متوسط المراحل (تلقائي)'; }
+  }
+  return {value, used, phasesPct, phaseCount, finPct, certified, base, baseLabel, method};
+}
+function epmsProjectProgress(pid){ const d=epmsProjectProgressDetail(pid); return d.value; }
+function epmsPct(p){ const v=epmsProjectProgress(p.id); return v!==null&&v!==undefined ? v : (Number(p.percentComplete||p.percent||0)||0); }
 function epmsProjectFinancials(pid){
   const acc=epmsArr('accounting').filter(a=>String(a.projectId)===String(pid));
   const expenses=acc.filter(a=>a.approvalStatus==='معتمد' && EPMS_COST_ENTRY_TYPES.includes(a.entryType));
@@ -6381,7 +6426,7 @@ async function epmsRecalcProject(pid){
   const f=epmsProjectFinancials(pid), pr=epmsProjectProgress(pid);
   p.actualExpenses=f.expenses; p.disbursedAmount=f.disbursed; p.pendingDisbursement=f.pendingDisb;
   p.remainingBudget=(Number(p.budget)||0)-f.expenses;
-  if(pr!==null) p.percentComplete=pr;
+  if(pr!==null && pr!==undefined) p.percentComplete=pr;
   p.financialsSyncedAt=epmsNowISO();
   try{ await dbSet('projects', STATE.projects); }catch(e){ console.error(e); }
   return {financials:f, progress:pr};
@@ -6426,7 +6471,7 @@ function projectCardsPanelHTML(){
   if(!ps.length) return '';
   return `<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▦</span>شاشة تفصيلية لكل مشروع</span></div>
   <div class="quick-grid">${ps.map(p=>{
-    const f=epmsProjectFinancials(p.id); const pr=epmsProjectProgress(p.id); const pct=Math.max(0,Math.min(100,pr!==null?pr:Number(p.percentComplete||p.percent||0)));
+    const f=epmsProjectFinancials(p.id); const pr=epmsProjectProgress(p.id); const pct=Math.max(0,Math.min(100,pr!==null?pr:epmsPct(p)));
     return `<button class="quick-btn" style="text-align:start" onclick="epmsOpenProjectDetail('${escapeHtml(String(p.id))}')"><b>▤</b>${escapeHtml(p.name||'مشروع')}<br><small>إنجاز ${pct}% · مصروفات ${epmsMoney(f.expenses)}</small><div class="progress-track" style="margin-top:6px"><div class="progress-fill" style="width:${pct}%"></div></div></button>`;
   }).join('')}</div></div>`;
 }
@@ -6438,7 +6483,7 @@ function projectDetailHTML(){
   window.__epmsProjectId=pid;
   const p=ps.find(x=>String(x.id)===String(pid));
   const f=epmsProjectFinancials(pid); const prog=epmsProjectProgress(pid);
-  const pct=Math.max(0,Math.min(100,prog!==null?prog:Number(p.percentComplete||p.percent||0)));
+  const pct=Math.max(0,Math.min(100,prog!==null?prog:epmsPct(p)));
   const budget=Number(p.budget)||0;
   const phases=(STATE.phases||[]).filter(x=>String(x.projectId)===String(pid)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   const canEditDisb=currentUser.isAdmin||canEdit('accounting');
@@ -6461,6 +6506,7 @@ function projectDetailHTML(){
      ${stat('⏳',epmsMoney(f.pendingDisb),'بانتظار قرار الصرف')}
      ${stat('Σ',epmsMoney(budget-f.expenses),'المتبقي من الميزانية')}
    </div>
+   ${(()=>{const g=epmsProjectProgressDetail(pid);return `<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◉</span>كيف حُسبت نسبة الإنجاز؟</span></div><div class="section-note">المعتمد الآن: <b>${escapeHtml(g.used||'—')}</b> = <b>${g.value===null?'—':g.value+'%'}</b><br>• متوسط المراحل المسجلة (${g.phaseCount} مرحلة): <b>${g.phasesPct===null?'—':g.phasesPct+'%'}</b><br>• الإنجاز المالي: أعمال المستخلصات المعتمدة ${epmsMoney(g.certified)} ÷ ${escapeHtml(g.baseLabel)} ${epmsMoney(g.base)} = <b>${g.finPct===null?'—':g.finPct+'%'}</b><br><small>لتغيير الطريقة: المشاريع ← تعديل المشروع ← «طريقة حساب نسبة الإنجاز» (تلقائي / مالي / متوسط المراحل / يدوي).</small></div></div>`})()}
    <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⇢</span>مسار التسميع لهذا المشروع</span></div>
      <div class="section-note">مستخلصات معتمدة لم تُسمَّع في الماليات: <b>${f.chainExtracts}</b> · ماليات بانتظار الاعتماد: <b>${f.finPending}</b> · محاسبة بانتظار الاعتماد: <b>${f.accPending}</b> · مبالغ «عدم الصرف»: <b>${epmsMoney(f.notDisbursed)}</b></div></div>
    <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◫</span>مراحل المشروع ونسب الإنجاز</span></div>
@@ -6472,6 +6518,16 @@ function projectDetailHTML(){
   </div>`;
 }
 
+/** ملخص مالي موحّد: يشمل المصروف فعلياً من شاشة الصرف */
+function epmsFinSummary(){
+  const fin=scopeRecords(STATE.finance||[],currentUser,'finance');
+  const disb=scopeRecords(STATE.disbursements||[],currentUser,'disbursements').filter(d=>d.disburseStatus==='صرف');
+  const sum=(a,f)=>a.reduce((x,r)=>x+(Number(f(r))||0),0);
+  const income=sum(fin.filter(f=>f.type==='إيراد'),f=>f.amount);
+  const manualExp=sum(fin.filter(f=>f.type==='مصروف'),f=>f.amount);
+  const disbursed=sum(disb,d=>d.amount);
+  return {income, manualExp, disbursed, expense:manualExp+disbursed, net:income-manualExp-disbursed};
+}
 function routeContent(){
   if(currentRoute==='dashboard') return dashboardHTML();
   if(currentRoute==='salesDashboard') return salesDashboardHTML();
@@ -6560,7 +6616,7 @@ function dashboardHTML(executive=false){
     const total=vpDash.length;
     const active=vpDash.filter(p=>p.status==='قيد التنفيذ').length;
     const done=vpDash.filter(p=>p.status==='منتهي').length;
-    const avg=total?Math.round(vpDash.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/total):0;
+    const avg=total?Math.round(vpDash.reduce((a,p)=>a+epmsPct(p),0)/total):0;
     cards.push(['▤',total,'إجمالي المشاريع'],['▶',active,'قيد التنفيذ'],['✓',done,'مشاريع منتهية'],['◉',avg+'%','متوسط الإنجاز']);
   }
   if(can('extracts')) cards.push(['▣',scopeRecords(STATE.extracts,currentUser,'extracts').filter(e=>e.status!=='مصروف').length,'مستخلصات معلقة']);
@@ -6568,17 +6624,15 @@ function dashboardHTML(executive=false){
   if(can('handoverRequests')) cards.push(['⇄',scopeRecords(STATE.handoverRequests,currentUser,'handoverRequests').filter(r=>!['مغلق','مقبول'].includes(r.status)).length,'طلبات استلام وتسليم مفتوحة']);
   if(can('documents')) cards.push(['▤',scopeRecords(STATE.documents,currentUser,'documents').length,'المستندات والرسومات']);
   if(can('finance')){
-    const fin=scopeRecords(STATE.finance,currentUser,'finance');
-    const income=fin.filter(f=>f.type==='إيراد').reduce((a,f)=>a+Number(f.amount||0),0);
-    const expense=fin.filter(f=>f.type==='مصروف').reduce((a,f)=>a+Number(f.amount||0),0);
-    cards.push(['¤',(income-expense).toLocaleString('ar-EG'),'صافي الرصيد']);
+    const _fs=epmsFinSummary();
+    cards.push(['¤',_fs.net.toLocaleString('ar-EG'),'صافي الرصيد'],['💵',_fs.disbursed.toLocaleString('ar-EG'),'المصروف فعلياً (الصرف)']);
   }
 
   const scopedProjects=visibleProjects();
   const projectTotal=scopedProjects.length;
-  const projectAvg=projectTotal?Math.round(scopedProjects.reduce((a,p)=>a+Number(p.percentComplete||p.percent||0),0)/projectTotal):0;
+  const projectAvg=projectTotal?Math.round(scopedProjects.reduce((a,p)=>a+epmsPct(p),0)/projectTotal):0;
   const projectRows=can('projects')?scopedProjects.slice(0,6).map(p=>{
-    const pct=Math.max(0,Math.min(100,Number(p.percentComplete||p.percent||0)));
+    const pct=Math.max(0,Math.min(100,epmsPct(p)));
     return `<div class="progress-row" style="cursor:pointer" onclick="epmsOpenProjectDetail('${escapeHtml(String(p.id))}')" title="فتح الشاشة التفصيلية"><span>${escapeHtml(p.name||'مشروع')}</span><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
   }).join(''):'<div class="section-note">لا توجد صلاحية لعرض بيانات المشاريع.</div>';
 
@@ -6626,13 +6680,13 @@ function dashboardHTML(executive=false){
     <div class="dashboard-grid">
       ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◉</span>حالة المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><div class="donut-wrap"><div class="donut"><div class="donut-center">${projectTotal}<small>مشروع</small></div></div><div class="legend"><div class="legend-row">قيد التنفيذ <b>${projectTotal?Math.round(scopedProjects.filter(p=>p.status==='قيد التنفيذ').length/projectTotal*100):0}%</b></div><div class="legend-row">مكتمل <b>${projectTotal?Math.round(scopedProjects.filter(p=>p.status==='منتهي').length/projectTotal*100):0}%</b></div><div class="legend-row">متوقف <b>${scopedProjects.filter(p=>p.status==='متوقف').length}</b></div><div class="legend-row">متوسط الإنجاز <b>${projectAvg}%</b></div></div></div></div>`:''}
       ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◫</span>تقدم المشاريع</span><span>${projectAvg}% متوسط</span></div><div class="mini-bars">${projectRows}</div></div>`:''}
-      ${can('finance')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">¤</span>الملخص المالي</span><span class="more" onclick="goRoute('finance')">التفاصيل</span></div><div style="display:grid;gap:9px;"><div class="stat-card success"><div class="n">${STATE.finance.filter(f=>f.type==='إيراد').reduce((a,f)=>a+Number(f.amount||0),0).toLocaleString('ar-EG')}</div><div class="l">إجمالي الإيرادات</div></div><div class="stat-card danger"><div class="n">${STATE.finance.filter(f=>f.type==='مصروف').reduce((a,f)=>a+Number(f.amount||0),0).toLocaleString('ar-EG')}</div><div class="l">إجمالي المصروفات</div></div></div></div>`:''}
+      ${can('finance')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">¤</span>الملخص المالي</span><span class="more" onclick="goRoute('finance')">التفاصيل</span></div><div style="display:grid;gap:9px;"><div class="stat-card success"><div class="n">${epmsFinSummary().income.toLocaleString('ar-EG')}</div><div class="l">إجمالي الإيرادات</div></div><div class="stat-card danger"><div class="n">${epmsFinSummary().expense.toLocaleString('ar-EG')}</div><div class="l">إجمالي المصروفات (شامل الصرف)</div></div><div class="stat-card"><div class="n">${epmsFinSummary().disbursed.toLocaleString('ar-EG')}</div><div class="l">منها المصروف فعلياً من شاشة الصرف</div></div><div class="stat-card"><div class="n">${epmsFinSummary().net.toLocaleString('ar-EG')}</div><div class="l">صافي الرصيد</div></div></div></div>`:''}
     </div>
     ${can('projects')?projectCardsPanelHTML():''}
     ${sectionLinks.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚙</span>الأقسام المتاحة لهذا المستخدم</span></div><div class="quick-grid">${sectionLinks.join('')}</div></div>`:''}
     <div class="dashboard-sections">
       ${quick.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">＋</span>إجراءات سريعة</span></div><div class="quick-grid">${quick.join('')}</div></div>`:''}
-      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◷</span>آخر المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><table class="dashboard-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>الإنجاز</th></tr></thead><tbody>${visibleProjects().slice(-5).reverse().map(p=>`<tr><td>${escapeHtml(p.name||'—')}</td><td>${formatCell(MODULES.projects,'status',p.status)}</td><td>${Number(p.percentComplete||p.percent||0)}%</td></tr>`).join('')||'<tr><td colspan="3">لا توجد مشاريع ضمن صلاحيتك.</td></tr>'}</tbody></table></div>`:''}
+      ${can('projects')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◷</span>آخر المشاريع</span><span class="more" onclick="goRoute('projects')">عرض الكل</span></div><table class="dashboard-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>الإنجاز</th></tr></thead><tbody>${visibleProjects().slice(-5).reverse().map(p=>`<tr><td>${escapeHtml(p.name||'—')}</td><td>${formatCell(MODULES.projects,'status',p.status)}</td><td>${epmsPct(p)}%</td></tr>`).join('')||'<tr><td colspan="3">لا توجد مشاريع ضمن صلاحيتك.</td></tr>'}</tbody></table></div>`:''}
       ${can('documents')?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▤</span>آخر المستندات</span><span class="more" onclick="goRoute('documents')">عرض الكل</span></div>${STATE.documents.slice(-5).reverse().map(d=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:11px;"><span>${escapeHtml(d.title||'مستند')}</span><span class="badge">${escapeHtml(d.category||'مستند')}</span></div>`).join('')||'<div class="section-note">لا توجد مستندات.</div>'}</div>`:''}
     </div>
     ${alertItems.length?`<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⚠</span>التنبيهات التشغيلية حسب الصلاحيات</span></div><div style="display:grid;gap:8px;font-size:11.5px;">${alertItems.map(x=>`<div class="section-note" style="margin:0;">${x}</div>`).join('')}</div></div>`:''}
@@ -8951,6 +9005,32 @@ async function saveUser(){
 }
 
 /* ===================== Approval Settings ===================== */
+
+/* ---- إيقاف / تشغيل الاعتماد (للكل أو لكل قسم) — غير مدمّر: الإعدادات السابقة تبقى كما هي ---- */
+function epmsApprovalStopped(k){
+  const o=STATE.approvalStopped;
+  if(!o || Array.isArray(o) || typeof o!=='object') return false;
+  if(Object.prototype.hasOwnProperty.call(o,k)) return !!o[k];
+  return !!o.__all;
+}
+async function epmsSetApprovalStopped(k, stopped){
+  if(!currentUser?.isAdmin){ alert('هذه العملية لمدير النظام فقط.'); return; }
+  let o=STATE.approvalStopped; if(!o||Array.isArray(o)||typeof o!=='object') o={};
+  o=Object.assign({},o);
+  if(k==='__all'){ o = stopped ? {__all:true} : {}; }
+  else { o[k]=!!stopped; }
+  STATE.approvalStopped=o;
+  await dbSet('approvalStopped', o);
+  render();
+}
+async function epmsStopAllApprovals(){
+  if(!confirm('إيقاف الاعتماد لجميع الأقسام؟ لن تظهر أزرار اعتماد/رفض ولن تُرسل معاملات جديدة للاعتماد. يمكنك التشغيل لاحقاً دون فقد الإعدادات.')) return;
+  await epmsSetApprovalStopped('__all', true);
+}
+async function epmsRunAllApprovals(){
+  if(!confirm('تشغيل الاعتماد لجميع الأقسام (حسب إعدادات كل قسم)؟')) return;
+  await epmsSetApprovalStopped('__all', false);
+}
 function approvalSettingsHTML(){
   ensureDefaultApprovalPolicies();
   const priority=DEFAULT_APPROVAL_MODULES;
@@ -8965,7 +9045,7 @@ function approvalSettingsHTML(){
     if(!who.length && p.permissionKey) who.push('حسب صلاحية: '+(PERM_LABELS[p.permissionKey]||p.permissionKey));
     if(!who.length) who.push('—');
     const highlight=priority.includes(k)?'style="background:#f0f8ff"':'';
-    return `<tr ${highlight}><td>${escapeHtml(mod.title)}${priority.includes(k)?' <span class="badge warn">مهم</span>':''}</td><td>${p.enabled?'<span class="badge ok">مفعّل</span>':'<span class="badge">غير مفعّل</span>'}</td><td>${escapeHtml(p.label||'—')}</td><td style="font-size:12px">${who.map(escapeHtml).join(' · ')}</td><td><button class="link-btn" onclick="openApprovalPolicy('${k}')">إعداد</button> <button class="link-btn" onclick="openWorkflowEditor('${k}')">Workflow</button></td></tr>`;
+    return `<tr ${highlight}><td>${escapeHtml(mod.title)}${priority.includes(k)?' <span class="badge warn">مهم</span>':''}</td><td>${epmsApprovalStopped(k)?'<span class="badge bad">متوقف</span>':(p.enabled?'<span class="badge ok">مفعّل</span>':'<span class="badge">غير مفعّل</span>')}</td><td>${escapeHtml(p.label||'—')}</td><td style="font-size:12px">${who.map(escapeHtml).join(' · ')}</td><td><button class="link-btn" onclick="openApprovalPolicy('${k}')">إعداد</button> <button class="link-btn" onclick="openWorkflowEditor('${k}')">Workflow</button> ${epmsApprovalStopped(k)?`<button class="link-btn" onclick="epmsSetApprovalStopped('${k}',false)">▶ تشغيل</button>`:`<button class="link-btn danger" onclick="epmsSetApprovalStopped('${k}',true)">⏸ إيقاف</button>`}</td></tr>`;
   }).join('');
   return `<div class="hero"><h1>إدارة الاعتمادات</h1><p>تفعيل دورة الاعتماد للأقسام (المخازن، المشتريات، التوريدات، التنفيذ، المستحدثات، العقود، المستخلصات...). الأدمن وحده يختار التخصصات والمديرين المؤهلين للاعتماد.</p></div>
   <div class="panel"><div class="section-note">
@@ -8981,6 +9061,8 @@ function approvalSettingsHTML(){
   <div class="toolbar no-print"><div></div>
     <button class="btn btn-primary" onclick="initializeCentralApprovalEngine()">⚙️ تفعيل محرك الاعتماد المركزي لجميع الأقسام</button>
     <button class="btn btn-amber" onclick="enableSuggestedApprovals()">تفعيل سريع للأقسام المهمة</button>
+    <button class="btn btn-danger" onclick="epmsStopAllApprovals()">⏸ إيقاف الاعتماد للجميع</button>
+    <button class="btn btn-primary" onclick="epmsRunAllApprovals()">▶ تشغيل الاعتماد للجميع</button>
   </div>
   <table><thead><tr><th>البند / القسم</th><th>الاعتماد</th><th>اسم الاعتماد</th><th>التخصصات والمديرون المؤهلون</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
   `;
@@ -10750,10 +10832,33 @@ function render(){
   const prevScroll = (typeof window.__epmsSidebarScroll==='number')
     ? window.__epmsSidebarScroll
     : (document.getElementById('sidebar') ? document.getElementById('sidebar').scrollTop : 0);
+  // حفظ مواضع التمرير (الصفحة + الجداول + النافذة) حتى لا تقفز الشاشة بعد أي زر
+  const _sameRoute = window.__epmsPrevRoute===currentRoute;
+  const _snap = {c:null,t:[],m:null,o:null};
+  if(_sameRoute){
+    const c=document.querySelector('.content'); if(c) _snap.c=[c.scrollTop,c.scrollLeft];
+    _snap.t=[...document.querySelectorAll('.table-scroll')].map(e=>[e.scrollTop,e.scrollLeft]);
+    const m=document.querySelector('.modal'); if(m) _snap.m=[m.scrollTop,m.scrollLeft];
+    const o=document.querySelector('.overlay'); if(o) _snap.o=o.scrollTop;
+  }
+  window.__epmsPrevRoute=currentRoute;
+  // لقطة عامة لكل العناصر المُمرَّرة (مسار العنصر داخل #app) + تمرير الصفحة نفسها
+  const _gsnap = _sameRoute ? epmsSnapScroll(app) : null;
+  const _winY = window.scrollY, _winX = window.scrollX;
   app.innerHTML = mainLayout();
+  if(_gsnap){
+    const _restore=()=>{ try{ epmsRestoreScroll(app,_gsnap); if(_winY||_winX) window.scrollTo(_winX,_winY); }catch(e){} };
+    _restore(); requestAnimationFrame(_restore); setTimeout(_restore,160);
+  }
   if(modalState && modalState.moduleKey==='extracts'){
     try{ extractLinkToContractChanged(); }catch(e){}
   }
+  try{
+    const c2=document.querySelector('.content'); if(c2&&_snap.c){ c2.scrollTop=_snap.c[0]; c2.scrollLeft=_snap.c[1]; }
+    document.querySelectorAll('.table-scroll').forEach((e,i)=>{ const v=_snap.t[i]; if(v){ e.scrollTop=v[0]; e.scrollLeft=v[1]; } });
+    const m2=document.querySelector('.modal'); if(m2&&_snap.m){ m2.scrollTop=_snap.m[0]; m2.scrollLeft=_snap.m[1]; }
+    const o2=document.querySelector('.overlay'); if(o2&&_snap.o) o2.scrollTop=_snap.o;
+  }catch(e){}
   const sb = document.getElementById('sidebar');
   if(sb && prevScroll>0){
     sb.scrollTop = prevScroll;
@@ -10768,7 +10873,50 @@ function render(){
     setTimeout(mountScheduleIframe, 30);
   }
   if(currentRoute==='customModuleBuilder'){ setTimeout(refreshCustomSuggestions, 20); }
+  try{ epmsSetupHBar(); }catch(e){}
 }
+
+function epmsElPath(root, el){ const p=[]; while(el && el!==root){ const par=el.parentElement; if(!par) return null; p.push(Array.prototype.indexOf.call(par.children, el)); el=par; } return el===root ? p.reverse().join('/') : null; }
+function epmsSnapScroll(root){
+  const out=[]; root.querySelectorAll('*').forEach(e=>{ if((e.scrollTop||e.scrollLeft) && e.id!=='epmsHBar'){ const k=epmsElPath(root,e); if(k!==null) out.push([k,e.scrollTop,e.scrollLeft]); } });
+  return out;
+}
+function epmsRestoreScroll(root, snap){
+  snap.forEach(([k,t,l])=>{ let el=root; for(const i of String(k).split('/')){ if(i==='') continue; el=el&&el.children[Number(i)]; if(!el) return; } if(el){ el.scrollTop=t; el.scrollLeft=l; } });
+}
+/* مقدار الجزء المخفي أسفل نافذة المتصفح خلف شريط مهام ويندوز — حتى تبقى المسطرة السفلية ظاهرة */
+function epmsHiddenBottom(){
+  try{
+    const availBottom=(screen.availTop||0)+screen.availHeight;
+    const winBottom=window.screenY+window.outerHeight;
+    const hidden=Math.round(winBottom-availBottom);
+    return Math.max(0, Math.min(hidden, 120));
+  }catch(e){ return 0; }
+}
+/* مسطرة تمرير أفقية عامة ثابتة أسفل الشاشة تتحكم في الجدول/المحتوى العريض في كل الشاشات */
+function epmsSetupHBar(){
+  const main=document.querySelector('.main'); if(!main) return;
+  let bar=document.getElementById('epmsHBar');
+  if(!bar){
+    bar=document.createElement('div'); bar.id='epmsHBar'; bar.innerHTML='<div id="epmsHBarIn"></div>'; main.appendChild(bar);
+    bar.addEventListener('scroll',()=>{ const t=window.__epmsHTarget; if(t && !bar.__lock){ t.__lock=true; t.scrollLeft=bar.scrollLeft; requestAnimationFrame(()=>{t.__lock=false;}); } },{passive:true});
+  }
+  epmsRefreshHBar();
+}
+function epmsRefreshHBar(){
+  const bar=document.getElementById('epmsHBar'); if(!bar) return;
+  let t=[...document.querySelectorAll('.table-scroll')].find(e=>e.offsetParent && e.scrollWidth>e.clientWidth+2) || null;
+  if(!t){ const c=document.querySelector('.content'); if(c && c.scrollWidth>c.clientWidth+10) t=c; }
+  window.__epmsHTarget=t;
+  if(!t){ bar.style.display='none'; return; }
+  bar.style.display='block';
+  const _hb=epmsHiddenBottom(); bar.style.marginBottom=_hb+'px'; bar.style.position='relative';
+  document.getElementById('epmsHBarIn').style.width=(bar.clientWidth+(t.scrollWidth-t.clientWidth))+'px';
+  if(!t.__hb){ t.__hb=true; t.addEventListener('scroll',()=>{ if(window.__epmsHTarget===t && !t.__lock){ bar.__lock=true; bar.scrollLeft=t.scrollLeft; requestAnimationFrame(()=>{bar.__lock=false;}); } },{passive:true}); }
+  if(Math.abs(bar.scrollLeft-t.scrollLeft)>1) bar.scrollLeft=t.scrollLeft;
+}
+setInterval(()=>{ try{ epmsRefreshHBar(); }catch(e){} },800);
+window.addEventListener('resize',()=>{ try{ epmsRefreshHBar(); }catch(e){} });
 
 setInterval(()=>{
   const el=document.getElementById('epmsClock');
@@ -10850,6 +10998,12 @@ html,body{height:100%;margin:0;overflow:hidden;}
 .content::-webkit-scrollbar{height:14px;width:12px;}
 .content::-webkit-scrollbar-thumb{background:#0b63d8;border-radius:8px;border:2px solid #d9e6f5;}
 .content::-webkit-scrollbar-track{background:#d9e6f5;border-radius:8px;}
+#epmsHBar{flex:0 0 auto;display:none;height:20px;overflow-x:scroll;overflow-y:hidden;background:#d9e6f5;border-top:2px solid #0b63d8;position:relative;z-index:40;scrollbar-width:auto;scrollbar-color:#0b63d8 #d9e6f5;}
+#epmsHBar::-webkit-scrollbar{height:18px;}
+#epmsHBar::-webkit-scrollbar-thumb{background:#0b63d8;border-radius:8px;border:2px solid #d9e6f5;}
+#epmsHBar::-webkit-scrollbar-track{background:#d9e6f5;}
+#epmsHBarIn{height:1px;}
+@media print{#epmsHBar{display:none !important;}}
 /* جدول: صندوق بارتفاع محدود حتى يبقى شريط التمرير الأفقي أسفل المنطقة المرئية */
 .table-scroll{
   width:100% !important;
