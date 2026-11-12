@@ -6343,14 +6343,23 @@ async function epmsApplyDisburse(moduleKey, rec, decision){
   if(pid) await epmsRecalcProject(pid);
   return d;
 }
+/** هل اتُّخذ قرار صرف نهائي (صرف / عدم الصرف) لهذا السجل؟ — «بانتظار القرار» لا يُعد قراراً */
+function epmsDisburseDecided(rec){ return !!rec && (rec.disburseStatus==='صرف' || rec.disburseStatus==='عدم الصرف'); }
+let _epmsDisburseBusy=false;
 async function epmsSetDisburse(moduleKey, id, decision){
+  if(_epmsDisburseBusy) return; // منع الضغط المتكرر أثناء الحفظ
   const mod=MODULES[moduleKey]; const rec=(STATE[moduleKey]||[]).find(x=>String(x.id)===String(id));
   if(!mod||!rec) return;
   if(!(currentUser && (currentUser.isAdmin || canEdit(mod.permKey)))){ alert('ليس لديك صلاحية تسجيل قرار الصرف.'); return; }
   if(rec.approvalStatus==='مرفوض'){ alert('لا يمكن تسجيل قرار صرف لمعاملة مرفوضة.'); return; }
+  // الحفظ مرة واحدة فقط: إن وُجد قرار سابق لا يُعاد تسجيله
+  if(epmsDisburseDecided(rec)){ alert('تم حفظ قرار الصرف لهذه المعاملة مسبقاً («'+rec.disburseStatus+'») ولا يمكن تكراره.'); render(); return; }
   if(decision==='صرف' && !confirm('تأكيد قرار «صرف» لهذه المعاملة؟')) return;
   if(decision==='عدم الصرف' && !confirm('تأكيد قرار «عدم الصرف» لهذه المعاملة؟')) return;
-  const _d = await epmsApplyDisburse(moduleKey, rec, decision);
+  _epmsDisburseBusy=true;
+  let _d;
+  try{ _d = await epmsApplyDisburse(moduleKey, rec, decision); }
+  finally{ _epmsDisburseBusy=false; }
   const _msg = _d ? ('تم تسجيل «'+decision+'» وظهر في: شاشة الصرف'+(decision==='صرف'?'، الملخص المالي (المصروفات)':'')+'، وبيانات المشروع.')
                   : 'تم تسجيل «'+decision+'» على المعاملة (لا مبلغ مستحق للصرف فيها).';
   alert(_msg);
@@ -6360,7 +6369,7 @@ async function epmsSetDisburse(moduleKey, id, decision){
 async function epmsBulkDisburse(moduleKey){
   const mod=MODULES[moduleKey];
   if(!(currentUser && (currentUser.isAdmin || canEdit(mod.permKey)))){ alert('ليس لديك صلاحية تسجيل قرار الصرف.'); return; }
-  const list=scopeRecords(STATE[moduleKey]||[], currentUser, moduleKey).filter(r=>!r.disburseStatus && r.approvalStatus!=='مرفوض');
+  const list=scopeRecords(STATE[moduleKey]||[], currentUser, moduleKey).filter(r=>!epmsDisburseDecided(r) && r.approvalStatus!=='مرفوض');
   if(!list.length){ alert('لا توجد معاملات بدون قرار صرف.'); return; }
   const c=prompt('قرار الصرف العام لعدد '+list.length+' معاملة لم يُتخذ فيها قرار:\n1 = صرف\n2 = عدم الصرف\n3 = إلغاء','1');
   if(c==null||String(c).trim()==='3') return;
@@ -6514,7 +6523,7 @@ function projectDetailHTML(){
    <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">▤</span>مصروفات المشروع (محاسبة معتمدة)</span></div>
      ${f.expenseRows.length?`<table class="dashboard-table"><thead><tr><th>التاريخ</th><th>النوع</th><th>المقاول / الجهة</th><th>المستخلص</th><th>المبلغ</th><th>قرار الصرف</th></tr></thead><tbody>${f.expenseRows.map(a=>`<tr><td>${escapeHtml(a.date||'—')}</td><td>${escapeHtml(a.entryType||'—')}</td><td>${escapeHtml(a.contractor||'—')}</td><td>${escapeHtml(a.extractNumber||'—')}</td><td>${epmsMoney(a.amount)}</td><td>${badge(a.disburseStatus)}</td></tr>`).join('')}</tbody></table>`:'<div class="section-note">لا توجد مصروفات معتمدة بعد.</div>'}</div>
    <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">💵</span>الصرف</span><span class="more" onclick="goRoute('disbursements')">كل سجلات الصرف</span></div>
-     ${f.disbRows.length?`<table class="dashboard-table"><thead><tr><th>التاريخ</th><th>المستفيد</th><th>المستخلص</th><th>المبلغ</th><th>القرار</th>${canEditDisb?'<th class="no-print">إجراء</th>':''}</tr></thead><tbody>${f.disbRows.map(d=>`<tr><td>${escapeHtml(d.date||'—')}</td><td>${escapeHtml(d.payee||'—')}</td><td>${escapeHtml(d.extractNumber||'—')}</td><td>${epmsMoney(d.amount)}</td><td>${badge(d.disburseStatus)}</td>${canEditDisb?`<td class="no-print"><button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','صرف')">صرف</button><button class="link-btn danger" onclick="epmsSetDisburse('disbursements','${d.id}','عدم الصرف')">عدم صرف</button></td>`:''}</tr>`).join('')}</tbody></table>`:'<div class="section-note">لا توجد سجلات صرف لهذا المشروع.</div>'}</div>
+     ${f.disbRows.length?`<table class="dashboard-table"><thead><tr><th>التاريخ</th><th>المستفيد</th><th>المستخلص</th><th>المبلغ</th><th>القرار</th>${canEditDisb?'<th class="no-print">إجراء</th>':''}</tr></thead><tbody>${f.disbRows.map(d=>`<tr><td>${escapeHtml(d.date||'—')}</td><td>${escapeHtml(d.payee||'—')}</td><td>${escapeHtml(d.extractNumber||'—')}</td><td>${epmsMoney(d.amount)}</td><td>${badge(d.disburseStatus)}</td>${canEditDisb?`<td class="no-print">${epmsDisburseDecided(d)?'<span class="badge '+(d.disburseStatus==='صرف'?'ok':'bad')+'">✓ '+(d.disburseStatus==='صرف'?'تم الصرف':'عدم الصرف')+'</span>':`<button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','صرف')">صرف</button><button class="link-btn danger" onclick="epmsSetDisburse('disbursements','${d.id}','عدم الصرف')">عدم صرف</button>`}</td>`:''}</tr>`).join('')}</tbody></table>`:'<div class="section-note">لا توجد سجلات صرف لهذا المشروع.</div>'}</div>
   </div>`;
 }
 
@@ -7323,7 +7332,7 @@ function moduleHTML(key, mod){
         ${key==='surveillanceCameras'&&r.streamUrl?`<button class="link-btn" onclick="openCameraStream('${r.id}')">📹 فتح البث</button>`:''}
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?t('تعديل','Edit','Modifier'):t('عرض','View','Voir')}</button>
         <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ ${t('طباعة','Print','Imprimer')}</button>
-        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&r.approvalStatus!=='مرفوض'?`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 ${r.disburseStatus==='صرف'?'✓ ':''}صرف</button><button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ ${r.disburseStatus==='عدم الصرف'?'✓ ':''}عدم صرف</button>`:''}
+        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&r.approvalStatus!=='مرفوض'?(epmsDisburseDecided(r)?`<span class="badge ${r.disburseStatus==='صرف'?'ok':'bad'}" title="تم حفظ قرار الصرف">${r.disburseStatus==='صرف'?'💵 ✓ تم الصرف':'⛔ ✓ عدم الصرف'}</span>`:`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 صرف</button><button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ عدم صرف</button>`):''}
         ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${canApproveRecord(key,r)?`<button class="link-btn" onclick="approveRecord('${key}','${r.id}','اعتماد')">${t('اعتماد','Approve','Approuver')}</button><button class="link-btn danger" onclick="approveRecord('${key}','${r.id}','رفض')">${t('رفض','Reject','Rejeter')}</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">${t('حذف','Delete','Supprimer')}</button>`:''}
       </div></td>
     </tr>`;
