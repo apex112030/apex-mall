@@ -1,4 +1,4 @@
-const CACHE = 'epms-v22b-disburse-once';
+const CACHE = 'epms-v22c-parties-directory';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {

@@ -813,7 +813,7 @@ let STATE = {
   warehouseItems:[], warehouseTx:[], finance:[], extracts:[], contracts:[],
   company:[], planning:[], siteExecution:[], engineersList:[], labor:[], equipment:[],
   boq:[], purchases:[], suppliers:[], deliveries:[], warehousesLoc:[], invoices:[],
-  accounting:[], accountingEntries:[], finBudgets:[], chartOfAccounts:[], fixedAssets:[], paymentRequests:[], advancesLoans:[], advancePayments:[], cashExpenses:[], paymentOrders:[], bankTransfers:[], disbursements:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
+  accounting:[], accountingEntries:[], finBudgets:[], chartOfAccounts:[], fixedAssets:[], paymentRequests:[], advancesLoans:[], advancePayments:[], cashExpenses:[], paymentOrders:[], bankTransfers:[], partiesDirectory:[], disbursements:[], qaqc:[], hse:[], documents:[], correspondence:[], changeOrders:[],
   claims:[], risks:[], specialties:[], handoverRequests:[], handoverInspections:[], handoverPunchList:[], handoverApprovals:[], handoverCloseouts:[], finalHandover:[], postHandoverMaint:[], execReports:[], approvalPolicies:[], approvalWorkflows:[],
   consultantExtracts:[], consultantDirectives:[], contractorRequests:[], jobTasks:[],
   hrEmployees:[], hrOrganization:[], hrRecruitment:[], hrAttendance:[], hrLeaves:[], hrTraining:[], hrEvaluations:[], hrPayroll:[], hrProjectAssignments:[], hrDisciplinary:[], hrExit:[], engArchDesign:[], engStructDesign:[], engElecDesign:[], engMechDesign:[], engPlumbingDesign:[], engCivilInfraDesign:[], engLandscapeDesign:[], engInteriorDesign:[], engShopDrawings:[], engAsBuilt:[], engDesignReview:[], engDesignRfi:[], engSpecs:[], engBim:[], procSopLibrary:[], procWorkStart:[], procPreStart:[], procMethodStatement:[], procSiteReception:[], procDesignHandover:[], procSupervisionStart:[], procDisciplineReceive:[], procStageGate:[], procPartialHandover:[], procSnagClose:[], procLessons:[],
@@ -2853,6 +2853,21 @@ const MODULES = {
     ],
     columns:[['transferNo','التحويل'],['date','التاريخ'],['fromAccount','من حساب'],['payee','المستفيد'],['amount','المبلغ'],['bankRef','المرجع البنكي'],['status','الحالة']]
   },
+  partiesDirectory:{
+    title:'دليل المقاولين والعمالة والمهندسين', permKey:'partiesDirectory', hasProject:true, projectOptional:true,
+    fields:[
+      {name:'partyType',label:'التصنيف',type:'select',options:['مقاول','شركة','مهندس','مشرف','صنايعي','عامل'],required:true},
+      {name:'name',label:'الاسم',type:'text',required:true},
+      {name:'company',label:'اسم الشركة / المقاول التابع له',type:'text'},
+      {name:'activityType',label:'النشاط / المهنة',type:'select',options:['مقاولات عامة','أعمال حفر وردم','أعمال خرسانة مسلحة','نجارة مسلحة (شدات)','حدادة مسلحة','مباني وطوب','بياض ومحارة','نقاشة ودهانات','سيراميك وبورسلين','رخام وجرانيت','أعمال جبس وأسقف معلقة','ألوميتال وزجاج','نجارة أبواب وشبابيك','حدادة وأعمال معدنية','سباكة وصرف صحي','كهرباء وإنارة','تكييف وتهوية','مكافحة حريق وإنذار','مصاعد','عزل مائي وحراري','أعمال طرق ورصف','تنسيق حدائق','مقاول باطن','توريد مواد','تأجير معدات','مهندس مدني','مهندس معماري','مهندس كهرباء','مهندس ميكانيكا','مهندس موقع','مهندس مساحة','مهندس جودة','مهندس سلامة','مشرف موقع','مشرف عمال','مراقب كميات','عامل عادي','سائق / مشغل معدة','أخرى']},
+      {name:'activityDetails',label:'تفاصيل النشاط / التخصص الدقيق',type:'text'},
+      {name:'phone',label:'رقم التليفون',type:'text'},
+      {name:'phone2',label:'تليفون آخر / واتساب',type:'text'},
+      {name:'address',label:'العنوان',type:'text'},
+      {name:'notes',label:'ملاحظات',type:'textarea'}
+    ],
+    columns:[['partyType','التصنيف'],['name','الاسم'],['company','الشركة / المقاول'],['activityType','النشاط / المهنة'],['phone','التليفون'],['address','العنوان']]
+  },
   qaqc:{
     title:'QA/QC والجودة', permKey:'qaqc', hasProject:true,
     fields:[
@@ -3879,6 +3894,7 @@ const NAV = [
   {key:'finance',label:'الماليات',module:'finance'},
   {key:'accounting',label:'المحاسبة',module:'accounting'},
   {key:'disbursements',label:'الصرف',module:'disbursements'},
+  {key:'partiesDirectory',label:'دليل المقاولين والعمالة والمهندسين',module:'partiesDirectory'},
   {key:'finBudgets',label:'الموازنة',module:'finBudgets'},
   {key:'chartOfAccounts',label:'دليل الحسابات',module:'chartOfAccounts'},
   {key:'fixedAssets',label:'الأصول',module:'fixedAssets'},
@@ -5849,7 +5865,7 @@ async function loadAllData(){
     if(DB_LOAD_FAILED.has(key)) return STATE[key]||[];   // فشلت القراءة: نُبقي ما هو موجود ولا نكتب فوقه
     DB_LOADED.add(key); return v;
   };
-  const keys=['accountingEntries','finBudgets','chartOfAccounts','fixedAssets','paymentRequests','advancesLoans','advancePayments','cashExpenses','paymentOrders','bankTransfers','approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','disbursements','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps','linkSettings','approvalStopped'];
+  const keys=['partiesDirectory','accountingEntries','finBudgets','chartOfAccounts','fixedAssets','paymentRequests','advancesLoans','advancePayments','cashExpenses','paymentOrders','bankTransfers','approvalPolicies','approvalWorkflows','specialties','menuVisibility','branding','siteIncidents','projects','phases','siteReports','techOffice','warehouseItems','warehouseTx','finance','extracts','contracts','company','planning','siteExecution','engineersList','labor','equipment','boq','purchases','suppliers','deliveries','warehousesLoc','invoices','accounting','disbursements','qaqc','hse','documents','correspondence','changeOrders','claims','risks','handoverRequests','handoverInspections','handoverPunchList','handoverApprovals','handoverCloseouts','finalHandover','postHandoverMaint','execReports','consultantExtracts','consultantDirectives','contractorRequests','jobTasks','hrEmployees','hrOrganization','hrRecruitment','hrAttendance','hrLeaves','hrTraining','hrEvaluations','hrPayroll','hrProjectAssignments','hrDisciplinary','hrExit','engArchDesign','engStructDesign','engElecDesign','engMechDesign','engPlumbingDesign','engCivilInfraDesign','engLandscapeDesign','engInteriorDesign','engShopDrawings','engAsBuilt','engDesignReview','engDesignRfi','engSpecs','engBim','procSopLibrary','procWorkStart','procPreStart','procMethodStatement','procSiteReception','procDesignHandover','procSupervisionStart','procDisciplineReceive','procStageGate','procPartialHandover','procSnagClose','procLessons','ownerDirectives','ownerApprovalRequests','pmDirectives','pmApprovalRequests','adminMgrDirectives','adminMgrApprovalRequests','surveillanceCameras','electronicSignatures','companyStamps','linkSettings','approvalStopped'];
   keys.forEach(k=>DB_GUARDED.add(k));
   DB_LOADING=true;
   try{
@@ -5989,6 +6005,7 @@ const MENU_SECTIONS = [
   {key:'finMenu',label:'الماليات',icon:'💰',items:[['finBudgets','الموازنة'],['fx_cashflow','التدفقات النقدية'],['fx_position','الموقف المالي'],['fx_liabilities','الالتزامات والمستحقات'],['fx_forecast','توقعات التدفقات'],['fx_mgmtReports','تقارير مالية إدارية']]},
   {key:'accMenu',label:'المحاسبة',icon:'📚',items:[['chartOfAccounts','دليل الحسابات'],['accounting','القيود اليومية'],['fx_ledger','الأستاذ العام'],['fx_customers','العملاء'],['fx_suppliers','الموردون'],['fx_contractors','المقاولون'],['finance','المصروفات والإيرادات'],['fx_tax','الضرائب'],['fixedAssets','الأصول'],['fx_trial','ميزان المراجعة'],['fx_accReports','التقارير المحاسبية']]},
   {key:'disbMenu',label:'الصرف',icon:'💵',items:[['paymentRequests','طلبات الصرف'],['fx_contractorDisb','صرف المقاولين'],['fx_supplierDisb','صرف الموردين'],['advancesLoans','السلف'],['advancePayments','الدفعات المقدمة'],['cashExpenses','المصروفات النقدية'],['paymentOrders','أوامر الدفع'],['bankTransfers','التحويلات البنكية'],['fx_approvalCycle','دورة الاعتماد'],['disbursements','سجل الصرف']]},
+  {key:'partiesMenu',label:'دليل المقاولين والعمالة',icon:'📇',items:[['partiesDirectory','دليل المقاولين والعمالة والمهندسين']]},
   {key:'labor',label:'العمالة',icon:'♙',items:[['labor','العمالة'],['engineersList','المهندسون'],['equipment','المعدات']]},
   {key:'hr',label:'الموارد البشرية',icon:'👥',items:[
     ['hrEmployees','ملف العاملين والموظفين'],
@@ -7628,6 +7645,12 @@ function moduleHTML(key, mod){
         <option value="">كل الأنشطة</option>${acts.map(a=>`<option value="${escapeHtml(String(a))}" ${act===String(a)?'selected':''}>${escapeHtml(a)}</option>`).join('')}
       </select>`;
       if(act) filtered = filtered.filter(r=>String(r.activityType||'')===act);
+    }
+    const ptField = (mod.fields||[]).find(f=>f.name==='partyType' && f.type==='select');
+    if(ptField){
+      const pt = String(projectFilter[key+'_partyType']||'');
+      filterBar += `<select onchange="setModuleFieldFilter('${key}','partyType',this.value)" title="التصنيف"><option value="">كل التصنيفات</option>${ptField.options.map(o=>`<option value="${escapeHtml(o)}" ${pt===o?'selected':''}>${escapeHtml(o)}</option>`).join('')}</select>`;
+      if(pt) filtered = filtered.filter(r=>String(r.partyType||'')===pt);
     }
   }
 
