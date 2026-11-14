@@ -6497,7 +6497,7 @@ function fxDisbTable(list){
   const canAct=currentUser&&(currentUser.isAdmin||canEdit('accounting'));
   const rows=list.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(d=>{
     const st=fxPaid(d)?'<span class="badge ok">تم الصرف</span>':d.disburseStatus==='عدم الصرف'?'<span class="badge bad">عدم الصرف</span>':'<span class="badge warn">بانتظار القرار</span>';
-    const act=canAct?`<button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','صرف')">💵 صرف</button><button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','عدم الصرف')">⛔ عدم الصرف</button>`:'';
+    const act=fxPaid(d)?'<span class="badge ok">✓ تم الصرف</span>':canAct?`<button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','صرف')">💵 صرف</button>${d.disburseStatus==='عدم الصرف'?'':`<button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','عدم الصرف')">⛔ عدم الصرف</button>`}`:'';
     return [fxE(d.date||''),fxE(d.payee||'—'),fxE(d.extractNumber||d.contractNumber||'—'),fxE(d.sourceType||'—'),fxM(d.amount),st,fxE(d.paidDate||'—'),`<span class="no-print">${act}</span>`];
   });
   const tot=list.reduce((a,d)=>a+fxN(d.amount),0), paid=list.filter(fxPaid).reduce((a,d)=>a+fxN(d.amount),0);
@@ -6656,7 +6656,18 @@ async function epmsOnRecordApproved(moduleKey, rec){
 }
 
 /** قرار «صرف / عدم الصرف» لمعاملة واحدة */
+/** قرار الصرف نهائي: لا يتكرر ولا يُعدَّل بعد «صرف»، ومحمي من الضغط المتكرر */
+const __epmsDisburseBusy=new Set();
 async function epmsApplyDisburse(moduleKey, rec, decision){
+  if(!rec) return null;
+  const lk=moduleKey+':'+rec.id;
+  if(__epmsDisburseBusy.has(lk)) return null;
+  if(rec.disburseStatus==='صرف') return null;
+  __epmsDisburseBusy.add(lk);
+  try{ return await epmsApplyDisburseCore(moduleKey, rec, decision); }
+  finally{ __epmsDisburseBusy.delete(lk); }
+}
+async function epmsApplyDisburseCore(moduleKey, rec, decision){
   const now=epmsNowISO(), by=currentUser?.name||currentUser?.username||'';
   rec.disburseStatus=decision; rec.disburseBy=by; rec.disburseAt=now;
   epmsHistory(rec, 'قرار الصرف: '+decision);
@@ -6724,6 +6735,9 @@ async function epmsSetDisburse(moduleKey, id, decision){
   if(!mod||!rec) return;
   if(!(currentUser && (currentUser.isAdmin || canEdit(mod.permKey)))){ alert('ليس لديك صلاحية تسجيل قرار الصرف.'); return; }
   if(rec.approvalStatus==='مرفوض'){ alert('لا يمكن تسجيل قرار صرف لمعاملة مرفوضة.'); return; }
+  if(rec.disburseStatus==='صرف'){ alert('تم صرف هذه المعاملة من قبل ولا يمكن تكرار قرار الصرف أو تعديله.'); return; }
+  if(__epmsDisburseBusy.has(moduleKey+':'+rec.id)) return;
+  if(rec.disburseStatus==='عدم الصرف' && decision==='عدم الصرف') return;
   if(decision==='صرف' && !confirm('تأكيد قرار «صرف» لهذه المعاملة؟')) return;
   if(decision==='عدم الصرف' && !confirm('تأكيد قرار «عدم الصرف» لهذه المعاملة؟')) return;
   const _d = await epmsApplyDisburse(moduleKey, rec, decision);
@@ -7700,7 +7714,7 @@ function moduleHTML(key, mod){
         ${key==='surveillanceCameras'&&r.streamUrl?`<button class="link-btn" onclick="openCameraStream('${r.id}')">📹 فتح البث</button>`:''}
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?t('تعديل','Edit','Modifier'):t('عرض','View','Voir')}</button>
         <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ ${t('طباعة','Print','Imprimer')}</button>
-        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&r.approvalStatus!=='مرفوض'?`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 ${r.disburseStatus==='صرف'?'✓ ':''}صرف</button><button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ ${r.disburseStatus==='عدم الصرف'?'✓ ':''}عدم صرف</button>`:''}
+        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&r.approvalStatus!=='مرفوض'?(r.disburseStatus==='صرف'?`<span class="badge ok">✓ تم الصرف</span>`:`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 صرف</button>${r.disburseStatus==='عدم الصرف'?`<span class="badge bad">⛔ عدم الصرف</span>`:`<button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ عدم صرف</button>`}`):''}
         ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${canApproveRecord(key,r)?`<button class="link-btn" onclick="approveRecord('${key}','${r.id}','اعتماد')">${t('اعتماد','Approve','Approuver')}</button><button class="link-btn danger" onclick="approveRecord('${key}','${r.id}','رفض')">${t('رفض','Reject','Rejeter')}</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">${t('حذف','Delete','Supprimer')}</button>`:''}
       </div></td>
     </tr>`;
