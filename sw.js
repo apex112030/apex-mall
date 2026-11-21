@@ -1,4 +1,4 @@
-const CACHE = 'epms-v22f-two-percents';
+const CACHE = 'epms-v22g-project-io';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {

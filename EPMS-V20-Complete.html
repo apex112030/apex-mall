@@ -2604,11 +2604,14 @@ const MODULES = {
       {name:'itemName',label:'البند',type:'text',required:true},
       {name:'unit',label:'الوحدة',type:'text'},
       {name:'quantity',label:'الكمية التعاقدية',type:'number'},
+      {name:'actualQty',label:'الكمية الفعلية الكلية (لوحات تشغيلية / حصر فعلي)',type:'number'},
+      {name:'executedQty',label:'الكمية المنفذة حتى الآن',type:'number'},
+      {name:'qtySource',label:'مصدر الكمية الفعلية / المنفذة',type:'select',options:['لوحات تشغيلية','حصر فعلي بالموقع','مستخلص','محضر استلام أعمال']},
       {name:'unitPrice',label:'سعر الوحدة',type:'number'},
       {name:'totalAmount',label:'إجمالي البند (كمية × سعر)',type:'number'},
       {name:'notes',label:'ملاحظات',type:'textarea'}
     ],
-    columns:[['itemCode','الكود'],['itemName','البند'],['contractor','المقاول'],['contractNumber','رقم العقد'],['unit','الوحدة'],['quantity','الكمية'],['unitPrice','سعر الوحدة'],['totalAmount','الإجمالي']]
+    columns:[['itemCode','الكود'],['itemName','البند'],['contractor','المقاول'],['contractNumber','رقم العقد'],['unit','الوحدة'],['quantity','الكمية التعاقدية'],['actualQty','الكمية الفعلية'],['executedQty','المنفذ'],['unitPrice','سعر الوحدة'],['totalAmount','الإجمالي']]
   },
   purchases:{
     title:'المشتريات', permKey:'purchases', hasProject:true,
@@ -3895,6 +3898,7 @@ const NAV = [
   {key:'accounting',label:'المحاسبة',module:'accounting'},
   {key:'disbursements',label:'الصرف',module:'disbursements'},
   {key:'partiesDirectory',label:'دليل المقاولين والعمالة والمهندسين',module:'partiesDirectory'},
+  {key:'fx_projectIO',label:'مدخلات ومخرجات المشروع',module:'boq'},
   {key:'finBudgets',label:'الموازنة',module:'finBudgets'},
   {key:'chartOfAccounts',label:'دليل الحسابات',module:'chartOfAccounts'},
   {key:'fixedAssets',label:'الأصول',module:'fixedAssets'},
@@ -6023,7 +6027,7 @@ const MENU_SECTIONS = [
   {key:'correspondence',label:'المراسلات',icon:'✉',items:[['correspondence','المراسلات والخطابات']]},
   {key:'risks',label:'المخاطر',icon:'⚠',items:[['risks','المخاطر'],['hse','HSE والسلامة'],['qaqc','QA/QC والجودة']]},
   {key:'projectManagement',label:'إدارة المشاريع',icon:'⚙',items:[['company','الشركة والفروع'],['projectManagement','مركز إدارة المشاريع'],['engineersList','سجل المهندسين']]},
-  {key:'technical',label:'المكتب الفني',icon:'⌘',items:[['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['documents','إدارة المستندات والرسومات']]},
+  {key:'technical',label:'المكتب الفني',icon:'⌘',items:[['techOffice','المكتب الفني'],['boq','الكميات / BOQ'],['fx_projectIO','مدخلات ومخرجات المشروع'],['documents','إدارة المستندات والرسومات']]},
   {key:'engDesigns',label:'التصميمات الهندسية',icon:'📐',items:[
     ['engArchDesign','التصميم المعماري'],
     ['engStructDesign','التصميم الإنشائي'],
@@ -6653,6 +6657,51 @@ async function fxPostPaymentJournal(d, decision){
   return true;
 }
 
+/* ===== V22g: مدخلات ومخرجات المشروع (كميات تعاقدية / فعلية / منفذة + المصروف) ===== */
+FX_REPORTS.fx_projectIO={perm:'boq',icon:'📐',title:'مدخلات ومخرجات المشروع',desc:'مقارنة الكمية المنفذة بالكمية التعاقدية والفعلية لكل بند وللعقد ككل، مع ما صُرف من فواتير ومشتريات ومستخلصات.'};
+const fxPct=(a,b)=>b>0?Math.round(a/b*1000)/10:null;
+const fxPctTxt=v=>v===null?'—':(v>100?`<b style="color:#c0392b">${v}%</b>`:v+'%');
+function fxProjectIOData(pid){
+  const items=(STATE.boq||[]).filter(b=>String(b.projectId)===String(pid));
+  let cV=0,aV=0,eV=0;
+  const rows=items.map(b=>{
+    const price=fxN(b.unitPrice), cq=fxN(b.quantity), aq=fxN(b.actualQty), eq=fxN(b.executedQty);
+    cV+=cq*price; aV+=(aq||cq)*price; eV+=eq*price;
+    return {b,price,cq,aq,eq,pc:fxPct(eq,cq),pa:fxPct(eq,aq),ev:eq*price};
+  });
+  const contracts=(STATE.contracts||[]).filter(c=>String(c.projectId)===String(pid)&&c.status!=='ملغي'&&c.status!=='مسودة').reduce((a,c)=>a+fxN(c.value),0);
+  const contractTotal=contracts>0?contracts:cV;
+  const inv=(STATE.invoices||[]).filter(i=>String(i.projectId)===String(pid)&&i.invoiceType!=='مبيعات');
+  const pur=(STATE.purchases||[]).filter(x=>String(x.projectId)===String(pid)&&x.status!=='ملغي');
+  const ext=(STATE.extracts||[]).filter(x=>String(x.projectId)===String(pid)&&x.approvalStatus!=='مرفوض'&&(x.approvalStatus==='معتمد'||/معتمد|مصروف/.test(String(x.status||''))));
+  const dis=(STATE.disbursements||[]).filter(d=>String(d.projectId)===String(pid)&&d.disburseStatus==='صرف');
+  return {rows,cV,aV,eV,contractTotal,
+    invTotal:inv.reduce((a,i)=>a+(fxN(i.totalAmount)||fxN(i.amount)),0), invN:inv.length,
+    purTotal:pur.reduce((a,x)=>a+fxN(x.totalAmount),0), purN:pur.length,
+    extTotal:ext.reduce((a,x)=>a+(fxN(x.currentAmount)||fxN(x.amount)),0), extN:ext.length,
+    paid:dis.reduce((a,d)=>a+fxN(d.amount),0)};
+}
+function fxProjectIOHTML(){
+  const r=FX_REPORTS.fx_projectIO; if(!canView('boq')) return noAccessHTML();
+  const ps=visibleProjects(); const pid=projectFilter.fx_io_project&&ps.some(p=>String(p.id)===String(projectFilter.fx_io_project))?projectFilter.fx_io_project:(ps[0]?ps[0].id:'');
+  const d=pid?fxProjectIOData(pid):null;
+  const sel=`<div class="toolbar no-print"><select onchange="fxSet('fx_io_project',this.value)">${ps.map(p=>`<option value="${fxE(p.id)}" ${String(p.id)===String(pid)?'selected':''}>${fxE(p.name)}</option>`).join('')}</select></div>`;
+  if(!d) return fxHead(r)+sel+'<div class="card">لا توجد مشاريع.</div>';
+  const card=(n,l,i)=>fxCard(n,l,i);
+  const pc=fxPct(d.eV,d.cV), pa=fxPct(d.eV,d.aV), pk=fxPct(d.eV,d.contractTotal);
+  const goBoq=`<button class="btn" onclick="goRoute('boq')">✏️ إدخال / تعديل الكميات (BOQ)</button>`;
+  const rows=d.rows.map(x=>[fxE(x.b.itemCode||''),fxE(x.b.itemName||''),fxE(x.b.unit||''),fxM(x.cq),x.aq?fxM(x.aq):'—',fxM(x.eq),fxPctTxt(x.pc),fxPctTxt(x.pa),fxM(x.ev)]);
+  const foot=['','الإجمالي (موزون بالقيمة)','','','','',fxPctTxt(pc),fxPctTxt(pa),fxM(d.eV)];
+  return fxHead(r,goBoq)+sel+
+   '<h3>المدخلات</h3>'+
+   `<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0">${card(fxM(d.contractTotal),'قيمة العقد الكلية'+(d.contractTotal===d.cV?' (من الكميات)':''),'📜')}${card(fxM(d.cV),'قيمة الكميات التعاقدية','📋')}${card(fxM(d.aV),'قيمة الكميات الفعلية (لوحات تشغيلية / حصر)','📐')}${card(fxM(d.eV),'قيمة المنفذ (كمية منفذة × سعر)','🏗️')}</div>`+
+   `<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0">${card(fxM(d.invTotal),'فواتير ('+d.invN+')','🧾')}${card(fxM(d.purTotal),'مشتريات ('+d.purN+')','🛒')}${card(fxM(d.extTotal),'مستخلصات معتمدة ('+d.extN+')','📑')}${card(fxM(d.paid),'المصروف فعليًا (قرارات صرف)','💵')}</div>`+
+   '<h3>المخرجات — نسب الإنجاز</h3>'+
+   `<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0">${card(pc===null?'—':pc+'%','الإنجاز التعاقدي للعقد ككل (المنفذ ÷ التعاقدي)','🎯')}${card(pa===null?'—':pa+'%','الإنجاز الفعلي للعقد ككل (المنفذ ÷ الفعلي)','📊')}${card(pk===null?'—':pk+'%','الإنجاز الكتلي (قيمة المنفذ ÷ قيمة العقد الكلية)','🧱')}</div>`+
+   '<h3>تفصيل البنود</h3>'+fxTable(['الكود','البند','الوحدة','الكمية التعاقدية','الكمية الفعلية','الكمية المنفذة','% تعاقدي','% فعلي','قيمة المنفذ'],rows,rows.length?foot:null)+
+   '<div class="card" style="margin-top:12px;color:var(--ink-soft)">التعاقدي = المنفذ ÷ الكمية التعاقدية للبند. الفعلي = المنفذ ÷ الكمية الفعلية الكلية للبند (من اللوحات التشغيلية أو الحصر الفعلي). البند الذي لم يُحصر فعليًا بعد يُعتبر في إجمالي العقد مساويًا للكمية التعاقدية. نسب العقد ككل موزونة بسعر الوحدة. القيم الأعلى من 100% تظهر بالأحمر للمراجعة.</div>';
+}
+
 /** نقطة الدخول بعد أي اعتماد نهائي */
 async function epmsOnRecordApproved(moduleKey, rec){
   if(!rec) return;
@@ -6968,6 +7017,7 @@ function routeContent(){
   if(currentRoute==='activityLog') return currentUser.isAdmin ? activityLogHTML() : noAccessHTML();
   if(currentRoute==='backup') return currentUser.isAdmin ? backupHTML() : noAccessHTML();
   if(currentRoute==='brandingSettings') return currentUser.isAdmin ? brandingSettingsHTML() : noAccessHTML();
+  if(currentRoute==='fx_projectIO') return fxProjectIOHTML();
   if(FX_REPORTS[currentRoute]) return fxReportHTML(currentRoute);
   const nav=NAV.find(n=>n.key===currentRoute);
   if(!nav) return dashboardHTML();
