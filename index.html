@@ -6962,7 +6962,7 @@ function projectDetailHTML(){
      <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
    </div>
    <div class="cards-row reference-stats">
-     ${(()=>{const g=epmsProjectProgressDetail(pid);const f1=v=>v===null||v===undefined?'—':v+'%';return stat('◉',f1(g.finPct),'نسبة الصرف (المصروف فعلياً ÷ التكلفة الكلية)')+stat('◈',f1(g.worksPct),'نسبة المنفذ (المستخلصات المعتمدة ÷ التكلفة الكلية)','success');})()}
+     ${(()=>{const g=epmsProjectProgressDetail(pid);const f1=v=>v===null||v===undefined?'—':v+'%';return stat('◉',f1(g.finPct),'نسبة الصرف (المصروف فعلياً ÷ التكلفة الكلية)')+stat('◈',f1(g.worksPct),'نسبة المنفذ (المستخلصات المعتمدة ÷ التكلفة الكلية)','success')+(()=>{const d=fxProjectIOData(pid);return stat('🎯',f1(fxPct(d.eV,d.cV)),'الإنجاز التعاقدي (الكمية المنفذة ÷ التعاقدية)')+stat('📐',f1(fxPct(d.eV,d.aV)),'الإنجاز الفعلي (الكمية المنفذة ÷ الفعلية)')+stat('🧱',f1(fxPct(d.eV,d.contractTotal)),'الإنجاز الكتلي (قيمة المنفذ ÷ قيمة العقد)')+`<div class="no-print" style="align-self:center"><button class="btn btn-ghost" onclick="projectFilter.fx_io_project='${pid}';goRoute('fx_projectIO')">📐 مدخلات ومخرجات المشروع</button></div>`;})();})()}
      ${stat('¤',epmsMoney(budget),'الميزانية التقديرية')}
      ${stat('▣',epmsMoney(f.expenses),'المصروفات المعتمدة (محاسبة)','danger')}
      ${stat('✓',epmsMoney(f.disbursed),'المصروف فعلياً','success')}
@@ -7083,6 +7083,11 @@ function dashboardHTML(executive=false){
     const done=vpDash.filter(p=>p.status==='منتهي').length;
     const avg=total?Math.round(vpDash.reduce((a,p)=>a+epmsPct(p),0)/total):0;
     cards.push(['▤',total,'إجمالي المشاريع'],['▶',active,'قيد التنفيذ'],['✓',done,'مشاريع منتهية'],['◉',avg+'%','متوسط الإنجاز']);
+    try{
+      let cV=0,aV=0,eV=0,ct=0; visibleProjects().forEach(p=>{ const d=fxProjectIOData(p.id); cV+=d.cV; aV+=d.aV; eV+=d.eV; ct+=d.contractTotal; });
+      const q=(a,b)=>b>0?(Math.round(a/b*1000)/10)+'%':'—';
+      cards.push(['🎯',q(eV,cV),'الإنجاز التعاقدي (المنفذ ÷ التعاقدي)'],['📐',q(eV,aV),'الإنجاز الفعلي (المنفذ ÷ الفعلي)'],['🧱',q(eV,ct),'الإنجاز الكتلي (المنفذ ÷ قيمة العقد)']);
+    }catch(e){}
   }
   if(can('extracts')) cards.push(['▣',scopeRecords(STATE.extracts,currentUser,'extracts').filter(e=>e.status!=='مصروف').length,'مستخلصات معلقة']);
   if(can('warehouse')) cards.push(['▦',STATE.warehouseItems.filter(i=>Number(i.qty||0)<=Number(i.minQty||0)).length,'أصناف عند حد الطلب']);
@@ -8934,6 +8939,18 @@ async function saveRecord(){
           return sum+(String(x.boqItemId)===String(boqId)?Number(x.currentQuantity)||0:0);
         },0);
         const contractQty=Number(boq.quantity)||0, unitPrice=Number(boq.unitPrice)||0, cum=previous+cur;
+        if(boq.executedQty!==undefined && boq.executedQty!==null && boq.executedQty!=='' ){
+          const execQty=Number(boq.executedQty)||0;
+          if(cum>execQty+1e-9){
+            const allowed=Math.max(0,execQty-previous);
+            const nm=(boq.itemCode?boq.itemCode+' — ':'')+(boq.itemName||boqId);
+            if(!confirm('تنبيه: كمية المستخلص للبند «'+nm+'» تتجاوز الكمية المنفذة المسجّلة.\n\nالمنفذ: '+execQty+' | السابق في مستخلصات: '+previous+' | المتاح للمستخلص: '+allowed+' | المُدخل الآن: '+cur+' (تراكمي '+cum+')\n\nموافق = الاستمرار بالكمية المُدخلة\nإلغاء = الرجوع للكمية المنفذة ('+allowed+')')){
+              const inp=row.querySelector('.ei-current'); if(inp){ inp.value=allowed; try{ inp.dispatchEvent(new Event('input',{bubbles:true})); }catch(e){} }
+              alert('تم الرجوع بالكمية إلى '+allowed+' (حد الكمية المنفذة). راجع الكميات ثم اضغط حفظ.');
+              return;
+            }
+          }
+        }
         if(contractQty>0 && cum>contractQty){const extra=cum-contractQty;if(!confirm('البند '+(boq.itemCode||boq.itemName||boqId)+' سيتجاوز كمية BOQ التعاقدية بمقدار '+extra+'. هل تريد الاستمرار؟'))return;}
         items.push({
           isExtra:false, itemType:'boq', boqItemId:String(boqId),
