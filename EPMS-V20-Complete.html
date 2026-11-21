@@ -6782,7 +6782,11 @@ async function epmsBulkDisburse(moduleKey){
 function epmsApprovedWorksValue(pid){
   return (STATE.extracts||[]).filter(x=>String(x.projectId)===String(pid) && x.approvalStatus!=='مرفوض' &&
     (x.approvalStatus==='معتمد' || /معتمد|مصروف/.test(String(x.status||''))))
-    .reduce((a,x)=>a+(Number(x.currentAmount)||0),0);
+    .reduce((a,x)=>a+(Number(x.currentAmount)||Number(x.amount)||0),0);
+}
+function epmsApprovedWorksCount(pid){
+  return (STATE.extracts||[]).filter(x=>String(x.projectId)===String(pid) && x.approvalStatus!=='مرفوض' &&
+    (x.approvalStatus==='معتمد' || /معتمد|مصروف/.test(String(x.status||'')))).length;
 }
 function epmsProjectProgressDetail(pid){
   const p=(STATE.projects||[]).find(x=>String(x.id)===String(pid))||{};
@@ -6795,19 +6799,21 @@ function epmsProjectProgressDetail(pid){
     phaseCount=vals.length; phasesPct=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:null;
   }
   const contractsVal=(STATE.contracts||[]).filter(c=>String(c.projectId)===String(pid) && c.status!=='ملغي' && c.status!=='مسودة').reduce((a,c)=>a+(Number(c.value)||0),0);
-  const base = contractsVal>0 ? contractsVal : (Number(p.budget)||0);
-  const baseLabel = contractsVal>0 ? 'قيمة العقود' : 'الميزانية التقديرية';
+  const base = (Number(p.budget)||0)>0 ? (Number(p.budget)||0) : contractsVal;
+  const baseLabel = (Number(p.budget)||0)>0 ? 'التكلفة الكلية للمشروع (الميزانية التقديرية)' : 'قيمة العقود';
   const certified=epmsApprovedWorksValue(pid);
-  const finPct = base>0 ? Math.max(0,Math.min(100,Math.round(certified/base*1000)/10)) : null;
+  const spent=epmsProjectFinancials(pid).disbursed;   // المصروف فعلياً (قرارات «صرف» المنفذة)
+  const finPct = base>0 ? Math.max(0,Math.min(100,Math.round(spent/base*1000)/10)) : null;
+  const worksPct = base>0 ? Math.max(0,Math.min(100,Math.round(certified/base*1000)/10)) : null;
   const method = p.progressMethod || 'تلقائي';
   let value=null, used='';
   if(method==='يدوي' && p.manualPercent!==undefined && p.manualPercent!==''){ value=Math.max(0,Math.min(100,Number(p.manualPercent)||0)); used='يدوي'; }
   else if(method==='متوسط المراحل'){ value=phasesPct; used='متوسط المراحل'; }
   else if(method==='مالي'){ value=finPct; used='مالي'; }
   else { // تلقائي: الإنجاز المالي (قيمة الأعمال المعتمدة ÷ العقود/الميزانية) إن وُجدت أعمال معتمدة، وإلا متوسط المراحل
-    if(finPct!==null && certified>0){ value=finPct; used='مالي (تلقائي)'; } else { value=phasesPct; used='متوسط المراحل (تلقائي)'; }
+    if(finPct!==null && spent>0){ value=finPct; used='مالي (تلقائي)'; } else { value=phasesPct; used='متوسط المراحل (تلقائي)'; }
   }
-  return {value, used, phasesPct, phaseCount, finPct, certified, base, baseLabel, method};
+  return {value, used, phasesPct, phaseCount, finPct, spent, worksPct, certified, certifiedCount:epmsApprovedWorksCount(pid), base, baseLabel, method};
 }
 function epmsProjectProgress(pid){ const d=epmsProjectProgressDetail(pid); return d.value; }
 function epmsPct(p){ const v=epmsProjectProgress(p.id); return v!==null&&v!==undefined ? v : (Number(p.percentComplete||p.percent||0)||0); }
@@ -6832,8 +6838,9 @@ async function epmsRecalcProject(pid){
   const p=(STATE.projects||[]).find(x=>String(x.id)===String(pid)); if(!p) return null;
   const f=epmsProjectFinancials(pid), pr=epmsProjectProgress(pid);
   p.actualExpenses=f.expenses; p.disbursedAmount=f.disbursed; p.pendingDisbursement=f.pendingDisb;
-  p.remainingBudget=(Number(p.budget)||0)-f.expenses;
+  p.remainingBudget=(Number(p.budget)||0)-Math.max(f.expenses,f.disbursed);
   if(pr!==null && pr!==undefined) p.percentComplete=pr;
+  try{ const g=epmsProjectProgressDetail(pid); p.spentPercent=g.finPct; p.executedPercent=g.worksPct; }catch(e){}
   p.financialsSyncedAt=epmsNowISO();
   try{ await dbSet('projects', STATE.projects); }catch(e){ console.error(e); }
   return {financials:f, progress:pr};
@@ -6906,14 +6913,14 @@ function projectDetailHTML(){
      <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
    </div>
    <div class="cards-row reference-stats">
-     ${stat('◉',pct+'%','نسبة الإنجاز')}
+     ${(()=>{const g=epmsProjectProgressDetail(pid);const f1=v=>v===null||v===undefined?'—':v+'%';return stat('◉',f1(g.finPct),'نسبة الصرف (المصروف فعلياً ÷ التكلفة الكلية)')+stat('◈',f1(g.worksPct),'نسبة المنفذ (المستخلصات المعتمدة ÷ التكلفة الكلية)','success');})()}
      ${stat('¤',epmsMoney(budget),'الميزانية التقديرية')}
      ${stat('▣',epmsMoney(f.expenses),'المصروفات المعتمدة (محاسبة)','danger')}
      ${stat('✓',epmsMoney(f.disbursed),'المصروف فعلياً','success')}
      ${stat('⏳',epmsMoney(f.pendingDisb),'بانتظار قرار الصرف')}
-     ${stat('Σ',epmsMoney(budget-f.expenses),'المتبقي من الميزانية')}
+     ${stat('Σ',epmsMoney(budget-Math.max(f.expenses,f.disbursed)),'المتبقي من الميزانية')}
    </div>
-   ${(()=>{const g=epmsProjectProgressDetail(pid);return `<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◉</span>كيف حُسبت نسبة الإنجاز؟</span></div><div class="section-note">المعتمد الآن: <b>${escapeHtml(g.used||'—')}</b> = <b>${g.value===null?'—':g.value+'%'}</b><br>• متوسط المراحل المسجلة (${g.phaseCount} مرحلة): <b>${g.phasesPct===null?'—':g.phasesPct+'%'}</b><br>• الإنجاز المالي: أعمال المستخلصات المعتمدة ${epmsMoney(g.certified)} ÷ ${escapeHtml(g.baseLabel)} ${epmsMoney(g.base)} = <b>${g.finPct===null?'—':g.finPct+'%'}</b><br><small>لتغيير الطريقة: المشاريع ← تعديل المشروع ← «طريقة حساب نسبة الإنجاز» (تلقائي / مالي / متوسط المراحل / يدوي).</small></div></div>`})()}
+   ${(()=>{const g=epmsProjectProgressDetail(pid);return `<div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◉</span>كيف حُسبت نسبة الإنجاز؟</span></div><div class="section-note">المعتمد الآن: <b>${escapeHtml(g.used||'—')}</b> = <b>${g.value===null?'—':g.value+'%'}</b><br>• متوسط المراحل المسجلة (${g.phaseCount} مرحلة): <b>${g.phasesPct===null?'—':g.phasesPct+'%'}</b><br>• نسبة الصرف: المصروف فعلياً ${epmsMoney(g.spent)} ÷ ${escapeHtml(g.baseLabel)} ${epmsMoney(g.base)} = <b>${g.finPct===null?'—':g.finPct+'%'}</b><br>• نسبة المنفذ: قيمة أعمال ${g.certifiedCount} مستخلص معتمد ${epmsMoney(g.certified)} ÷ التكلفة الكلية = <b>${g.worksPct===null?'—':g.worksPct+'%'}</b><br><small>لتغيير الطريقة: المشاريع ← تعديل المشروع ← «طريقة حساب نسبة الإنجاز» (تلقائي / مالي / متوسط المراحل / يدوي).</small></div></div>`})()}
    <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">⇢</span>مسار التسميع لهذا المشروع</span></div>
      <div class="section-note">مستخلصات معتمدة لم تُسمَّع في الماليات: <b>${f.chainExtracts}</b> · ماليات بانتظار الاعتماد: <b>${f.finPending}</b> · محاسبة بانتظار الاعتماد: <b>${f.accPending}</b> · مبالغ «عدم الصرف»: <b>${epmsMoney(f.notDisbursed)}</b></div></div>
    <div class="panel"><div class="dashboard-card-title"><span class="section-icon-title"><span class="ico">◫</span>مراحل المشروع ونسب الإنجاز</span></div>
