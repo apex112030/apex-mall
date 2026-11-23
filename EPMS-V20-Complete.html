@@ -3899,6 +3899,7 @@ const NAV = [
   {key:'disbursements',label:'الصرف',module:'disbursements'},
   {key:'partiesDirectory',label:'دليل المقاولين والعمالة والمهندسين',module:'partiesDirectory'},
   {key:'fx_projectIO',label:'مدخلات ومخرجات المشروع',module:'boq'},
+  {key:'fx_linkAudit',label:'تطابق الربط والمكرر',module:'accounting'},
   {key:'finBudgets',label:'الموازنة',module:'finBudgets'},
   {key:'chartOfAccounts',label:'دليل الحسابات',module:'chartOfAccounts'},
   {key:'fixedAssets',label:'الأصول',module:'fixedAssets'},
@@ -6008,7 +6009,7 @@ const MENU_SECTIONS = [
   {key:'jobTasksMgmt',label:'المهام الوظيفية',icon:'📋',items:[['jobTasks','إدارة المهام الوظيفية']]},
   {key:'finMenu',label:'الماليات',icon:'💰',items:[['finBudgets','الموازنة'],['fx_cashflow','التدفقات النقدية'],['fx_position','الموقف المالي'],['fx_liabilities','الالتزامات والمستحقات'],['fx_forecast','توقعات التدفقات'],['fx_mgmtReports','تقارير مالية إدارية']]},
   {key:'accMenu',label:'المحاسبة',icon:'📚',items:[['chartOfAccounts','دليل الحسابات'],['accounting','القيود اليومية'],['fx_ledger','الأستاذ العام'],['fx_customers','العملاء'],['fx_suppliers','الموردون'],['fx_contractors','المقاولون'],['finance','المصروفات والإيرادات'],['fx_tax','الضرائب'],['fixedAssets','الأصول'],['fx_trial','ميزان المراجعة'],['fx_accReports','التقارير المحاسبية']]},
-  {key:'disbMenu',label:'الصرف',icon:'💵',items:[['paymentRequests','طلبات الصرف'],['fx_contractorDisb','صرف المقاولين'],['fx_supplierDisb','صرف الموردين'],['advancesLoans','السلف'],['advancePayments','الدفعات المقدمة'],['cashExpenses','المصروفات النقدية'],['paymentOrders','أوامر الدفع'],['bankTransfers','التحويلات البنكية'],['fx_approvalCycle','دورة الاعتماد'],['disbursements','سجل الصرف']]},
+  {key:'disbMenu',label:'الصرف',icon:'💵',items:[['paymentRequests','طلبات الصرف'],['fx_contractorDisb','صرف المقاولين'],['fx_supplierDisb','صرف الموردين'],['advancesLoans','السلف'],['advancePayments','الدفعات المقدمة'],['cashExpenses','المصروفات النقدية'],['paymentOrders','أوامر الدفع'],['bankTransfers','التحويلات البنكية'],['fx_approvalCycle','دورة الاعتماد'],['fx_linkAudit','تطابق الربط والمكرر'],['disbursements','سجل الصرف']]},
   {key:'partiesMenu',label:'دليل المقاولين والعمالة',icon:'📇',items:[['partiesDirectory','دليل المقاولين والعمالة والمهندسين']]},
   {key:'labor',label:'العمالة',icon:'♙',items:[['labor','العمالة'],['engineersList','المهندسون'],['equipment','المعدات']]},
   {key:'hr',label:'الموارد البشرية',icon:'👥',items:[
@@ -6318,12 +6319,10 @@ function epmsHistory(rec, action){ try{ pushEditHistory(rec, action); }catch(e){
 /** هل السجل جديد لم تتم مزامنته من قبل؟ (يعتمد على علامة المزامنة أو وجود أثر سابق) */
 function epmsExtractAlreadyPosted(x){
   if(!x) return true;
-  if(x.epmsFinanceSyncedAt) return true;
   return epmsArr('finance').some(f=>f.sourceId==='extract:'+x.id);
 }
 function epmsProcureAlreadyPosted(kind, r){
   if(!r) return true;
-  if(r.epmsSyncedAt) return true;
   const src = kind+':'+(r.id||r.orderNumber||r.deliveryNumber||r.number);
   return epmsArr('finance').some(f=>f.sourceId===src) || epmsArr('accounting').some(a=>a.sourceId===src);
 }
@@ -6437,6 +6436,7 @@ async function epmsPostAccountingToDisbursementAndProject(acc){
     await dbSet('disbursements', disb);
   }
   acc.postedToDisbursementAt=epmsNowISO(); acc.postedToProjectAt=epmsNowISO();
+  try{ epmsDedupeLinks(); await dbSet('disbursements', epmsArr('disbursements')); await dbSet('accountingEntries', epmsArr('accountingEntries')); }catch(e){ console.error(e); }
   await dbSet('accounting', STATE.accounting);
   if(acc.projectId) await epmsRecalcProject(acc.projectId);
   return out;
@@ -6471,8 +6471,8 @@ const FX_POSTING_IF_STANDALONE=['paymentOrders','bankTransfers'];
 const fxN=v=>Number(v)||0;
 const fxM=v=>fxN(v).toLocaleString('ar-EG',{maximumFractionDigits:2});
 const fxE=s=>escapeHtml(String(s==null?'':s));
-const fxList=k=>{ try{ return scopeRecords(STATE[k]||[],currentUser,k); }catch(e){ return Array.isArray(STATE[k])?STATE[k]:[]; } };
-const fxJE=()=>Array.isArray(STATE.accountingEntries)?STATE.accountingEntries:[];
+const fxList=k=>{ let a; try{ a=scopeRecords(STATE[k]||[],currentUser,k); }catch(e){ a=Array.isArray(STATE[k])?STATE[k]:[]; } return a.filter(x=>!(x&&x.superseded)); };
+const fxJE=()=>Array.isArray(STATE.accountingEntries)?STATE.accountingEntries.filter(e=>!e.superseded):[];
 const fxMonth=d=>String(d||'').slice(0,7)||'بدون تاريخ';
 const fxIsBank=a=>/البنك|الخزينة/.test(String(a||''));
 const fxPaid=d=>d.disburseStatus==='صرف';
@@ -6702,6 +6702,156 @@ function fxProjectIOHTML(){
    '<div class="card" style="margin-top:12px;color:var(--ink-soft)">التعاقدي = المنفذ ÷ الكمية التعاقدية للبند. الفعلي = المنفذ ÷ الكمية الفعلية الكلية للبند (من اللوحات التشغيلية أو الحصر الفعلي). البند الذي لم يُحصر فعليًا بعد يُعتبر في إجمالي العقد مساويًا للكمية التعاقدية. نسب العقد ككل موزونة بسعر الوحدة. القيم الأعلى من 100% تظهر بالأحمر للمراجعة.</div>';
 }
 
+/* ====================================================================
+   V22i — تطابق الربط: ربط الناقص فقط + استبعاد المكرر (بدون الاعتماد على علامات قديمة)
+   ==================================================================== */
+const EPMS_RANK={purchase:1,delivery:2,invoice:3};
+const EPMS_KIND_LABEL={extract:'مستخلص',purchase:'أمر شراء',delivery:'توريد',invoice:'فاتورة'};
+FX_REPORTS.fx_linkAudit={perm:'accounting',icon:'🔗',title:'تطابق الربط والمكرر',desc:'مطابقة كل بند (مستخلص / أمر شراء / توريد / فاتورة) مع الماليات والمحاسبة والقيود والصرف. الربط يتم للناقص فقط، والمكرر يُستبعد من الحسابات.'};
+function epmsSrcId(kind,r){ return kind+':'+(r.id||r.orderNumber||r.deliveryNumber||r.number); }
+function epmsProcureSources(){
+  const out=[];
+  (STATE.purchases||[]).forEach(r=>{ if(/تم الطلب|تم التوريد|تم الاستلام/i.test(String(r.status||''))) out.push({kind:'purchase',key:'purchases',r}); });
+  (STATE.deliveries||[]).forEach(r=>out.push({kind:'delivery',key:'deliveries',r}));
+  (STATE.invoices||[]).forEach(r=>{ if(/مشتريات|توريد|مقاول/i.test(String(r.invoiceType||'مشتريات'))) out.push({kind:'invoice',key:'invoices',r}); });
+  return out.map(x=>({...x,src:epmsSrcId(x.kind,x.r)}));
+}
+function epmsChainKeyOf(x){
+  const r=x.r; const po=String(x.kind==='purchase'?(r.orderNumber||''):(r.purchaseOrderNumber||'')).trim();
+  if(po) return 'po|'+(r.projectId||'')+'|'+po;
+  const sup=String(r.supplier||r.party||'').trim().toLowerCase(), item=String(r.itemName||r.itemDescription||'').trim().toLowerCase();
+  const amt=Number(r.totalAmount)||Number(r.amount)||((Number(r.quantity)||0)*(Number(r.unitPrice)||0));
+  return 'it|'+(r.projectId||'')+'|'+sup+'|'+item+'|'+amt;
+}
+/** استبعاد المكرر (تلقائي وقابل للإعادة): لا يحذف شيئًا، بل يضع علامة superseded فتخرج الصفوف من كل الحسابات */
+function epmsDedupeLinks(){
+  const T=['finance','accounting','accountingEntries','disbursements'].reduce((o,k)=>(o[k]=epmsArr(k),o),{});
+  let changes=0; const prevSup=new Set();
+  Object.values(T).forEach(arr=>arr.forEach(row=>{ if(row.superseded) prevSup.add(row); }));
+  Object.values(T).forEach(arr=>arr.forEach(row=>{ if(row.supersededAuto){ delete row.superseded; delete row.supersededAuto; delete row.supersededReason; delete row.supersededBy; } }));
+  const mark=(row,reason,by)=>{ if(row.superseded) return; row.superseded=true; row.supersededAuto=true; row.supersededReason=reason; row.supersededBy=by||''; if(!prevSup.has(row)) changes++; };
+  const rowsOf=src=>{
+    const finR=T.finance.filter(f=>f.sourceId===src), accR=T.accounting.filter(a=>a.sourceId===src), accIds=new Set(accR.map(a=>a.id)), finIds=new Set(finR.map(f=>f.id));
+    return {finR,accR,
+      jeR:T.accountingEntries.filter(e=>e.sourceKey===src||accIds.has(String(e.sourceKey||'').replace(/^acc:/,''))&&/^acc:/.test(e.sourceKey||'')),
+      disR:T.disbursements.filter(d=>accIds.has(d.accountingId)||finIds.has(d.financeId))};
+  };
+  // (1) سلسلة أمر الشراء ← التوريد ← الفاتورة: تُحتسب مرة واحدة
+  const groups={}; epmsProcureSources().forEach(x=>{ (groups[epmsChainKeyOf(x)]=groups[epmsChainKeyOf(x)]||[]).push(x); });
+  Object.values(groups).forEach(g=>{
+    if(g.length<2 || g.some(x=>x.r.keepBoth)) return;
+    g.forEach(x=>{ x.rows=rowsOf(x.src); x.paid=x.rows.disR.some(d=>d.disburseStatus==='صرف'); });
+    const paid=g.filter(x=>x.paid); const maxRank=Math.max(...g.map(x=>EPMS_RANK[x.kind]));
+    const winners=paid.length?paid:g.filter(x=>EPMS_RANK[x.kind]===maxRank);
+    const wl=winners.map(w=>EPMS_KIND_LABEL[w.kind]+' '+(w.r.number||w.r.orderNumber||w.r.deliveryNumber||'')).join('، ');
+    g.filter(x=>!winners.includes(x)).forEach(x=>{
+      const reason='مكرر لنفس البند — يُحتسب '+wl+(paid.length?' (صُرف بالفعل)':'');
+      ['finR','accR','jeR','disR'].forEach(k=>x.rows[k].forEach(row=>mark(row,reason,winners[0].src)));
+    });
+  });
+  // (2) تكرار في الصرف: نفس المستفيد/المبلغ/المصدر/المستخلص/التاريخ، أو نفس القيد المحاسبي
+  const live=T.disbursements.filter(d=>!d.superseded);
+  const dgroups={};
+  live.forEach(d=>{ const k=[d.projectId,d.payee,Number(d.amount)||0,d.sourceType,d.extractNumber,d.contractNumber,d.date].join('|'); (dgroups[k]=dgroups[k]||[]).push(d); });
+  const byAcc={}; live.forEach(d=>{ if(d.accountingId) (byAcc[d.accountingId]=byAcc[d.accountingId]||[]).push(d); });
+  [...Object.values(dgroups),...Object.values(byAcc)].forEach(g=>{
+    const alive=g.filter(d=>!d.superseded); if(alive.length<2) return;
+    const keep=alive.find(d=>d.disburseStatus==='صرف')||alive.slice().sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||'')))[0];
+    alive.filter(d=>d!==keep).forEach(d=>{ if(d.disburseStatus==='صرف') return; mark(d,'سجل صرف مكرر مطابق لسجل آخر',keep.id); });
+  });
+  // (3) تكرار في الماليات والمحاسبة لنفس المصدر والنوع والمبلغ
+  const dupBy=(arr,keyf,extra)=>{ const m={}; arr.filter(r=>!r.superseded&&r.sourceId).forEach(r=>(m[keyf(r)]=m[keyf(r)]||[]).push(r));
+    Object.values(m).forEach(g=>{ if(g.length<2) return; const keep=g.find(r=>r.approvalStatus==='معتمد')||g[0]; g.filter(r=>r!==keep).forEach(r=>{ mark(r,'صف مكرر لنفس المصدر',keep.id); if(extra) extra(r); }); }); };
+  dupBy(T.finance,f=>[f.sourceId,f.type,f.category,Number(f.amount)||0].join('|'));
+  dupBy(T.accounting,a=>[a.sourceId,a.entryType,a.account,Number(a.amount)||0].join('|'),a=>T.disbursements.filter(d=>d.accountingId===a.id).forEach(d=>mark(d,'تابع لقيد محاسبي مكرر',a.id)));
+  return changes;
+}
+async function epmsDedupeAndSave(){
+  const n=epmsDedupeLinks();
+  for(const k of ['finance','accounting','accountingEntries','disbursements']){ try{ await dbSet(k,STATE[k]); }catch(e){} }
+  return n;
+}
+/** هل الصف مستبعد كمكرر؟ */
+const epmsLive=r=>!(r&&r.superseded);
+
+/** تطابق مرحلة بمرحلة لبند واحد */
+function epmsLinkStatus(kind,key,r){
+  const src=kind==='extract'?'extract:'+r.id:epmsSrcId(kind,r);
+  const fin=epmsArr('finance').filter(f=>f.sourceId===src), acc=epmsArr('accounting').filter(a=>a.sourceId===src);
+  const accIds=new Set(acc.map(a=>a.id)), finIds=new Set(fin.map(f=>f.id));
+  const je=epmsArr('accountingEntries').some(e=>e.sourceKey===src||accIds.has(String(e.sourceKey||'').replace(/^acc:/,'')));
+  const dis=epmsArr('disbursements').filter(d=>accIds.has(d.accountingId)||finIds.has(d.financeId)||(kind==='extract'&&d.extractId===r.id));
+  const payable=kind==='extract'||kind!=='invoice'||/مشتريات|توريد|مقاول/i.test(String(r.invoiceType||'مشتريات'));
+  const finApproved=fin.some(f=>f.approvalStatus==='معتمد'||!f.chainRow), accApproved=acc.some(a=>a.approvalStatus==='معتمد');
+  const sup=[...fin,...acc,...dis].find(x=>x.superseded);
+  const allSup=[...fin,...acc].length>0&&[...fin,...acc].every(x=>x.superseded);
+  return {src,fin:fin.length>0,acc:acc.length>0,je,dis:dis.length>0,payable,finApproved,accApproved,
+    superseded:allSup,reason:allSup?(sup&&sup.supersededReason):'',
+    paid:dis.some(d=>d.disburseStatus==='صرف'),
+    missing:{fin:!fin.length, acc:fin.length>0&&finApproved&&!acc.length, je:acc.length>0&&accApproved&&!je, dis:payable&&acc.length>0&&accApproved&&!dis.length}};
+}
+/** ربط الناقص فقط — يُنفَّذ لكل مرحلة بشرط عدم وجودها فعليًا */
+async function epmsReconcileLinks(opts){
+  opts=opts||{}; const rep={fin:0,acc:0,je:0,dis:0,already:0,dups:0,items:0};
+  const inScope=(pid)=>!opts.pid||String(pid)===String(opts.pid);
+  const srcs=[];
+  if(opts.scope!=='procurement') (STATE.extracts||[]).filter(x=>inScope(x.projectId)&&(x.approvalStatus==='معتمد'||(x.approvalStatus!=='مرفوض'&&/معتمد|مصروف|approved|مكتمل/i.test(String(x.status||''))))).forEach(r=>srcs.push({kind:'extract',key:'extracts',r}));
+  if(opts.scope!=='extracts') epmsProcureSources().filter(x=>inScope(x.r.projectId)).forEach(x=>srcs.push(x));
+  for(const x of srcs){
+    const s=epmsLinkStatus(x.kind,x.key,x.r); if(opts.only&&s.src!==opts.only) continue; rep.items++;
+    if(s.superseded && !opts.force){ rep.dups++; continue; }
+    let did=false;
+    if(s.missing.fin){ try{ if(x.kind==='extract') await epmsSyncExtractToFinanceAndAccounting(x.r,true); else await epmsSyncProcurementToFinanceAndAccounting(x.key,x.r); rep.fin++; did=true; }catch(e){ console.error(e); } }
+    let s2=epmsLinkStatus(x.kind,x.key,x.r);
+    if(s2.missing.acc){ for(const f of epmsArr('finance').filter(f=>f.sourceId===s2.src&&(f.approvalStatus==='معتمد'||!f.chainRow))){ try{ if(await epmsPostFinanceToAccounting(f)){ rep.acc++; did=true; } }catch(e){ console.error(e); } } }
+    s2=epmsLinkStatus(x.kind,x.key,x.r);
+    if(s2.missing.je||s2.missing.dis){ for(const a of epmsArr('accounting').filter(a=>a.sourceId===s2.src&&a.approvalStatus==='معتمد'&&epmsLive(a))){ try{ const o=await epmsPostAccountingToDisbursementAndProject(a); if(o.je) rep.je++; if(o.disb) rep.dis++; if(o.je||o.disb) did=true; }catch(e){ console.error(e); } } }
+    if(!did) rep.already++;
+  }
+  await epmsDedupeAndSave();
+  const pids=[...new Set(srcs.map(x=>x.r.projectId).filter(Boolean))]; for(const p of pids){ try{ await epmsRecalcProject(p); }catch(e){} }
+  return rep;
+}
+function epmsReconcileMsg(rep){
+  const made=rep.fin+rep.acc+rep.je+rep.dis;
+  return 'نتيجة التطابق ('+rep.items+' بند):\n• رُبط الناقص فقط: ماليات '+rep.fin+' · محاسبة '+rep.acc+' · قيود '+rep.je+' · صرف '+rep.dis+'\n• بنود مربوطة بالكامل سابقًا (لم تُكرَّر): '+rep.already+'\n• بنود مكررة مستبعدة من الحسابات: '+rep.dups+(made===0?'\n\nلا يوجد ناقص يحتاج ربطًا.':'');
+}
+async function epmsLinkAll(){ const pid=projectFilter.fx_link_project||''; const rep=await epmsReconcileLinks({pid}); alert(epmsReconcileMsg(rep)); render(); }
+async function epmsLinkOne(src){ const rep=await epmsReconcileLinks({only:src}); alert(epmsReconcileMsg(rep)); render(); }
+async function epmsKeepBoth(key,id){
+  const r=(STATE[key]||[]).find(x=>String(x.id)===String(id)); if(!r) return;
+  if(!confirm('اعتبار هذا البند مستقلًا وليس مكررًا (سيُحتسب مع البنود الأخرى لنفس أمر الشراء)؟')) return;
+  r.keepBoth=true; await dbSet(key,STATE[key]); await epmsDedupeAndSave(); render();
+}
+async function epmsDedupeClick(){ const n=await epmsDedupeAndSave(); alert(n?('تم استبعاد '+n+' صف مكرر من الحسابات (لم يُحذف شيء ويمكن استعادته من صفحة التطابق).'):'لا توجد صفوف مكررة.'); render(); }
+
+function fxLinkAuditHTML(){
+  const r=FX_REPORTS.fx_linkAudit; if(!canView('accounting')) return noAccessHTML();
+  const ps=visibleProjects(); const pid=projectFilter.fx_link_project||'';
+  const srcs=[]; (STATE.extracts||[]).filter(x=>x.approvalStatus==='معتمد'||(x.approvalStatus!=='مرفوض'&&/معتمد|مصروف|approved|مكتمل/i.test(String(x.status||'')))).forEach(x=>srcs.push({kind:'extract',key:'extracts',r:x}));
+  epmsProcureSources().forEach(x=>srcs.push(x));
+  const sc=(srcs.filter(x=>!pid||String(x.r.projectId)===String(pid)));
+  const ck=v=>v?'<span style="color:#176b50">✓</span>':'<span style="color:#c0392b">✗</span>';
+  let nMiss=0,nSup=0,nOk=0;
+  const rows=sc.map(x=>{
+    const s=epmsLinkStatus(x.kind,x.key,x.r); const miss=Object.values(s.missing).some(Boolean);
+    const lbl=x.kind==='extract'?(x.r.number||''):(x.r.number||x.r.orderNumber||x.r.deliveryNumber||'');
+    const party=x.r.contractor||x.r.supplier||x.r.party||'';
+    const amt=x.kind==='extract'?(Number(x.r.currentAmount)||Number(x.r.amount)||0):(Number(x.r.totalAmount)||Number(x.r.amount)||0);
+    let st,act='';
+    if(s.superseded){ nSup++; st=`<span class="badge bad">⧉ مكرر — مستبعد</span><div style="font-size:11px">${fxE(s.reason||'')}</div>`; act=x.kind!=='extract'?`<button class="link-btn" onclick="epmsKeepBoth('${x.key}','${x.r.id}')">اعتباره مستقلًا</button>`:''; }
+    else if(miss){ nMiss++; st='<span class="badge warn">ناقص الربط</span>'; act=`<button class="link-btn" onclick="epmsLinkOne('${s.src}')">🔗 ربط الناقص</button>`; }
+    else { nOk++; st='<span class="badge ok">مربوط</span>'; }
+    return [fxE(EPMS_KIND_LABEL[x.kind]),fxE(lbl),fxE(party),x.r.itemName?fxE(x.r.itemName):'—',fxM(amt),ck(s.fin),ck(s.acc),ck(s.je),s.payable?ck(s.dis):'—',st,`<span class="no-print">${act}</span>`];
+  });
+  const sel=`<select onchange="fxSet('fx_link_project',this.value)"><option value="">كل المشاريع</option>${ps.map(p=>`<option value="${fxE(p.id)}" ${String(p.id)===String(pid)?'selected':''}>${fxE(p.name)}</option>`).join('')}</select>`;
+  const btns=`<button class="btn" onclick="epmsLinkAll()">🔗 ربط الناقص فقط</button><button class="btn btn-ghost" onclick="epmsDedupeClick()">⧉ فحص المكرر</button>`;
+  return fxHead(r,btns)+`<div class="toolbar no-print">${sel}</div>`+
+    `<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0">${fxCard(nOk,'مربوط بالكامل','✅')}${fxCard(nMiss,'ناقص الربط','🔗')}${fxCard(nSup,'مكرر مستبعد','⧉')}</div>`+
+    fxTable(['النوع','الرقم','الجهة','البند','القيمة','ماليات','محاسبة','قيود','صرف','الحالة','إجراء'],rows)+
+    '<div class="card" style="margin-top:12px;color:var(--ink-soft)">المطابقة تعتمد على وجود السجلات فعليًا في كل مرحلة وليس على علامات قديمة؛ فإذا حُذف بند من الصرف يظهر هنا «ناقص» ويُعاد ربطه وحده. سلسلة أمر الشراء ← التوريد ← الفاتورة تُحتسب مرة واحدة (تُفضَّل الفاتورة، أو البند الذي صُرف فعلًا).</div>';
+}
+
 /** نقطة الدخول بعد أي اعتماد نهائي */
 async function epmsOnRecordApproved(moduleKey, rec){
   if(!rec) return;
@@ -6728,7 +6878,7 @@ async function epmsApplyDisburse(moduleKey, rec, decision){
   if(!rec) return null;
   const lk=moduleKey+':'+rec.id;
   if(__epmsDisburseBusy.has(lk)) return null;
-  if(rec.disburseStatus==='صرف') return null;
+  if(rec.disburseStatus==='صرف'||rec.superseded) return null;
   __epmsDisburseBusy.add(lk);
   try{ return await epmsApplyDisburseCore(moduleKey, rec, decision); }
   finally{ __epmsDisburseBusy.delete(lk); }
@@ -6801,6 +6951,7 @@ async function epmsSetDisburse(moduleKey, id, decision){
   if(!mod||!rec) return;
   if(!(currentUser && (currentUser.isAdmin || canEdit(mod.permKey)))){ alert('ليس لديك صلاحية تسجيل قرار الصرف.'); return; }
   if(rec.approvalStatus==='مرفوض'){ alert('لا يمكن تسجيل قرار صرف لمعاملة مرفوضة.'); return; }
+  if(rec.superseded){ alert('هذا البند مستبعد كمكرر ('+(rec.supersededReason||'')+') ولا يمكن الصرف عليه. راجع «تطابق الربط والمكرر».'); return; }
   if(rec.disburseStatus==='صرف'){ alert('تم صرف هذه المعاملة من قبل ولا يمكن تكرار قرار الصرف أو تعديله.'); return; }
   if(__epmsDisburseBusy.has(moduleKey+':'+rec.id)) return;
   if(rec.disburseStatus==='عدم الصرف' && decision==='عدم الصرف') return;
@@ -6867,9 +7018,9 @@ function epmsProjectProgressDetail(pid){
 function epmsProjectProgress(pid){ const d=epmsProjectProgressDetail(pid); return d.value; }
 function epmsPct(p){ const v=epmsProjectProgress(p.id); return v!==null&&v!==undefined ? v : (Number(p.percentComplete||p.percent||0)||0); }
 function epmsProjectFinancials(pid){
-  const acc=epmsArr('accounting').filter(a=>String(a.projectId)===String(pid));
+  const acc=epmsArr('accounting').filter(a=>String(a.projectId)===String(pid)&&epmsLive(a));
   const expenses=acc.filter(a=>a.approvalStatus==='معتمد' && EPMS_COST_ENTRY_TYPES.includes(a.entryType));
-  const disb=epmsArr('disbursements').filter(d=>String(d.projectId)===String(pid));
+  const disb=epmsArr('disbursements').filter(d=>String(d.projectId)===String(pid)&&epmsLive(d));
   const sum=(arr,f)=>arr.reduce((s,x)=>s+(Number(f(x))||0),0);
   return {
     expenseRows:expenses, disbRows:disb,
@@ -6902,27 +7053,10 @@ async function epmsRecalcProjectClick(pid){
 
 /* ---------- المزامنة للجديد فقط ---------- */
 async function epmsPostContractorAccounting(){
-  const approved=(STATE.extracts||[]).filter(x=>x.approvalStatus==='معتمد' || (x.approvalStatus!=='مرفوض' && /معتمد|مصروف|approved|مكتمل/i.test(String(x.status||''))));
-  const fresh=approved.filter(x=>!epmsExtractAlreadyPosted(x));
-  if(!approved.length){ alert('لا توجد مستخلصات معتمدة أو مصروفة قابلة للتسميع.'); return; }
-  if(!fresh.length){ alert('لا توجد مستخلصات جديدة — كل المستخلصات المعتمدة تمت مزامنتها سابقاً ('+approved.length+'). لم يتم تكرار أي شيء.'); return; }
-  let n=0;
-  for(const x of fresh){ try{ if(await epmsSyncExtractToFinanceAndAccounting(x, true)) n++; }catch(e){ console.error(e); } }
-  alert('تم تسميع '+n+' مستخلص جديد في الماليات فقط (بانتظار الاعتماد). تم تجاهل '+(approved.length-fresh.length)+' مستخلص سبقت مزامنته.');
-  render();
+  const rep=await epmsReconcileLinks({scope:'extracts'}); alert(epmsReconcileMsg(rep)); render();
 }
 async function epmsPostProcurementAccounting(){
-  let n=0, skipped=0;
-  const kinds=[['purchases','purchase',p=>/تم الطلب|تم التوريد|تم الاستلام/i.test(String(p.status||''))],['deliveries','delivery',()=>true],['invoices','invoice',()=>true]];
-  for(const [key,kind,ok] of kinds){
-    for(const r of (STATE[key]||[])){
-      if(!ok(r)) continue;
-      if(epmsProcureAlreadyPosted(kind,r)){ skipped++; continue; }
-      await epmsSyncProcurementToFinanceAndAccounting(key, r); n++;
-    }
-  }
-  alert('تمت مزامنة '+n+' سجل جديد فقط من المشتريات/التوريدات/الفواتير. تم تجاهل '+skipped+' سجل سبقت مزامنته.');
-  render();
+  const rep=await epmsReconcileLinks({scope:'procurement'}); alert(epmsReconcileMsg(rep)); render();
 }
 
 /* ---------- الشاشة التفصيلية لكل مشروع ---------- */
@@ -7018,6 +7152,7 @@ function routeContent(){
   if(currentRoute==='backup') return currentUser.isAdmin ? backupHTML() : noAccessHTML();
   if(currentRoute==='brandingSettings') return currentUser.isAdmin ? brandingSettingsHTML() : noAccessHTML();
   if(currentRoute==='fx_projectIO') return fxProjectIOHTML();
+  if(currentRoute==='fx_linkAudit') return fxLinkAuditHTML();
   if(FX_REPORTS[currentRoute]) return fxReportHTML(currentRoute);
   const nav=NAV.find(n=>n.key===currentRoute);
   if(!nav) return dashboardHTML();
@@ -7799,7 +7934,7 @@ function moduleHTML(key, mod){
         ${key==='surveillanceCameras'&&r.streamUrl?`<button class="link-btn" onclick="openCameraStream('${r.id}')">📹 فتح البث</button>`:''}
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?t('تعديل','Edit','Modifier'):t('عرض','View','Voir')}</button>
         <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ ${t('طباعة','Print','Imprimer')}</button>
-        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&r.approvalStatus!=='مرفوض'?(r.disburseStatus==='صرف'?`<span class="badge ok">✓ تم الصرف</span>`:`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 صرف</button>${r.disburseStatus==='عدم الصرف'?`<span class="badge bad">⛔ عدم الصرف</span>`:`<button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ عدم صرف</button>`}`):''}
+        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&r.approvalStatus!=='مرفوض'?(r.superseded?`<span class="badge bad" title="${escapeHtml(r.supersededReason||'')}">⧉ مكرر — مستبعد</span>`:r.disburseStatus==='صرف'?`<span class="badge ok">✓ تم الصرف</span>`:`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 صرف</button>${r.disburseStatus==='عدم الصرف'?`<span class="badge bad">⛔ عدم الصرف</span>`:`<button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ عدم صرف</button>`}`):''}
         ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${canApproveRecord(key,r)?`<button class="link-btn" onclick="approveRecord('${key}','${r.id}','اعتماد')">${t('اعتماد','Approve','Approuver')}</button><button class="link-btn danger" onclick="approveRecord('${key}','${r.id}','رفض')">${t('رفض','Reject','Rejeter')}</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">${t('حذف','Delete','Supprimer')}</button>`:''}
       </div></td>
     </tr>`;
@@ -8558,6 +8693,7 @@ async function epmsSyncProcurementToFinanceAndAccounting(moduleKey, record){
     }
   }
 
+  try{ epmsDedupeLinks(); }catch(e){ console.error(e); }
   await dbSet('finance', STATE.finance);
   await dbSet('accounting', STATE.accounting);
   await dbSet('accountingEntries', STATE.accountingEntries);

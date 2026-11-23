@@ -1,4 +1,4 @@
-const CACHE = 'epms-v22h-qty-link';
+const CACHE = 'epms-v22i-link-reconcile';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
