@@ -6068,8 +6068,31 @@ const MENU_SECTIONS = [
   {key:'system',label:'إدارة النظام',icon:'⚙',adminOnly:true,items:[['systemManagement','إدارة النظام'],['jobTasks','المهام الوظيفية'],['approvalSettings','إدارة الاعتمادات'],['admin','المستخدمون والصلاحيات'],['activityLog','سجل العمليات'],['backup','Backup / Restore'],['brandingSettings','الهوية والواجهات'],['listManagement','إدارة القوائم']]}
 ];
 
+/** الأزرار والإجراءات التي يمكن إخفاؤها/إظهارها من «إدارة النظام» (الافتراضي: ظاهرة) */
+const EPMS_ACTION_BUTTONS=[
+  ['syncExtracts','🔄 ترحيل / مزامنة المستخلصات → ماليات ومحاسبة'],
+  ['syncProcurement','🔄 ترحيل / مزامنة المشتريات والتوريدات والفواتير'],
+  ['bulkDisburse','💵 صرف / عدم صرف (عام)'],
+  ['rowDisburse','💵 أزرار صرف / عدم صرف داخل كل سجل وكل شاشة'],
+  ['recalcProject','🔄 تسميع مصروفات ونسبة إنجاز المشروع'],
+  ['linkReconcile','🔗 ربط الناقص فقط / فحص المكرر / ربط بند'],
+  ['printPage','🖨️ طباعة الصفحة'],
+  ['printSelected','📑 طباعة المحدد'],
+  ['printFullDoc','📄 طباعة نموذج كامل'],
+  ['boqLinks','🔗 أزرار ربط BOQ بالأقسام'],
+  ['addNew','+ إضافة سجل جديد']
+];
+function isActionVisible(k){ const v=getMenuVisibility(); return !v.buttons || v.buttons[k]!==false; }
+function actionButtonsEditorHTML(){
+  const v=getMenuVisibility();
+  return `<div style="border:1px solid var(--epms-line);border-radius:10px;padding:10px 12px;background:#fff;">
+    <div style="font-weight:800;color:#103b6c;margin-bottom:8px;">🔘 الأزرار والإجراءات داخل الصفحات <span class="badge warn">إخفاء الزر لا يلغي الصلاحية</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;padding-right:8px;">${EPMS_ACTION_BUTTONS.map(([k,label])=>{ const on=!v.buttons||v.buttons[k]!==false;
+      return `<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid #e5eef6;border-radius:6px;background:${on?'#f7fbff':'#fafafa'};font-size:12.5px;"><input type="checkbox" class="mv-btn" data-btn="${k}" ${on?'checked':''}> <span>${escapeHtml(label)}</span></label>`; }).join('')}</div></div>`;
+}
 function getMenuVisibility(){
   if(!STATE.menuVisibility || typeof STATE.menuVisibility!=='object') STATE.menuVisibility={sections:{},items:{}};
+  if(!STATE.menuVisibility.buttons || typeof STATE.menuVisibility.buttons!=='object') STATE.menuVisibility.buttons={};
   if(!STATE.menuVisibility.sections) STATE.menuVisibility.sections={};
   if(!STATE.menuVisibility.items) STATE.menuVisibility.items={};
   return STATE.menuVisibility;
@@ -6515,7 +6538,7 @@ function fxDisbGroup(d){
   return fxIsContractorPayee(d.payee)?'contractor':'supplier';
 }
 function fxDisbTable(list){
-  const canAct=currentUser&&(currentUser.isAdmin||canEdit('accounting'));
+  const canAct=currentUser&&(currentUser.isAdmin||canEdit('accounting'))&&isActionVisible('rowDisburse');
   const rows=list.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).map(d=>{
     const st=fxPaid(d)?'<span class="badge ok">تم الصرف</span>':d.disburseStatus==='عدم الصرف'?'<span class="badge bad">عدم الصرف</span>':'<span class="badge warn">بانتظار القرار</span>';
     const act=fxPaid(d)?'<span class="badge ok">✓ تم الصرف</span>':canAct?`<button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','صرف')">💵 صرف</button>${d.disburseStatus==='عدم الصرف'?'':`<button class="link-btn" onclick="epmsSetDisburse('disbursements','${d.id}','عدم الصرف')">⛔ عدم الصرف</button>`}`:'';
@@ -6840,12 +6863,12 @@ function fxLinkAuditHTML(){
     const amt=x.kind==='extract'?(Number(x.r.currentAmount)||Number(x.r.amount)||0):(Number(x.r.totalAmount)||Number(x.r.amount)||0);
     let st,act='';
     if(s.superseded){ nSup++; st=`<span class="badge bad">⧉ مكرر — مستبعد</span><div style="font-size:11px">${fxE(s.reason||'')}</div>`; act=x.kind!=='extract'?`<button class="link-btn" onclick="epmsKeepBoth('${x.key}','${x.r.id}')">اعتباره مستقلًا</button>`:''; }
-    else if(miss){ nMiss++; st='<span class="badge warn">ناقص الربط</span>'; act=`<button class="link-btn" onclick="epmsLinkOne('${s.src}')">🔗 ربط الناقص</button>`; }
+    else if(miss){ nMiss++; st='<span class="badge warn">ناقص الربط</span>'; act=isActionVisible('linkReconcile')?`<button class="link-btn" onclick="epmsLinkOne('${s.src}')">🔗 ربط الناقص</button>`:''; }
     else { nOk++; st='<span class="badge ok">مربوط</span>'; }
     return [fxE(EPMS_KIND_LABEL[x.kind]),fxE(lbl),fxE(party),x.r.itemName?fxE(x.r.itemName):'—',fxM(amt),ck(s.fin),ck(s.acc),ck(s.je),s.payable?ck(s.dis):'—',st,`<span class="no-print">${act}</span>`];
   });
   const sel=`<select onchange="fxSet('fx_link_project',this.value)"><option value="">كل المشاريع</option>${ps.map(p=>`<option value="${fxE(p.id)}" ${String(p.id)===String(pid)?'selected':''}>${fxE(p.name)}</option>`).join('')}</select>`;
-  const btns=`<button class="btn" onclick="epmsLinkAll()">🔗 ربط الناقص فقط</button><button class="btn btn-ghost" onclick="epmsDedupeClick()">⧉ فحص المكرر</button>`;
+  const btns=isActionVisible('linkReconcile')?`<button class="btn" onclick="epmsLinkAll()">🔗 ربط الناقص فقط</button><button class="btn btn-ghost" onclick="epmsDedupeClick()">⧉ فحص المكرر</button>`:'';
   return fxHead(r,btns)+`<div class="toolbar no-print">${sel}</div>`+
     `<div style="display:flex;gap:12px;flex-wrap:wrap;margin:12px 0">${fxCard(nOk,'مربوط بالكامل','✅')}${fxCard(nMiss,'ناقص الربط','🔗')}${fxCard(nSup,'مكرر مستبعد','⧉')}</div>`+
     fxTable(['النوع','الرقم','الجهة','البند','القيمة','ماليات','محاسبة','قيود','صرف','الحالة','إجراء'],rows)+
@@ -7083,7 +7106,7 @@ function projectDetailHTML(){
   const pct=Math.max(0,Math.min(100,prog!==null?prog:epmsPct(p)));
   const budget=Number(p.budget)||0;
   const phases=(STATE.phases||[]).filter(x=>String(x.projectId)===String(pid)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-  const canEditDisb=currentUser.isAdmin||canEdit('accounting');
+  const canEditDisb=(currentUser.isAdmin||canEdit('accounting'))&&isActionVisible('rowDisburse');
   const badge=(v)=>{ const c=/^(صرف|معتمد)$/.test(v)?'ok':/^(عدم الصرف|مرفوض)$/.test(v)?'bad':'warn'; return `<span class="badge ${c}">${escapeHtml(v||'بانتظار القرار')}</span>`; };
   const stat=(ic,n,l,cls='')=>`<div class="stat-card ${cls}"><span class="stat-icon">${ic}</span><div class="n">${n}</div><div class="l">${l}</div></div>`;
   return `<div class="page-wrap">
@@ -7091,7 +7114,7 @@ function projectDetailHTML(){
     <p>${escapeHtml(p.client||'')} ${p.location?'— '+escapeHtml(p.location):''} · الحالة: ${escapeHtml(p.status||'—')} ${p.startDate?'· من '+escapeHtml(p.startDate):''} ${p.endDate?'إلى '+escapeHtml(p.endDate):''}</p></div>
    <div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;align-items:center">
      <select onchange="epmsOpenProjectDetail(this.value)" style="min-width:220px">${ps.map(x=>`<option value="${escapeHtml(String(x.id))}" ${String(x.id)===String(pid)?'selected':''}>${escapeHtml(x.name||'مشروع')}</option>`).join('')}</select>
-     ${(currentUser.isAdmin||canEdit('projects'))?`<button class="btn btn-amber" onclick="epmsRecalcProjectClick('${escapeHtml(String(pid))}')">🔄 تسميع مصروفات ونسبة إنجاز هذا المشروع</button>`:''}
+     ${(currentUser.isAdmin||canEdit('projects'))&&isActionVisible('recalcProject')?`<button class="btn btn-amber" onclick="epmsRecalcProjectClick('${escapeHtml(String(pid))}')">🔄 تسميع مصروفات ونسبة إنجاز هذا المشروع</button>`:''}
      <button class="btn btn-ghost" onclick="goRoute('dashboard')">⌂ الرئيسية</button>
      <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
    </div>
@@ -7455,6 +7478,7 @@ function systemManagementHTML(){
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;padding-right:8px;">${items}</div>
         </div>`;
       }).join('')}
+      ${actionButtonsEditorHTML()}
     </div>
   </div>
   <div class="panel" style="margin-top:16px;border:1px solid #f0c2c2;background:#fff8f8;">
@@ -7491,10 +7515,12 @@ async function setAllMenuVisibility(show){
     cb.checked=!!show;
   });
   document.querySelectorAll('.mv-item').forEach(cb=>{ cb.checked=!!show; });
+  if(show){ for(const [k] of EPMS_ACTION_BUTTONS) v.buttons[k]=true; document.querySelectorAll('.mv-btn').forEach(cb=>{ cb.checked=true; }); }
 }
 async function saveMenuVisibility(){
   if(!currentUser || !currentUser.isAdmin){ alert('هذه العملية للمدير فقط.'); return; }
-  const v={sections:{}, items:{}};
+  const v={sections:{}, items:{}, buttons:{}};
+  document.querySelectorAll('.mv-btn').forEach(cb=>{ v.buttons[cb.dataset.btn]=cb.checked; });
   document.querySelectorAll('.mv-section').forEach(cb=>{
     v.sections[cb.dataset.section]=cb.checked;
   });
@@ -7504,7 +7530,7 @@ async function saveMenuVisibility(){
   });
   STATE.menuVisibility=v;
   await dbSet('menuVisibility', v);
-  alert('تم حفظ إعدادات إظهار/إخفاء الأقسام.');
+  alert('تم حفظ إعدادات إظهار/إخفاء الأقسام والأزرار.');
   render();
 }
 
@@ -7934,7 +7960,7 @@ function moduleHTML(key, mod){
         ${key==='surveillanceCameras'&&r.streamUrl?`<button class="link-btn" onclick="openCameraStream('${r.id}')">📹 فتح البث</button>`:''}
         <button class="link-btn" onclick="openEdit('${key}','${r.id}')">${editable?t('تعديل','Edit','Modifier'):t('عرض','View','Voir')}</button>
         <button class="link-btn" onclick="printAnyRecord('${key}','${r.id}')">🖨️ ${t('طباعة','Print','Imprimer')}</button>
-        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&r.approvalStatus!=='مرفوض'?(r.superseded?`<span class="badge bad" title="${escapeHtml(r.supersededReason||'')}">⧉ مكرر — مستبعد</span>`:r.disburseStatus==='صرف'?`<span class="badge ok">✓ تم الصرف</span>`:`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 صرف</button>${r.disburseStatus==='عدم الصرف'?`<span class="badge bad">⛔ عدم الصرف</span>`:`<button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ عدم صرف</button>`}`):''}
+        ${(key==='finance'||key==='accounting'||key==='disbursements')&&editable&&isActionVisible('rowDisburse')&&r.approvalStatus!=='مرفوض'?(r.superseded?`<span class="badge bad" title="${escapeHtml(r.supersededReason||'')}">⧉ مكرر — مستبعد</span>`:r.disburseStatus==='صرف'?`<span class="badge ok">✓ تم الصرف</span>`:`<button class="link-btn" onclick="epmsSetDisburse('${key}','${r.id}','صرف')" title="قرار صرف">💵 صرف</button>${r.disburseStatus==='عدم الصرف'?`<span class="badge bad">⛔ عدم الصرف</span>`:`<button class="link-btn danger" onclick="epmsSetDisburse('${key}','${r.id}','عدم الصرف')" title="قرار عدم الصرف">⛔ عدم صرف</button>`}`):''}
         ${key==='handoverRequests'?`<button class="link-btn" onclick="openHandoverWorkflow('${r.id}')">دورة الاعتماد</button>`:''}${canApproveRecord(key,r)?`<button class="link-btn" onclick="approveRecord('${key}','${r.id}','اعتماد')">${t('اعتماد','Approve','Approuver')}</button><button class="link-btn danger" onclick="approveRecord('${key}','${r.id}','رفض')">${t('رفض','Reject','Rejeter')}</button>`:''}${editable?`<button class="link-btn danger" onclick="deleteRecord('${key}','${r.id}')">${t('حذف','Delete','Supprimer')}</button>`:''}
       </div></td>
     </tr>`;
@@ -7950,10 +7976,10 @@ function moduleHTML(key, mod){
         ${dateFields.length?`<span class="sort-label">ترتيب البنود:</span><select onchange="setSort('${key}',this.value)"><option value="">بدون ترتيب زمني</option>${dateFields.map(([f,l])=>`<option value="${f}" ${sortField===f?'selected':''}>حسب ${l}</option>`).join('')}</select><select onchange="setSortDir('${key}',this.value)"><option value="desc" ${sortDir==='desc'?'selected':''}>الأحدث أولاً ↓</option><option value="asc" ${sortDir==='asc'?'selected':''}>الأقدم أولاً ↑</option></select><span class="sort-current">${sortField ? (sortDir==='desc'?'الأحدث ← الأقدم':'الأقدم ← الأحدث') : 'الترتيب الافتراضي'}</span>`:''}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost" onclick="window.print()">🖨️ ${t('طباعة الصفحة','Print page','Imprimer la page')}</button>
-        <button class="btn btn-primary" onclick="printSelectedRecords('${key}')">📑 ${t('طباعة المحدد','Print selected','Imprimer la sélection')}</button>
-        ${(key==='contracts'||key==='extracts') && filtered.length ? `<button class="btn btn-primary" onclick="printDocument('${key}','${filtered[0].id}')">📄 طباعة نموذج كامل</button>`:''}
-        ${key==='boq'?`
+        ${isActionVisible('printPage')?`<button class="btn btn-ghost" onclick="window.print()">🖨️ ${t('طباعة الصفحة','Print page','Imprimer la page')}</button>`:''}
+        ${isActionVisible('printSelected')?`<button class="btn btn-primary" onclick="printSelectedRecords('${key}')">📑 ${t('طباعة المحدد','Print selected','Imprimer la sélection')}</button>`:''}
+        ${(key==='contracts'||key==='extracts') && filtered.length && isActionVisible('printFullDoc') ? `<button class="btn btn-primary" onclick="printDocument('${key}','${filtered[0].id}')">📄 طباعة نموذج كامل</button>`:''}
+        ${key==='boq'&&isActionVisible('boqLinks')?`
         <button class="btn ${isSectionLinked('boq','contracts')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','contracts')" title="ربط اختياري BOQ مع العقود">🔗 العقود ${isSectionLinked('boq','contracts')?'✓':'○'}</button>
         <button class="btn ${isSectionLinked('boq','extracts')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','extracts')" title="ربط اختياري BOQ مع المستخلصات">🔗 المستخلصات ${isSectionLinked('boq','extracts')?'✓':'○'}</button>
         <button class="btn ${isSectionLinked('boq','finance')?'btn-primary':'btn-ghost'}" onclick="toggleSectionLink('boq','finance')" title="ربط اختياري BOQ مع الماليات">🔗 الماليات ${isSectionLinked('boq','finance')?'✓':'○'}</button>
@@ -7961,10 +7987,10 @@ function moduleHTML(key, mod){
         <button type="button" class="btn btn-primary" onclick="enableAllSectionLinks()" title="تفعيل كل روابط الأقسام في النظام">✅ تفعيل كل الروابط</button>
         <button type="button" class="btn btn-amber" onclick="disableAllSectionLinks()" title="فصل كل الأقسام عن بعضها">⛔ فصل كل الأقسام</button>
         `:''}
-        ${key==='extracts'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">📒 ترحيل المعتمد → ماليات ومحاسبة</button>`:''}
-        ${key==='purchases'||key==='deliveries'||key==='invoices'?`<button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">📒 ترحيل المشتريات/التوريدات/الفواتير → ماليات ومحاسبة</button>`:''}
-        ${key==='accounting'||key==='finance'?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">🔄 مزامنة المستخلصات الجديدة فقط</button><button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">🔄 مزامنة المشتريات والفواتير الجديدة فقط</button><button class="btn btn-primary" onclick="epmsBulkDisburse('${key}')" title="يُطبّق على المعاملات التي لم يُتخذ فيها قرار فقط">💵 صرف / عدم صرف (عام)</button>`:''}
-        ${editable ? `<button class="btn btn-amber" onclick="openNew('${key}')">+ ${t('إضافة','Add','Ajouter')}</button>` : ''}
+        ${key==='extracts'&&isActionVisible('syncExtracts')?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">📒 ترحيل المعتمد → ماليات ومحاسبة</button>`:''}
+        ${(key==='purchases'||key==='deliveries'||key==='invoices')&&isActionVisible('syncProcurement')?`<button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">📒 ترحيل المشتريات/التوريدات/الفواتير → ماليات ومحاسبة</button>`:''}
+        ${key==='accounting'||key==='finance'?`${isActionVisible('syncExtracts')?`<button class="btn btn-amber" onclick="epmsPostContractorAccounting()">🔄 مزامنة المستخلصات الجديدة فقط</button>`:''}${isActionVisible('syncProcurement')?`<button class="btn btn-amber" onclick="epmsPostProcurementAccounting()">🔄 مزامنة المشتريات والفواتير الجديدة فقط</button>`:''}${isActionVisible('bulkDisburse')?`<button class="btn btn-primary" onclick="epmsBulkDisburse('${key}')" title="يُطبّق على المعاملات التي لم يُتخذ فيها قرار فقط">💵 صرف / عدم صرف (عام)</button>`:''}`:''}
+        ${editable && isActionVisible('addNew') ? `<button class="btn btn-amber" onclick="openNew('${key}')">+ ${t('إضافة','Add','Ajouter')}</button>` : ''}
       </div>
     </div>
     <h3 class="print-only" style="margin:0 0 12px;">${moduleTitle(key)}</h3>
@@ -8700,9 +8726,6 @@ async function epmsSyncProcurementToFinanceAndAccounting(moduleKey, record){
   record.epmsSyncedAt = new Date().toISOString();
   try{ await dbSet(moduleKey, STATE[moduleKey]); }catch(e){}
 }
-
-/** مزامنة سلسلة: مستخلص → ماليات → محاسبة */
-/* (استُبدلت بنسخة V21 أسفل الملف) */
 
 /** تحديث إجماليات العقد من بنود BOQ المرتبطة */
 async function epmsSyncBoqTotalsToContract(boqItem){
