@@ -1,4 +1,4 @@
-const CACHE = 'epms-v22k-cleanup';
+const CACHE = 'epms-v23-i18n-phase1';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
